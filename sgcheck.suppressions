@@ -1,0 +1,27 @@
+{
+   <cantfix>
+   exp-sgcheck:SorG
+   fun:_IO_vfscanf
+   fun:vsscanf
+   fun:sscanf
+   fun:boot_manager_inspect_kernel
+   fun:boot_manager_get_kernels
+   fun:bootman_list_kernels_test
+   obj:/usr/*lib*/libcheck.so.0.0.0
+   fun:srunner_run
+   fun:main
+}
+
+{
+   <cantfix2>
+   exp-sgcheck:SorG
+   fun:vfprintf
+   fun:__vasprintf_chk
+   fun:__asprintf_chk
+   fun:boot_manager_inspect_kernel
+   fun:boot_manager_get_kernels
+   fun:bootman_list_kernels_test
+   obj:/usr/*lib64*/libcheck.so.0.0.0
+   fun:srunner_run
+   fun:main
+}
