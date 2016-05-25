@@ -10,10 +10,10 @@
  */
 
 #define _GNU_SOURCE
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 
 #include "hashmap.h"
 
@@ -29,34 +29,34 @@
  * An bucket/chain within the hashmap
  */
 typedef struct CbmHashmapEntry {
-        void *hash;                             /**<The key for this item */
-        void *value;                            /**<Value for this item */
-        struct CbmHashmapEntry *next;         /**<Next item in the chain */
-        bool occ;                               /**<Whether this bucket is occupied */
+        void *hash;                   /**<The key for this item */
+        void *value;                  /**<Value for this item */
+        struct CbmHashmapEntry *next; /**<Next item in the chain */
+        bool occ;                     /**<Whether this bucket is occupied */
 } CbmHashmapEntry;
 
 /**
  * A CbmHashmap
  */
 struct CbmHashmap {
-        int size;                       /**<Current size of the hashmap */
-        int next_size;                  /**<Next size at which we need to resize */
-        int n_buckets;                  /**<Current number of buckets */
-        CbmHashmapEntry *buckets;     /**<Stores our bucket chains */
+        int size;                 /**<Current size of the hashmap */
+        int next_size;            /**<Next size at which we need to resize */
+        int n_buckets;            /**<Current number of buckets */
+        CbmHashmapEntry *buckets; /**<Stores our bucket chains */
 
-        hash_create_func hash;         /**<Hash generation function */
-        hash_compare_func compare;     /**<Key comparison function */
-        hash_free_func key_free;        /**<Cleanup function for keys */
-        hash_free_func value_free;      /**<Cleanup function for values */
+        hash_create_func hash;     /**<Hash generation function */
+        hash_compare_func compare; /**<Key comparison function */
+        hash_free_func key_free;   /**<Cleanup function for keys */
+        hash_free_func value_free; /**<Cleanup function for values */
 };
 
 /**
  * Iteration object
  */
 typedef struct _CbmHashmapIter {
-        int bucket;              /**<Current bucket position */
-        CbmHashmap *map;        /**<Associated CbmHashmap */
-        void *item;              /**<Current item in this iteration */
+        int bucket;      /**<Current bucket position */
+        CbmHashmap *map; /**<Associated CbmHashmap */
+        void *item;      /**<Current item in this iteration */
 } _CbmHashmapIter;
 
 static void cbm_hashmap_update_next_size(CbmHashmap *self);
@@ -73,7 +73,8 @@ static inline bool cbm_hashmap_maybe_resize(CbmHashmap *self)
         return false;
 }
 
-static CbmHashmap *cbm_hashmap_new_internal(hash_create_func create , hash_compare_func compare, hash_free_func key_free, hash_free_func value_free)
+static CbmHashmap *cbm_hashmap_new_internal(hash_create_func create, hash_compare_func compare,
+                                            hash_free_func key_free, hash_free_func value_free)
 {
         CbmHashmap *map = NULL;
         CbmHashmapEntry *buckets = NULL;
@@ -84,7 +85,7 @@ static CbmHashmap *cbm_hashmap_new_internal(hash_create_func create , hash_compa
         }
 
         buckets = calloc(INITIAL_SIZE, sizeof(CbmHashmapEntry));
-        if (!buckets ) {
+        if (!buckets) {
                 free(map);
                 return NULL;
         }
@@ -106,7 +107,8 @@ CbmHashmap *cbm_hashmap_new(hash_create_func create, hash_compare_func compare)
         return cbm_hashmap_new_internal(create, compare, NULL, NULL);
 }
 
-CbmHashmap *cbm_hashmap_new_full(hash_create_func create , hash_compare_func compare, hash_free_func key_free, hash_free_func value_free)
+CbmHashmap *cbm_hashmap_new_full(hash_create_func create, hash_compare_func compare,
+                                 hash_free_func key_free, hash_free_func value_free)
 {
         return cbm_hashmap_new_internal(create, compare, key_free, value_free);
 }
@@ -117,7 +119,8 @@ static inline unsigned cbm_hashmap_get_hash(CbmHashmap *self, const void *key)
         return hash;
 }
 
-static bool cbm_hashmap_insert_bucket(CbmHashmap *self, CbmHashmapEntry *buckets, int n_buckets, unsigned hash, const void *key, void *value)
+static bool cbm_hashmap_insert_bucket(CbmHashmap *self, CbmHashmapEntry *buckets, int n_buckets,
+                                      unsigned hash, const void *key, void *value)
 {
         if (!self || !buckets) {
                 return false;
@@ -164,7 +167,7 @@ static bool cbm_hashmap_insert_bucket(CbmHashmap *self, CbmHashmapEntry *buckets
                 }
         }
 
-        row->hash = (void*)key;
+        row->hash = (void *)key;
         row->value = value;
         row->occ = true;
         if (parent != row && parent) {
@@ -313,7 +316,6 @@ void cbm_hashmap_free(CbmHashmap *self)
         }
 
         free(self);
-
 }
 
 static void cbm_hashmap_update_next_size(CbmHashmap *self)
@@ -321,7 +323,7 @@ static void cbm_hashmap_update_next_size(CbmHashmap *self)
         if (!self) {
                 return;
         }
-        self->next_size = (int) (self->n_buckets * FULL_FACTOR);
+        self->next_size = (int)(self->n_buckets * FULL_FACTOR);
 }
 
 int cbm_hashmap_size(CbmHashmap *self)
@@ -359,7 +361,12 @@ static bool cbm_hashmap_resize(CbmHashmap *self)
                 while (entry) {
                         if (entry->occ) {
                                 unsigned hash = cbm_hashmap_get_hash(self, entry->hash);
-                                if ((incr = cbm_hashmap_insert_bucket(self, new_buckets, new_size, hash, entry->hash, entry->value)) > 0) {
+                                if ((incr = cbm_hashmap_insert_bucket(self,
+                                                                      new_buckets,
+                                                                      new_size,
+                                                                      hash,
+                                                                      entry->hash,
+                                                                      entry->value)) > 0) {
                                         items += incr;
                                 } else {
                                         /* Likely a memory issue */
@@ -369,7 +376,8 @@ static bool cbm_hashmap_resize(CbmHashmap *self)
                         entry = entry->next;
                 }
         }
-        /* Successfully resized - do this separately because we need to gaurantee old data is preserved */
+        /* Successfully resized - do this separately because we need to gaurantee old data is
+         * preserved */
         for (int i = 0; i < old_size; i++) {
                 cbm_hashmap_free_bucket(self, &(old_buckets[i]), false);
         }
@@ -390,18 +398,15 @@ failure:
         return false;
 }
 
-
 void cbm_hashmap_iter_init(CbmHashmap *map, CbmHashmapIter *citer)
 {
         _CbmHashmapIter *iter = NULL;
         if (!map || !citer) {
                 return;
         }
-        iter = (_CbmHashmapIter*)citer;
+        iter = (_CbmHashmapIter *)citer;
         _CbmHashmapIter it = {
-               .bucket = -1,
-               .map = map,
-               .item = NULL,
+                .bucket = -1, .map = map, .item = NULL,
         };
         *iter = it;
 }
@@ -415,7 +420,7 @@ bool cbm_hashmap_iter_next(CbmHashmapIter *citer, void **key, void **value)
                 return false;
         }
 
-        iter = (_CbmHashmapIter*)citer;
+        iter = (_CbmHashmapIter *)citer;
         if (!iter->map) {
                 return false;
         }
@@ -430,7 +435,7 @@ bool cbm_hashmap_iter_next(CbmHashmapIter *citer, void **key, void **value)
                 }
                 if (!item) {
                         iter->bucket++;
-                        if (iter->bucket > iter->map->n_buckets-1) {
+                        if (iter->bucket > iter->map->n_buckets - 1) {
                                 return false;
                         }
                         item = &(iter->map->buckets[iter->bucket]);
@@ -452,7 +457,7 @@ success:
         }
 
         return true;
-}   
+}
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

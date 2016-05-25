@@ -12,10 +12,10 @@
 #pragma once
 
 #define _GNU_SOURCE
-#include <stdbool.h>
-#include <stdarg.h>
-#include <sys/stat.h>
 #include <mntent.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <sys/stat.h>
 
 #include "util.h"
 
@@ -62,7 +62,6 @@ bool cbm_files_match(const char *p1, const char *p2);
  * @return a newly allocated string
  */
 char *cbm_get_file_parent(const char *p);
-
 
 /**
  * Recursively make the directories for the given path
@@ -136,7 +135,7 @@ char *cbm_get_mountpoint_for_device(const char *device);
  * Gradually build up a valid path, which may point within an existing
  * tree, to mitigate any case sensitivity issues on FAT32
  */
-__attribute__ ((sentinel(0))) char *build_case_correct_path(const char *c, ...);
+__attribute__((sentinel(0))) char *build_case_correct_path(const char *c, ...);
 
 char *build_case_correct_path_va(const char *c, va_list ap);
 

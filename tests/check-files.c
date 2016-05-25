@@ -11,9 +11,9 @@
 
 #define _GNU_SOURCE
 #include <check.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "util.h"
 
@@ -66,7 +66,8 @@ END_TEST
 START_TEST(bootman_mount_test)
 {
         fail_if(!cbm_is_mounted("/", NULL), "Apparently / not mounted. Question physics.");
-        fail_if(cbm_is_mounted("/,^roflcopter", NULL), "Non-existent path mounted. Or you have a genuinely weird path");
+        fail_if(cbm_is_mounted("/,^roflcopter", NULL),
+                "Non-existent path mounted. Or you have a genuinely weird path");
 }
 END_TEST
 

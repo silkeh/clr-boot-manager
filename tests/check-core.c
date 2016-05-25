@@ -11,26 +11,26 @@
 
 #define _GNU_SOURCE
 #include <check.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "util.h"
 
-#include "bootman.c"
 #include "array.c"
-#include "util.c"
+#include "bootman.c"
 #include "files.c"
+#include "util.c"
 
 /* Needed due to extern */
 #include "bootloaders/systemd-class.c"
 
 #if defined(HAVE_SYSTEMD_BOOT)
-        #include "bootloaders/systemd-boot.c"
+#include "bootloaders/systemd-boot.c"
 #elif defined(HAVE_GUMMIBOOT)
-        #include "bootloaders/gummiboot.c"
+#include "bootloaders/gummiboot.c"
 #else
-        #include "bootloaders/goofiboot.c"
+#include "bootloaders/goofiboot.c"
 #endif
 
 /**
@@ -72,8 +72,8 @@ END_TEST
 
 int kernel_compare(const void *a, const void *b)
 {
-        const Kernel *ka = *(const Kernel**)a;
-        const Kernel *kb = *(const Kernel**)b;
+        const Kernel *ka = *(const Kernel **)a;
+        const Kernel *kb = *(const Kernel **)b;
 
         if (ka->release < kb->release) {
                 return -1;
@@ -83,8 +83,8 @@ int kernel_compare(const void *a, const void *b)
 
 int kernel_compare_reverse(const void *a, const void *b)
 {
-        const Kernel *ka = *(const Kernel**)a;
-        const Kernel *kb = *(const Kernel**)b;
+        const Kernel *ka = *(const Kernel **)a;
+        const Kernel *kb = *(const Kernel **)b;
 
         if (ka->release > kb->release) {
                 return -1;
@@ -102,7 +102,7 @@ START_TEST(bootman_list_kernels_test)
         fail_if(boot_manager_set_prefix(m, "/ro347u59jaowlq'#1'1'1'1aaaaa,*"),
                 "set_prefix should fail for non existent directory");
 
-        boot_manager_set_prefix(m, (char*)TOP_BUILD_DIR "/tests/dummy_install");
+        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
 
         list = boot_manager_get_kernels(m);
         fail_if(!list, "Failed to list kernels");
@@ -137,23 +137,24 @@ START_TEST(bootman_install_kernel_test)
 {
         autofree(BootManager) *m = NULL;
         autofree(KernelArray) *list = NULL;
-        __attribute__ ((unused)) const Kernel *kernel = NULL;
+        __attribute__((unused)) const Kernel *kernel = NULL;
 
         m = boot_manager_new();
-        boot_manager_set_prefix(m, (char*)TOP_BUILD_DIR "/tests/dummy_install");
+        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
         list = boot_manager_get_kernels(m);
 
         cbm_array_qsort(list, kernel_compare_reverse);
         /* org.clearlinux.native.4.2.3-138 */
         kernel = cbm_array_get(list, 0);
 
-        fail_if(!boot_manager_install_kernel(m, kernel),
-                "Failed to install kernel");
+        fail_if(!boot_manager_install_kernel(m, kernel), "Failed to install kernel");
 
-        fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/loader/entries/Clear-linux-native-4.2.3-138.conf"),
+        fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                               "/loader/entries/Clear-linux-native-4.2.3-138.conf"),
                 "Failed to find loader .conf entry");
 
-        fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/org.clearlinux.native.4.2.3-138"),
+        fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                               "/org.clearlinux.native.4.2.3-138"),
                 "Failed to find kernel file after install");
 }
 END_TEST
@@ -162,22 +163,23 @@ START_TEST(bootman_set_default_kernel_test)
 {
         autofree(BootManager) *m = NULL;
         autofree(KernelArray) *list = NULL;
-        __attribute__ ((unused)) const Kernel *kernel = NULL;
+        __attribute__((unused)) const Kernel *kernel = NULL;
         const char *expected = "default Clear-linux-native-4.2.3-138\n";
         autofree(char) *got = NULL;
 
         m = boot_manager_new();
-        boot_manager_set_prefix(m, (char*)TOP_BUILD_DIR "/tests/dummy_install");
+        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
         list = boot_manager_get_kernels(m);
 
         cbm_array_qsort(list, kernel_compare_reverse);
         /* org.clearlinux.native.4.2.3-138 */
         kernel = cbm_array_get(list, 0);
 
-        fail_if(!boot_manager_set_default_kernel(m, kernel),
-                "Failed to set default kernel");
+        fail_if(!boot_manager_set_default_kernel(m, kernel), "Failed to set default kernel");
 
-        fail_if(!file_get_text(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/loader/loader.conf", &got),
+        fail_if(!file_get_text(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                             "/loader/loader.conf",
+                               &got),
                 "Failed to read loader.conf");
 
         fail_if(!streq(expected, got), "loader.conf does not match expected data");
@@ -189,24 +191,24 @@ START_TEST(bootman_remove_kernel_test)
 {
         autofree(BootManager) *m = NULL;
         autofree(KernelArray) *list = NULL;
-        __attribute__ ((unused)) const Kernel *kernel = NULL;
+        __attribute__((unused)) const Kernel *kernel = NULL;
 
         m = boot_manager_new();
-        boot_manager_set_prefix(m, (char*)TOP_BUILD_DIR "/tests/dummy_install");
+        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
         list = boot_manager_get_kernels(m);
 
         cbm_array_qsort(list, kernel_compare_reverse);
         /* org.clearlinux.native.4.2.3-138 */
         kernel = cbm_array_get(list, 0);
 
+        fail_if(!boot_manager_remove_kernel(m, kernel), "Failed to remove kernel");
 
-        fail_if(!boot_manager_remove_kernel(m, kernel),
-                "Failed to remove kernel");
-
-        fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/loader/entries/Clear-linux-native-4.2.3-138.conf"),
+        fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                              "/loader/entries/Clear-linux-native-4.2.3-138.conf"),
                 "Failed to remove loader .conf entry");
 
-        fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/org.clearlinux.native.4.2.3-138"),
+        fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                              "/org.clearlinux.native.4.2.3-138"),
                 "Failed to remove kernel file after install");
 }
 END_TEST
@@ -215,25 +217,23 @@ START_TEST(bootman_purge_test)
 {
         autofree(BootManager) *m = NULL;
         autofree(KernelArray) *list = NULL;
-        __attribute__ ((unused)) const Kernel *kernel = NULL;
+        __attribute__((unused)) const Kernel *kernel = NULL;
 
         m = boot_manager_new();
-        boot_manager_set_prefix(m, (char*)TOP_BUILD_DIR "/tests/dummy_install");
+        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
         list = boot_manager_get_kernels(m);
 
         for (int i = 0; i < list->len; i++) {
                 kernel = cbm_array_get(list, i);
-                fail_if(!boot_manager_install_kernel(m, kernel),
-                        "Failed to install known kernel");
+                fail_if(!boot_manager_install_kernel(m, kernel), "Failed to install known kernel");
         }
 
         /* Uncomment for validation
-        __attribute__((unused)) int r = system("tree " TOP_BUILD_DIR "/tests/dummy_install"); */ 
+        __attribute__((unused)) int r = system("tree " TOP_BUILD_DIR "/tests/dummy_install"); */
 
         for (int i = 0; i < list->len; i++) {
                 kernel = cbm_array_get(list, i);
-                fail_if(!boot_manager_remove_kernel(m, kernel),
-                        "Failed to remove known kernel");
+                fail_if(!boot_manager_remove_kernel(m, kernel), "Failed to remove known kernel");
         }
 
         /* Second part of validation
@@ -242,7 +242,6 @@ START_TEST(bootman_purge_test)
         cbm_array_free(&list, (array_free_func)free_kernel);
 
         list = boot_manager_get_kernels(m);
-
 
         fail_if(list->len != 0, "Unaccounted kernels left in test tree");
 }
@@ -253,35 +252,43 @@ START_TEST(bootman_install_bootloader_test)
         autofree(BootManager) *m = NULL;
 
         m = boot_manager_new();
-        boot_manager_set_prefix(m, (char*)TOP_BUILD_DIR "/tests/dummy_install");
+        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
 
         fail_if(!boot_manager_modify_bootloader(m, BOOTLOADER_OPERATION_INSTALL),
                 "Failed to install the bootloader");
 
         if (boot_manager_get_architecture_size(m) == 64) {
-                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/Boot/BOOTX64.EFI"),
+                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                       "/EFI/Boot/BOOTX64.EFI"),
                         "Main x64 bootloader missing");
 #if defined(HAVE_SYSTEMD_BOOT)
-                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/systemd/systemd-bootx64.efi"),
+                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                       "/EFI/systemd/systemd-bootx64.efi"),
                         "Systemd x64 bootloader missing");
 #elif defined(HAVE_GUMMIBOOT)
-                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/gummiboot/gummibootx64.efi"),
+                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                       "/EFI/gummiboot/gummibootx64.efi"),
                         "gummiboot x64 bootloader missing");
 #else
-                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/goofiboot/goofibootx64.efi"),
+                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                       "/EFI/goofiboot/goofibootx64.efi"),
                         "goofiboot x64 bootloader missing");
 #endif
         } else {
-                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/Boot/BOOTIA32.EFI"),
+                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                       "/EFI/Boot/BOOTIA32.EFI"),
                         "Main ia32 bootloader missing");
 #if defined(HAVE_SYSTEMD_BOOT)
-                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/systemd/systemd-bootia32.efi"),
+                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                       "/EFI/systemd/systemd-bootia32.efi"),
                         "systemd-boot ia32 bootloader missing");
 #elif defined(HAVE_GUMMIBOOT)
-                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/gummiboot/gummibootia32.efi"),
+                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                       "/EFI/gummiboot/gummibootia32.efi"),
                         "gummiboot ia32 bootloader missing");
 #else
-                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/goofiboot/goofibootia32.efi"),
+                fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                       "/EFI/goofiboot/goofibootia32.efi"),
                         "goofiboot ia32 bootloader missing");
 #endif
         }
@@ -295,46 +302,55 @@ START_TEST(bootman_remove_bootloader_test)
 {
         autofree(BootManager) *m = NULL;
 
-        fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/Boot"),
+        fail_if(!cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY "/EFI/Boot"),
                 "Main EFI directory missing, botched install");
 
         m = boot_manager_new();
 
-        boot_manager_set_prefix(m, (char*)TOP_BUILD_DIR "/tests/dummy_install");
+        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
 
         fail_if(!boot_manager_modify_bootloader(m, BOOTLOADER_OPERATION_REMOVE),
                 "Failed to remove the bootloader");
 
         /* Ensure that it is indeed removed. */
         if (boot_manager_get_architecture_size(m) == 64) {
-                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install"BOOT_DIRECTORY"/EFI/Boot/BOOTX64.EFI"),
+                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install" BOOT_DIRECTORY
+                                                      "/EFI/Boot/BOOTX64.EFI"),
                         "Main x64 bootloader present");
 #if defined(HAVE_SYSTEMD_BOOT)
-                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/systemd"),
+                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                      "/EFI/systemd"),
                         "Systemd x64 bootloader present");
 #elif defined(HAVE_GUMMIBOOT)
-                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/gummiboot"),
+                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                      "/EFI/gummiboot"),
                         "gummiboot x64 bootloader present");
 #else
-                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/goofiboot"),
+                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                      "/EFI/goofiboot"),
                         "goofiboot x64 bootloader present");
 #endif
         } else {
-                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/Boot/BOOTIA32.EFI"),
+                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                      "/EFI/Boot/BOOTIA32.EFI"),
                         "Main ia32 bootloader present");
 #if defined(HAVE_SYSTEMD_BOOT)
-                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/systemd"),
+                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                      "/EFI/systemd"),
                         "systemd-boot ia32 bootloader present");
 #elif defined(HAVE_GUMMIBOOT)
-                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/gummiboot"),
+                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                      "/EFI/gummiboot"),
                         "gummiboot ia32 bootloader present");
 #else
-                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/EFI/goofiboot"),
+                fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                                      "/EFI/goofiboot"),
                         "goofiboot ia32 bootloader present");
 #endif
         }
 
-        fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/"BOOT_DIRECTORY"/loader/loader.conf"),
+        fail_if(cbm_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                                              "/loader/loader.conf"),
                 "systemd-class loader.conf present");
         /* DEBUG:
         __attribute__ ((unused)) int r = system("tree " TOP_BUILD_DIR "/tests/dummy_install");*/

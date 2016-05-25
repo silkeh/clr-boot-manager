@@ -10,15 +10,15 @@
  */
 
 #include <ctype.h>
-#include <string.h>
 #include <getopt.h>
+#include <string.h>
 
-#include "cli.h"
 #include "bootman.h"
+#include "cli.h"
 
 static inline bool is_numeric(const char *str)
 {
-        for (char *c = (char*)str; *c; c++) {
+        for (char *c = (char *)str; *c; c++) {
                 if (!isdigit(*c)) {
                         if (c == str && *c == '-') {
                                 continue;
@@ -64,7 +64,9 @@ bool cbm_command_set_timeout(int argc, char **argv)
         }
 
         if (n_val < -1) {
-                fprintf(stderr, "Value of '%d' is incorrect. Use 0 if you mean to disable boot timeout\n", n_val);
+                fprintf(stderr,
+                        "Value of '%d' is incorrect. Use 0 if you mean to disable boot timeout\n",
+                        n_val);
                 return false;
         }
 

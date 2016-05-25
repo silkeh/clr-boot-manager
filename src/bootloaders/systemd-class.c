@@ -18,9 +18,9 @@
 
 #include "bootloader.h"
 #include "bootman.h"
-#include "util.h"
 #include "files.h"
 #include "systemd-class.h"
+#include "util.h"
 
 /**
  * Private to systemd-class implementation
@@ -42,7 +42,13 @@ typedef struct SdClassConfig {
 static SdClassConfig sd_class_config = { 0 };
 static BootLoaderConfig *sd_config = NULL;
 
-#define FREE_IF_SET(x) { if (x) { free(x); x = NULL; } }
+#define FREE_IF_SET(x)                                                                             \
+        {                                                                                          \
+                if (x) {                                                                           \
+                        free(x);                                                                   \
+                        x = NULL;                                                                  \
+                }                                                                                  \
+        }
 
 static bool sd_class_install_x64(const BootManager *manager);
 static bool sd_class_update_x64(const BootManager *manager);
@@ -68,7 +74,7 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         sd_config = config;
 
         /* Cache all of these to save useless allocs of the same paths later */
-        base_path = boot_manager_get_boot_dir((BootManager*)manager);
+        base_path = boot_manager_get_boot_dir((BootManager *)manager);
         OOM_CHECK_RET(base_path, false);
         sd_class_config.base_path = base_path;
 
@@ -84,7 +90,7 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         OOM_CHECK_RET(entries_dir, false);
         sd_class_config.entries_dir = entries_dir;
 
-        prefix = boot_manager_get_prefix((BootManager*)manager);
+        prefix = boot_manager_get_prefix((BootManager *)manager);
 
         /* ia32 paths */
         if (!asprintf(&ia32_source, "%s/%s/%s", prefix, sd_config->efi_dir, sd_config->ia32_blob)) {
@@ -94,7 +100,11 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         }
         sd_class_config.ia32_source = ia32_source;
 
-        ia32_dest = build_case_correct_path(sd_class_config.base_path, "EFI", sd_config->vendor_dir, sd_config->ia32_blob, NULL);
+        ia32_dest = build_case_correct_path(sd_class_config.base_path,
+                                            "EFI",
+                                            sd_config->vendor_dir,
+                                            sd_config->ia32_blob,
+                                            NULL);
         OOM_CHECK_RET(ia32_source, false);
         sd_class_config.ia32_dest = ia32_dest;
 
@@ -106,29 +116,36 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         }
         sd_class_config.x64_source = x64_source;
 
-        x64_dest = build_case_correct_path(sd_class_config.base_path, "EFI", sd_config->vendor_dir, sd_config->x64_blob, NULL);
+        x64_dest = build_case_correct_path(sd_class_config.base_path,
+                                           "EFI",
+                                           sd_config->vendor_dir,
+                                           sd_config->x64_blob,
+                                           NULL);
         OOM_CHECK_RET(x64_dest, false);
         sd_class_config.x64_dest = x64_dest;
 
         /* default x64 path */
-        default_path_x64 = build_case_correct_path(sd_class_config.base_path, "EFI", "Boot", "BOOTX64.EFI", NULL);
+        default_path_x64 =
+            build_case_correct_path(sd_class_config.base_path, "EFI", "Boot", "BOOTX64.EFI", NULL);
         OOM_CHECK_RET(default_path_x64, false);
         sd_class_config.default_path_x64 = default_path_x64;
 
         /* default ia32 path */
-        default_path_ia32 = build_case_correct_path(sd_class_config.base_path, "EFI", "Boot", "BOOTIA32.EFI", NULL);
+        default_path_ia32 =
+            build_case_correct_path(sd_class_config.base_path, "EFI", "Boot", "BOOTIA32.EFI", NULL);
         OOM_CHECK_RET(default_path_ia32, false);
         sd_class_config.default_path_ia32 = default_path_ia32;
 
         /* Loader entry */
-        loader_config = build_case_correct_path(sd_class_config.base_path, "loader", "loader.conf", NULL);
+        loader_config =
+            build_case_correct_path(sd_class_config.base_path, "loader", "loader.conf", NULL);
         OOM_CHECK_RET(loader_config, false);
         sd_class_config.loader_config = loader_config;
 
         return true;
 }
 
-void sd_class_destroy(__attribute__ ((unused)) const BootManager *manager)
+void sd_class_destroy(__attribute__((unused)) const BootManager *manager)
 {
         FREE_IF_SET(sd_class_config.efi_dir);
         FREE_IF_SET(sd_class_config.vendor_dir);
@@ -143,7 +160,6 @@ void sd_class_destroy(__attribute__ ((unused)) const BootManager *manager)
         FREE_IF_SET(sd_class_config.loader_config);
 }
 
-
 /* i.e. $prefix/$boot/loader/entries/Clear-linux-native-4.1.6-113.conf */
 static char *get_entry_path_for_kernel(BootManager *manager, const Kernel *kernel)
 {
@@ -155,16 +171,24 @@ static char *get_entry_path_for_kernel(BootManager *manager, const Kernel *kerne
 
         prefix = boot_manager_get_vendor_prefix(manager);
 
-        if (!asprintf(&item_name, "%s-%s-%s-%d.conf", prefix, str_kernel_type(kernel->type),
-                kernel->version, kernel->release)) {
+        if (!asprintf(&item_name,
+                      "%s-%s-%s-%d.conf",
+                      prefix,
+                      str_kernel_type(kernel->type),
+                      kernel->version,
+                      kernel->release)) {
                 DECLARE_OOM();
                 abort();
         }
 
-        return build_case_correct_path(sd_class_config.base_path, "loader", "entries", item_name, NULL);
+        return build_case_correct_path(sd_class_config.base_path,
+                                       "loader",
+                                       "entries",
+                                       item_name,
+                                       NULL);
 }
 
-static bool sd_class_ensure_dirs(__attribute__ ((unused)) const BootManager *manager)
+static bool sd_class_ensure_dirs(__attribute__((unused)) const BootManager *manager)
 {
         if (!mkdir_p(sd_class_config.efi_dir, 00755)) {
                 LOG("Failed to create %s: %s\n", sd_class_config.efi_dir, strerror(errno));
@@ -201,8 +225,7 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         char *kname_base = NULL;
         autofree(char) *kfile_target = NULL;
 
-
-        conf_path = get_entry_path_for_kernel((BootManager*)manager, kernel);
+        conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
 
         /* Ensure all the relevant directories exist */
         if (!sd_class_ensure_dirs(manager)) {
@@ -211,17 +234,21 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         }
 
         /* Build the options for the entry */
-        root_uuid = boot_manager_get_root_uuid((BootManager*)manager);
+        root_uuid = boot_manager_get_root_uuid((BootManager *)manager);
         if (!root_uuid) {
                 /* But test suites. */
-                LOG("PartUUID unknown, this should never happen (unless in make check): %s\n", kernel->path);
+                LOG("PartUUID unknown, this should never happen (unless in make check): %s\n",
+                    kernel->path);
 
                 if (!asprintf(&boot_options, "options %s", kernel->cmdline)) {
                         DECLARE_OOM();
                         abort();
                 }
         } else {
-                if (!asprintf(&boot_options, "options root=PARTUUID=%s %s", root_uuid, kernel->cmdline)) {
+                if (!asprintf(&boot_options,
+                              "options root=PARTUUID=%s %s",
+                              root_uuid,
+                              kernel->cmdline)) {
                         DECLARE_OOM();
                         abort();
                 }
@@ -230,10 +257,14 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         kname_copy = strdup(kernel->path);
         kname_base = basename(kname_copy);
 
-        os_name = boot_manager_get_os_name((BootManager*)manager);
+        os_name = boot_manager_get_os_name((BootManager *)manager);
 
         /* Kernels are installed to the root of the ESP, namespaced */
-        if (!asprintf(&conf_entry, "title %s\nlinux /%s\n%s\n", os_name, kname_base, boot_options)) {
+        if (!asprintf(&conf_entry,
+                      "title %s\nlinux /%s\n%s\n",
+                      os_name,
+                      kname_base,
+                      boot_options)) {
                 DECLARE_OOM();
                 abort();
         }
@@ -270,13 +301,15 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
         autofree(char) *kfile_target = NULL;
         char *kname_base = NULL;
 
-        conf_path = get_entry_path_for_kernel((BootManager*)manager, kernel);
+        conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
         OOM_CHECK_RET(conf_path, false);
 
         /* We must take a non-fatal approach in a remove operation */
         if (cbm_file_exists(conf_path)) {
                 if (unlink(conf_path) < 0) {
-                        LOG("sd_class_remove_kernel: Failed to remove %s: %s\n", conf_path, strerror(errno));
+                        LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
+                            conf_path,
+                            strerror(errno));
                 } else {
                         sync();
                 }
@@ -294,7 +327,9 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
 
         /* Remove the kernel from the ESP */
         if (unlink(kfile_target) < 0) {
-                LOG("sd_class_remove_kernel: Failed to remove %s: %s\n", kfile_target, strerror(errno));
+                LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
+                    kfile_target,
+                    strerror(errno));
         } else {
                 sync();
         }
@@ -302,7 +337,9 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
         /* Purge the kernel modules from disk */
         if (kernel->module_dir) {
                 if (!rm_rf(kernel->module_dir)) {
-                        LOG("sd_class_remove_kernel: Failed to remove (-rf) %s: %s\n", kernel->module_dir, strerror(errno));
+                        LOG("sd_class_remove_kernel: Failed to remove (-rf) %s: %s\n",
+                            kernel->module_dir,
+                            strerror(errno));
                 } else {
                         sync();
                 }
@@ -312,23 +349,31 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
 
         if (kernel->cmdline_file) {
                 if (unlink(kernel->cmdline_file) < 0) {
-                        LOG("sd_class_remove_kernel: Failed to remove %s: %s\n", kernel->cmdline_file, strerror(errno));
+                        LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
+                            kernel->cmdline_file,
+                            strerror(errno));
                 }
         }
         if (kernel->kconfig_file) {
                 if (unlink(kernel->kconfig_file) < 0) {
-                        LOG("sd_class_remove_kernel: Failed to remove %s: %s\n", kernel->kconfig_file, strerror(errno));
+                        LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
+                            kernel->kconfig_file,
+                            strerror(errno));
                 }
         }
         if (kernel->kboot_file) {
                 if (unlink(kernel->kboot_file) < 0) {
-                        LOG("sd_class_remove_kernel: Failed to remove %s: %s\n", kernel->kboot_file, strerror(errno));
+                        LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
+                            kernel->kboot_file,
+                            strerror(errno));
                 }
         }
 
         /* Lastly, remove the source */
         if (unlink(kernel->path) < 0) {
-                LOG("sd_class_remove_kernel: Failed to remove %s: %s\n", kernel->path, strerror(errno));
+                LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
+                    kernel->path,
+                    strerror(errno));
                 return false;
         }
 
@@ -346,27 +391,38 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
         int timeout = 0;
         const char *prefix = NULL;
 
-        prefix = boot_manager_get_vendor_prefix((BootManager*)manager);
+        prefix = boot_manager_get_vendor_prefix((BootManager *)manager);
 
-        timeout = boot_manager_get_timeout_value((BootManager*)manager);
+        timeout = boot_manager_get_timeout_value((BootManager *)manager);
 
         if (timeout > 0) {
                 /* Set the timeout as configured by the user */
-                if (!asprintf(&item_name, "timeout %d\ndefault %s-%s-%s-%d\n\n", timeout, prefix, str_kernel_type(kernel->type),
-                        kernel->version, kernel->release)) {
+                if (!asprintf(&item_name,
+                              "timeout %d\ndefault %s-%s-%s-%d\n\n",
+                              timeout,
+                              prefix,
+                              str_kernel_type(kernel->type),
+                              kernel->version,
+                              kernel->release)) {
                         DECLARE_OOM();
                         return false;
                 }
         } else {
                 /* TODO: Add timeout support via /etc/boot.conf or similar */
-                if (!asprintf(&item_name, "default %s-%s-%s-%d\n", prefix, str_kernel_type(kernel->type),
-                        kernel->version, kernel->release)) {
+                if (!asprintf(&item_name,
+                              "default %s-%s-%s-%d\n",
+                              prefix,
+                              str_kernel_type(kernel->type),
+                              kernel->version,
+                              kernel->release)) {
                         DECLARE_OOM();
                         return false;
                 }
         }
         if (!file_set_text(sd_class_config.loader_config, item_name)) {
-                LOG("sd_class_set_default_kernel: Failed to write %s: %s\n", config_file, strerror(errno));
+                LOG("sd_class_set_default_kernel: Failed to write %s: %s\n",
+                    config_file,
+                    strerror(errno));
                 return false;
         }
 
@@ -381,20 +437,23 @@ bool sd_class_needs_install(const BootManager *manager)
                 return false;
         }
 
-        if (cbm_file_exists(sd_class_config.ia32_source) && !cbm_file_exists(sd_class_config.ia32_dest)) {
+        if (cbm_file_exists(sd_class_config.ia32_source) &&
+            !cbm_file_exists(sd_class_config.ia32_dest)) {
                 return true;
         }
 
-
-        if (cbm_file_exists(sd_class_config.x64_source) && !cbm_file_exists(sd_class_config.x64_dest)) {
+        if (cbm_file_exists(sd_class_config.x64_source) &&
+            !cbm_file_exists(sd_class_config.x64_dest)) {
                 return true;
         }
 
-        if (cbm_file_exists(sd_class_config.x64_source) && !cbm_file_exists(sd_class_config.default_path_x64)) {
+        if (cbm_file_exists(sd_class_config.x64_source) &&
+            !cbm_file_exists(sd_class_config.default_path_x64)) {
                 return true;
         }
 
-        if (cbm_file_exists(sd_class_config.ia32_source) && !cbm_file_exists(sd_class_config.default_path_ia32)) {
+        if (cbm_file_exists(sd_class_config.ia32_source) &&
+            !cbm_file_exists(sd_class_config.default_path_ia32)) {
                 return true;
         }
 
@@ -407,19 +466,23 @@ bool sd_class_needs_update(const BootManager *manager)
                 return false;
         }
 
-        if (cbm_file_exists(sd_class_config.ia32_source) && !cbm_files_match(sd_class_config.ia32_source, sd_class_config.ia32_dest)) {
+        if (cbm_file_exists(sd_class_config.ia32_source) &&
+            !cbm_files_match(sd_class_config.ia32_source, sd_class_config.ia32_dest)) {
                 return true;
         }
 
-        if (cbm_file_exists(sd_class_config.x64_source) && !cbm_files_match(sd_class_config.x64_source, sd_class_config.x64_dest)) {
+        if (cbm_file_exists(sd_class_config.x64_source) &&
+            !cbm_files_match(sd_class_config.x64_source, sd_class_config.x64_dest)) {
                 return true;
         }
 
-        if (cbm_file_exists(sd_class_config.x64_source) && !cbm_files_match(sd_class_config.x64_source, sd_class_config.default_path_x64)) {
+        if (cbm_file_exists(sd_class_config.x64_source) &&
+            !cbm_files_match(sd_class_config.x64_source, sd_class_config.default_path_x64)) {
                 return true;
         }
 
-        if (cbm_file_exists(sd_class_config.ia32_source) && !cbm_files_match(sd_class_config.x64_source, sd_class_config.default_path_ia32)) {
+        if (cbm_file_exists(sd_class_config.ia32_source) &&
+            !cbm_files_match(sd_class_config.x64_source, sd_class_config.default_path_ia32)) {
                 return true;
         }
 
@@ -444,7 +507,9 @@ static bool sd_class_install_x64(const BootManager *manager)
 
         /* Install default x64 blob */
         if (!copy_file(sd_class_config.x64_source, sd_class_config.default_path_x64, 00644)) {
-                LOG("Failed to install %s: %s\n", sd_class_config.default_path_x64, strerror(errno));
+                LOG("Failed to install %s: %s\n",
+                    sd_class_config.default_path_x64,
+                    strerror(errno));
                 return false;
         }
         sync();
@@ -467,7 +532,9 @@ static bool sd_class_install_ia32(const BootManager *manager)
 
         /* Install default ia32 blob */
         if (!copy_file(sd_class_config.ia32_source, sd_class_config.default_path_ia32, 00644)) {
-                LOG("Failed to install %s: %s\n", sd_class_config.default_path_ia32, strerror(errno));
+                LOG("Failed to install %s: %s\n",
+                    sd_class_config.default_path_ia32,
+                    strerror(errno));
                 return false;
         }
         sync();
@@ -486,8 +553,9 @@ bool sd_class_install(const BootManager *manager)
                 return false;
         }
 
-        if (boot_manager_get_architecture_size((BootManager*)manager) == 32) {
-                if (boot_manager_get_platform_size((BootManager*)manager) == 64 && cbm_file_exists(sd_class_config.x64_source)) {
+        if (boot_manager_get_architecture_size((BootManager *)manager) == 32) {
+                if (boot_manager_get_platform_size((BootManager *)manager) == 64 &&
+                    cbm_file_exists(sd_class_config.x64_source)) {
                         /* 32-bit OS that has access to 64-bit sdclass bootloader, use this */
                         return sd_class_install_x64(manager);
                 } else {
@@ -495,7 +563,7 @@ bool sd_class_install(const BootManager *manager)
                         return sd_class_install_ia32(manager);
                 }
         } else {
-                if (boot_manager_get_platform_size((BootManager*)manager) == 32) {
+                if (boot_manager_get_platform_size((BootManager *)manager) == 32) {
                         /* 64-bit OS on 32-bit UEFI */
                         return sd_class_install_ia32(manager);
                 } else {
@@ -512,15 +580,21 @@ static bool sd_class_update_ia32(const BootManager *manager)
 
         if (!cbm_files_match(sd_class_config.ia32_source, sd_class_config.ia32_dest)) {
                 if (!copy_file(sd_class_config.ia32_source, sd_class_config.ia32_dest, 00644)) {
-                        LOG("Failed to update %s: %s\n", sd_class_config.ia32_dest, strerror(errno));
+                        LOG("Failed to update %s: %s\n",
+                            sd_class_config.ia32_dest,
+                            strerror(errno));
                         return false;
                 }
         }
         sync();
 
         if (!cbm_files_match(sd_class_config.ia32_source, sd_class_config.default_path_ia32)) {
-                if (!copy_file(sd_class_config.ia32_source, sd_class_config.default_path_ia32, 00644)) {
-                        LOG("Failed to update %s: %s\n", sd_class_config.default_path_ia32, strerror(errno));
+                if (!copy_file(sd_class_config.ia32_source,
+                               sd_class_config.default_path_ia32,
+                               00644)) {
+                        LOG("Failed to update %s: %s\n",
+                            sd_class_config.default_path_ia32,
+                            strerror(errno));
                         return false;
                 }
         }
@@ -544,8 +618,12 @@ static bool sd_class_update_x64(const BootManager *manager)
         sync();
 
         if (!cbm_files_match(sd_class_config.x64_source, sd_class_config.default_path_x64)) {
-                if (!copy_file(sd_class_config.x64_source, sd_class_config.default_path_x64, 00644)) {
-                        LOG("Failed to update %s: %s\n", sd_class_config.default_path_x64, strerror(errno));
+                if (!copy_file(sd_class_config.x64_source,
+                               sd_class_config.default_path_x64,
+                               00644)) {
+                        LOG("Failed to update %s: %s\n",
+                            sd_class_config.default_path_x64,
+                            strerror(errno));
                         return false;
                 }
         }
@@ -564,8 +642,9 @@ bool sd_class_update(const BootManager *manager)
                 return false;
         }
 
-        if (boot_manager_get_architecture_size((BootManager*)manager) == 32) {
-                if (boot_manager_get_platform_size((BootManager*)manager) == 64 && cbm_file_exists(sd_class_config.x64_source)) {
+        if (boot_manager_get_architecture_size((BootManager *)manager) == 32) {
+                if (boot_manager_get_platform_size((BootManager *)manager) == 64 &&
+                    cbm_file_exists(sd_class_config.x64_source)) {
                         /* 32-bit OS that has access to 64-bit sdclass bootloader, use this */
                         return sd_class_update_x64(manager);
                 } else {
@@ -573,7 +652,7 @@ bool sd_class_update(const BootManager *manager)
                         return sd_class_update_ia32(manager);
                 }
         } else {
-                if (boot_manager_get_platform_size((BootManager*)manager) == 32) {
+                if (boot_manager_get_platform_size((BootManager *)manager) == 32) {
                         /* 64-bit OS on 32-bit UEFI */
                         return sd_class_update_ia32(manager);
                 } else {
@@ -596,19 +675,24 @@ bool sd_class_remove(const BootManager *manager)
         }
         sync();
 
-        if (cbm_file_exists(sd_class_config.default_path_ia32) && unlink(sd_class_config.default_path_ia32) < 0) {
-                LOG("Failed to remove %s: %s\n", sd_class_config.default_path_ia32, strerror(errno));
+        if (cbm_file_exists(sd_class_config.default_path_ia32) &&
+            unlink(sd_class_config.default_path_ia32) < 0) {
+                LOG("Failed to remove %s: %s\n",
+                    sd_class_config.default_path_ia32,
+                    strerror(errno));
                 return false;
         }
         sync();
 
-        if (cbm_file_exists(sd_class_config.default_path_x64) && unlink(sd_class_config.default_path_x64) < 0) {
+        if (cbm_file_exists(sd_class_config.default_path_x64) &&
+            unlink(sd_class_config.default_path_x64) < 0) {
                 LOG("Failed to remove %s: %s\n", sd_class_config.default_path_x64, strerror(errno));
                 return false;
         }
         sync();
 
-        if (cbm_file_exists(sd_class_config.loader_config) && unlink(sd_class_config.loader_config) < 0) {
+        if (cbm_file_exists(sd_class_config.loader_config) &&
+            unlink(sd_class_config.loader_config) < 0) {
                 LOG("Failed to remove %s: %s\n", sd_class_config.loader_config, strerror(errno));
                 return false;
         }

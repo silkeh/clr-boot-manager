@@ -12,35 +12,33 @@
 #pragma once
 
 #ifdef HAVE_CONFIG_H
-	#include "config.h"
+#include "config.h"
 #endif
 
-#include <stdint.h>
-#include <stdbool.h>
 #include <search.h>
+#include <stdbool.h>
+#include <stdint.h>
 
 /**
  * A dynamic array
  * Represents daemon's reply to client
  */
 typedef struct CBMArray {
-        void **data; /**<Dynamic array contents */
+        void **data;  /**<Dynamic array contents */
         uint16_t len; /**<Length of the array */
 } CBMArray;
-
 
 /**
  * Valid function prototype for 'free' method
  * @param p Pointer to free
  */
-typedef void (*array_free_func) (void* p);
+typedef void (*array_free_func)(void *p);
 
 /**
  * Create a new CBMArray
  * @returns CBMArray a newly allocated CBMArray
  */
-CBMArray *cbm_array_new(void)
-	__attribute__((warn_unused_result));
+CBMArray *cbm_array_new(void) __attribute__((warn_unused_result));
 
 /**
  * Append data to CBMArray
@@ -48,18 +46,14 @@ CBMArray *cbm_array_new(void)
  * @param data Pointer to add to this array
  * @returns bool true if the data was added to the array
  */
-bool cbm_array_add(CBMArray *array,
-		      void *data)
-	__attribute__((warn_unused_result));
+bool cbm_array_add(CBMArray *array, void *data) __attribute__((warn_unused_result));
 
 /**
  * Free an array, and optionally its members
  * @param array valid CBMArray reference
  * @param free_func Function to call to free all members, or NULL to leave allocated
  */
-void cbm_array_free(CBMArray **array,
-		       array_free_func free_method);
-
+void cbm_array_free(CBMArray **array, array_free_func free_method);
 
 /**
  * Retrieve an element from the array by index
@@ -67,8 +61,7 @@ void cbm_array_free(CBMArray **array,
  * @param index index of the element in the array
  * @return a data pointer refered to by index, or NULL
  */
-void *cbm_array_get(CBMArray *array, uint16_t index)
-	__attribute__((warn_unused_result));
+void *cbm_array_get(CBMArray *array, uint16_t index) __attribute__((warn_unused_result));
 
 /**
  * Sort the internal array using the qsort() function

@@ -11,17 +11,14 @@
 
 #define _GNU_SOURCE
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <getopt.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "cli.h"
 
-static struct option default_opts[] = {
-        { "path", required_argument, 0, 'p' },
-        { 0, 0, 0, 0 }
-};
+static struct option default_opts[] = { { "path", required_argument, 0, 'p' }, { 0, 0, 0, 0 } };
 
 void cli_default_args_init(int *argc, char ***argv, char **root)
 {
@@ -59,7 +56,6 @@ void cli_default_args_init(int *argc, char ***argv, char **root)
                 default:
                         abort();
                 }
-
         }
         *argc -= optind;
 

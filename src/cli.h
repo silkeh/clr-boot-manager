@@ -11,10 +11,9 @@
 
 #pragma once
 
-
 #include <stdbool.h>
 
-typedef bool (*subcommand_callback) (int argc, char **argv);
+typedef bool (*subcommand_callback)(int argc, char **argv);
 
 typedef struct SubCommand {
         const char *name;
@@ -26,7 +25,6 @@ typedef struct SubCommand {
 } SubCommand;
 
 void cli_default_args_init(int *argc, char ***argv, char **root);
-
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

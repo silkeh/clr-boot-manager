@@ -10,21 +10,21 @@
  */
 
 #define _GNU_SOURCE
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <dirent.h>
-#include <stdio.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
 #include <sys/utsname.h>
+#include <unistd.h>
 
-#include "bootman.h"
-#include "util.h"
 #include "array.h"
-#include "files.h"
 #include "bootloader.h"
+#include "bootman.h"
+#include "files.h"
+#include "util.h"
 
 #include "config.h"
 
@@ -38,7 +38,6 @@ extern const BootLoader systemd_bootloader;
 extern const BootLoader gummiboot_bootloader;
 extern const BootLoader goofiboot_bootloader;
 
-
 struct BootManager {
         char *prefix;
         char *kernel_dir;
@@ -46,9 +45,8 @@ struct BootManager {
         char *vendor_prefix;
         char *os_name;
         char *root_uuid;
-        char *abs_bootdir;      /**<Absolute boot directory, i.e. already mounted */
+        char *abs_bootdir; /**<Absolute boot directory, i.e. already mounted */
 };
-
 
 BootManager *boot_manager_new()
 {
@@ -69,7 +67,7 @@ BootManager *boot_manager_new()
         boot_manager_set_vendor_prefix(r, "Clear-linux");
         boot_manager_set_os_name(r, "Clear Linux Software for Intel Architecture");
 
-        /* Use the bootloader selected at compile time */
+/* Use the bootloader selected at compile time */
 #if defined(HAVE_SYSTEMD_BOOT)
         r->bootloader = &systemd_bootloader;
 #elif defined(HAVE_GUMMIBOOT)
@@ -159,7 +157,7 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
         if (geteuid() == 0) {
                 /* Only try this if we have root perms, don't break the
                  * test suite. */
-                 self->root_uuid = get_part_uuid(self->prefix);
+                self->root_uuid = get_part_uuid(self->prefix);
         }
 
         if (!self->bootloader) {
@@ -180,7 +178,7 @@ const char *boot_manager_get_prefix(BootManager *self)
         if (!self) {
                 return NULL;
         }
-        return (const char*)self->prefix;
+        return (const char *)self->prefix;
 }
 
 const char *boot_manager_get_kernel_dir(BootManager *self)
@@ -188,9 +186,8 @@ const char *boot_manager_get_kernel_dir(BootManager *self)
         if (!self) {
                 return NULL;
         }
-        return (const char*)self->kernel_dir;
+        return (const char *)self->kernel_dir;
 }
-
 
 void boot_manager_set_vendor_prefix(BootManager *self, char *vendor_prefix)
 {
@@ -209,7 +206,7 @@ const char *boot_manager_get_vendor_prefix(BootManager *self)
         if (!self) {
                 return NULL;
         }
-        return (const char*)self->vendor_prefix;
+        return (const char *)self->vendor_prefix;
 }
 
 void boot_manager_set_os_name(BootManager *self, char *os_name)
@@ -229,7 +226,7 @@ const char *boot_manager_get_os_name(BootManager *self)
         if (!self) {
                 return NULL;
         }
-        return (const char*)self->os_name;
+        return (const char *)self->os_name;
 }
 
 Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
@@ -245,14 +242,14 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         autofree(char) *kconfig_file = NULL;
         autofree(char) *default_file = NULL;
         autofree(char) *kboot_file = NULL;
-        char linkbuf[PATH_MAX] = {0};
+        char linkbuf[PATH_MAX] = { 0 };
         /* Consider making this a namespace option */
         autofree(FILE) *f = NULL;
         size_t sn;
         int r = 0;
         char *buf = NULL;
         char *bcp = NULL;
-        struct utsname running = {0};
+        struct utsname running = { 0 };
         autofree(char) *run_match = NULL;
         autofree(char) *run_match_legacy = NULL;
 
@@ -278,7 +275,6 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                 abort();
         }
 
-
         if (!asprintf(&kconfig_file, "%s/config-%s-%d.%s", parent, version, release, type)) {
                 DECLARE_OOM();
                 abort();
@@ -298,7 +294,13 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         }
 
         /* Check local modules */
-        if (!asprintf(&module_dir, "%s/%s/%s-%d.%s", self->prefix, KERNEL_MODULES_DIRECTORY, version, release, type)) {
+        if (!asprintf(&module_dir,
+                      "%s/%s/%s-%d.%s",
+                      self->prefix,
+                      KERNEL_MODULES_DIRECTORY,
+                      version,
+                      release,
+                      type)) {
                 DECLARE_OOM();
                 abort();
         }
@@ -306,7 +308,12 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         /* Fallback to an older namespace */
         if (!cbm_file_exists(module_dir)) {
                 free(module_dir);
-                if (!asprintf(&module_dir, "%s/%s/%s-%d", self->prefix, KERNEL_MODULES_DIRECTORY, version, release)) {
+                if (!asprintf(&module_dir,
+                              "%s/%s/%s-%d",
+                              self->prefix,
+                              KERNEL_MODULES_DIRECTORY,
+                              version,
+                              release)) {
                         DECLARE_OOM();
                         abort();
                 }
@@ -344,7 +351,10 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         }
 
         if (kern->type != KERNEL_TYPE_UNKNOWN) {
-                if (!asprintf(&default_file, "%s/default-%s", parent, str_kernel_type(kern->type))) {
+                if (!asprintf(&default_file,
+                              "%s/default-%s",
+                              parent,
+                              str_kernel_type(kern->type))) {
                         DECLARE_OOM();
                         abort();
                 }
@@ -384,8 +394,8 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         while ((r = getline(&buf, &sn, f)) > 0) {
                 char *tmp = NULL;
                 /* Strip newlines */
-                if (r > 1 && buf[r-1] == '\n') {
-                        buf[r-1] = '\0';
+                if (r > 1 && buf[r - 1] == '\n') {
+                        buf[r - 1] = '\0';
                 }
                 if (kern->cmdline) {
                         if (!asprintf(&tmp, "%s %s", kern->cmdline, buf)) {
@@ -493,7 +503,7 @@ const char *boot_manager_get_root_uuid(BootManager *self)
         if (!self) {
                 return NULL;
         }
-        return (const char*)self->root_uuid;
+        return (const char *)self->root_uuid;
 }
 
 bool boot_manager_install_kernel(BootManager *self, const Kernel *kernel)
@@ -605,7 +615,7 @@ bool boot_manager_modify_bootloader(BootManager *self, BootLoaderOperation op)
 
 static inline uint8_t _detect_platform_size(void)
 {
-        /* Only when we can't reliably detect the firmware architecture */
+/* Only when we can't reliably detect the firmware architecture */
 #if UINTPTR_MAX == 0xffffffffffffffff
         return 64;
 #else
@@ -613,7 +623,7 @@ static inline uint8_t _detect_platform_size(void)
 #endif
 }
 
-uint8_t boot_manager_get_architecture_size(__attribute__ ((unused)) BootManager *manager)
+uint8_t boot_manager_get_architecture_size(__attribute__((unused)) BootManager *manager)
 {
         return _detect_platform_size();
 }
@@ -621,7 +631,7 @@ uint8_t boot_manager_get_architecture_size(__attribute__ ((unused)) BootManager 
 /**
  * We'll add a check here later to allow for differences in subdir usage
  */
-uint8_t boot_manager_get_platform_size(__attribute__ ((unused)) BootManager *manager)
+uint8_t boot_manager_get_platform_size(__attribute__((unused)) BootManager *manager)
 {
         int fd;
         char buffer[3];
@@ -700,7 +710,6 @@ int boot_manager_get_timeout_value(BootManager *self)
         autofree(FILE) *fp = NULL;
         autofree(char) *path = NULL;
         int t_val;
-
 
         if (!self || !self->prefix) {
                 return false;

@@ -10,9 +10,9 @@
  */
 
 #define _GNU_SOURCE
+#include "hashmap.c"
 #include <check.h>
 #include <stdlib.h>
-#include "hashmap.c"
 
 START_TEST(cbm_hashmap_new_check)
 {
@@ -53,7 +53,7 @@ START_TEST(cbm_hashmap_simple_check)
         val = cbm_hashmap_get(map, HASH_KEY(802));
         fail_if(!val, "Value should be returned from hashmap for known key");
         fail_if(UNHASH_VALUE(val) != 802, "Value returned from hashmap was incorrect");
-        
+
         cbm_hashmap_free(map);
         map = NULL;
 
@@ -96,7 +96,6 @@ START_TEST(cbm_hashmap_string_check)
         fail_if(UNHASH_VALUE(val) != 83, "Failed to get correct value from hashmap");
 
         cbm_hashmap_free(map);
-        
 }
 END_TEST
 
@@ -120,7 +119,7 @@ START_TEST(cbm_hashmap_iter_check)
         fail_if(cbm_hashmap_size(map) != 5000, "Invalid hashmap size after 5000 elements");
 
         cbm_hashmap_iter_init(map, &iter);
-        while (cbm_hashmap_iter_next(&iter, (void**)&key, (void**)&value)) {
+        while (cbm_hashmap_iter_next(&iter, (void **)&key, (void **)&value)) {
                 fail_if(UNHASH_KEY(key) != UNHASH_VALUE(value),
                         "Mismatched key/value pair in iteration");
                 ++count;
@@ -153,7 +152,7 @@ static int free_count = 0;
 
 static inline void free_helper(void *p)
 {
-        free((void*)p);
+        free((void *)p);
         ++free_count;
 }
 
@@ -190,37 +189,37 @@ START_TEST(cbm_hashmap_alloc_check)
         fail_if(free_count != 2, "Failed to free last element from hashmap");
 }
 END_TEST
-        
+
 static Suite *cbm_hashmap_suite(void)
 {
-	Suite *s = NULL;
-	TCase *tc = NULL;
+        Suite *s = NULL;
+        TCase *tc = NULL;
 
-	s = suite_create("cbm_hashmap");
-	tc = tcase_create("cbm_hashmap_functions");
-	tcase_add_test(tc, cbm_hashmap_new_check);
-	tcase_add_test(tc, cbm_hashmap_simple_check);
-	tcase_add_test(tc, cbm_hashmap_string_check);
-	tcase_add_test(tc, cbm_hashmap_iter_check);
-	tcase_add_test(tc, cbm_hashmap_alloc_check);
-	suite_add_tcase(s, tc);
+        s = suite_create("cbm_hashmap");
+        tc = tcase_create("cbm_hashmap_functions");
+        tcase_add_test(tc, cbm_hashmap_new_check);
+        tcase_add_test(tc, cbm_hashmap_simple_check);
+        tcase_add_test(tc, cbm_hashmap_string_check);
+        tcase_add_test(tc, cbm_hashmap_iter_check);
+        tcase_add_test(tc, cbm_hashmap_alloc_check);
+        suite_add_tcase(s, tc);
 
-	return s;
+        return s;
 }
 
 int main(void)
 {
-	int number_failed;
-	Suite *s;
-	SRunner *sr;
+        int number_failed;
+        Suite *s;
+        SRunner *sr;
 
-	s = cbm_hashmap_suite();
-	sr = srunner_create(s);
-	srunner_run_all(sr, CK_VERBOSE);
-	number_failed = srunner_ntests_failed(sr);
-	srunner_free(sr);
+        s = cbm_hashmap_suite();
+        sr = srunner_create(s);
+        srunner_run_all(sr, CK_VERBOSE);
+        number_failed = srunner_ntests_failed(sr);
+        srunner_free(sr);
 
-	return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
 /*

@@ -11,14 +11,14 @@
 
 #define _GNU_SOURCE
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
+#include <assert.h>
 #include <dirent.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <sys/param.h>
-#include <assert.h>
+#include <unistd.h>
 
 #include "util.h"
 
@@ -67,34 +67,37 @@ void dump_file_descriptor_leaks(void)
                 memset(&buffer, 0, sizeof(buffer));
                 size = readlink(filename, buffer, PATH_MAX);
                 if (size) {
-                        fprintf(stderr, "Possible filedescriptor leak : %s (%s)\n", entry->d_name, buffer);
+                        fprintf(stderr,
+                                "Possible filedescriptor leak : %s (%s)\n",
+                                entry->d_name,
+                                buffer);
                 }
         }
 
         closedir(dir);
 }
 
-void* greedy_realloc(void **p, size_t *allocated, size_t need)
+void *greedy_realloc(void **p, size_t *allocated, size_t need)
 {
-	size_t a;
-	void *q;
+        size_t a;
+        void *q;
 
-	assert(p);
-	assert(allocated);
+        assert(p);
+        assert(allocated);
 
-	if (*allocated >= need) {
-		return *p;
-	}
+        if (*allocated >= need) {
+                return *p;
+        }
 
-	a = MAX(64u, need * 2);
-	q = realloc(*p, a);
-	if (!q) {
-		return NULL;
-	}
+        a = MAX(64u, need * 2);
+        q = realloc(*p, a);
+        if (!q) {
+                return NULL;
+        }
 
-	*p = q;
-	*allocated = a;
-	return q;
+        *p = q;
+        *allocated = a;
+        return q;
 }
 
 /*

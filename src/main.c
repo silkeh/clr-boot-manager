@@ -9,17 +9,17 @@
  * of the License, or (at your option) any later version.
  */
 
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
-#include "util.h"
-#include "hashmap.h"
-#include "config.h"
 #include "cli.h"
+#include "config.h"
+#include "hashmap.h"
+#include "util.h"
 
-#include "ops/update.h"
 #include "ops/timeout.h"
+#include "ops/update.h"
 
 static SubCommand cmd_update;
 static SubCommand cmd_help;
@@ -48,7 +48,11 @@ static bool print_usage(int argc, char **argv)
                         fprintf(stderr, "Unknown topic '%s'\n", argv[0]);
                         return false;
                 }
-                fprintf(stdout, "Usage: %s %s%s\n", binary_name, command->name, command->usage ? command->usage : "");
+                fprintf(stdout,
+                        "Usage: %s %s%s\n",
+                        binary_name,
+                        command->name,
+                        command->usage ? command->usage : "");
                 fprintf(stdout, "\n%s\n", command->help ? command->help : command->blurb);
                 return true;
         }
@@ -56,19 +60,21 @@ static bool print_usage(int argc, char **argv)
         fprintf(stderr, "Usage: %s\n\n", binary_name);
 
         cbm_hashmap_iter_init(g_commands, &iter);
-        while (cbm_hashmap_iter_next(&iter, (void**)&id, (void**)&command)) {
+        while (cbm_hashmap_iter_next(&iter, (void **)&id, (void **)&command)) {
                 fprintf(stdout, "%15s - %s\n", id, command->blurb);
         }
 
         return true;
 }
 
-static bool print_version(__attribute__ ((unused)) int argc, __attribute__ ((unused)) char **argv)
+static bool print_version(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
 {
-        fprintf(stdout, PACKAGE_NAME" - version "PACKAGE_VERSION"\n\
+        fprintf(stdout,
+                PACKAGE_NAME " - version " PACKAGE_VERSION
+                             "\n\
 \n\
 Copyright \u00A9 2016 Intel Corporation\n\n\
-"PACKAGE_NAME" is free software; you can redistribute it and/or modify\n\
+" PACKAGE_NAME " is free software; you can redistribute it and/or modify\n\
 it under the terms of the GNU General Public License as published by\n\
 the Free Software Foundation; either version 2 of the License, or\n\
 (at your option) any later version.\n");
@@ -93,10 +99,11 @@ int main(int argc, char **argv)
         g_commands = commands;
 
         /* Currently our only "real" command */
-        cmd_update = (SubCommand) {
+        cmd_update = (SubCommand){
                 .name = "update",
                 .blurb = "Perform post-update configuration of the system",
-                .help = "Automatically install any newly discovered kernels on the file system\n\
+                .help =
+                    "Automatically install any newly discovered kernels on the file system\n\
 and register them with the UEFI boot manager. Older, unused kernels will\n\
 be automatically garbage collected.\n\
 \n\
@@ -113,10 +120,11 @@ time.",
         }
 
         /* Set the timeout */
-        cmd_set_timeout = (SubCommand) {
+        cmd_set_timeout = (SubCommand){
                 .name = "set-timeout",
                 .blurb = "Set the timeout to be used by the bootloader",
-                .help = "Set the default timeout to be used by" PACKAGE_NAME" when using\n\
+                .help = "Set the default timeout to be used by" PACKAGE_NAME
+                        " when using\n\
 the \"update\" command.\n\
 This integer value will be used when next configuring the bootloader, and is used\n\
 to forcibly delay the system boot for a specified number of seconds.",
@@ -131,10 +139,11 @@ to forcibly delay the system boot for a specified number of seconds.",
         }
 
         /* Get the timeout */
-        cmd_get_timeout = (SubCommand) {
+        cmd_get_timeout = (SubCommand){
                 .name = "get-timeout",
                 .blurb = "Get the timeout to be used by the bootloader",
-                .help = "Get the default timeout to be used by" PACKAGE_NAME" when using\n\
+                .help = "Get the default timeout to be used by" PACKAGE_NAME
+                        " when using\n\
 the \"update\" command.\n\
 This integer value will be used when next configuring the bootloader, and is used\n\
 to forcibly delay the system boot for a specified number of seconds.",
@@ -149,7 +158,7 @@ to forcibly delay the system boot for a specified number of seconds.",
         }
 
         /* Version */
-        cmd_version = (SubCommand) {
+        cmd_version = (SubCommand){
                 .name = "version",
                 .blurb = "Print the version and quit",
                 .callback = print_version,
@@ -163,14 +172,12 @@ to forcibly delay the system boot for a specified number of seconds.",
         }
 
         /* Help */
-        cmd_help = (SubCommand) {
-                .name = "help",
-                .blurb = "Show help message",
-                .callback = print_usage,
-                .usage = " [topic]",
-                .help = NULL,
-                .requires_root = false
-        };
+        cmd_help = (SubCommand){.name = "help",
+                                .blurb = "Show help message",
+                                .callback = print_usage,
+                                .usage = " [topic]",
+                                .help = NULL,
+                                .requires_root = false };
 
         if (!cbm_hashmap_put(commands, cmd_help.name, &cmd_help)) {
                 DECLARE_OOM();
@@ -178,7 +185,9 @@ to forcibly delay the system boot for a specified number of seconds.",
         }
 
         if (argc < 2) {
-                fprintf(stderr, "Usage: %s [command]\nRe-run with -h for a list of supported commands\n", binary_name);
+                fprintf(stderr,
+                        "Usage: %s [command]\nRe-run with -h for a list of supported commands\n",
+                        binary_name);
                 return EXIT_FAILURE;
         }
 
@@ -208,7 +217,10 @@ to forcibly delay the system boot for a specified number of seconds.",
         }
 
         if (s_command->requires_root && geteuid() != 0) {
-                fprintf(stderr, "%s \'%s\' requires root permissions to execute. Try again with sudo\n", binary_name, s_command->name);
+                fprintf(stderr,
+                        "%s \'%s\' requires root permissions to execute. Try again with sudo\n",
+                        binary_name,
+                        s_command->name);
                 return false;
         }
 

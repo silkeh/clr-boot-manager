@@ -11,23 +11,23 @@
 
 #define _GNU_SOURCE
 
+#include <blkid.h>
+#include <ctype.h>
+#include <dirent.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <ftw.h>
+#include <glob.h>
+#include <libgen.h>
+#include <limits.h>
 #include <openssl/sha.h>
 #include <stdint.h>
-#include <sys/stat.h>
 #include <stdio.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
-#include <blkid.h>
-#include <errno.h>
-#include <glob.h>
-#include <ctype.h>
-#include <libgen.h>
-#include <dirent.h>
-#include <ftw.h>
-#include <limits.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include "files.h"
 #include "util.h"
@@ -43,7 +43,7 @@ char *get_sha1sum(const char *p)
         struct stat st = { 0 };
         char *buffer = NULL;
         char *ret = NULL;
-        int max_len = SHA_DIGEST_LENGTH*2;
+        int max_len = SHA_DIGEST_LENGTH * 2;
 
         if ((fd = open(p, O_RDONLY)) < 0) {
                 goto finish;
@@ -57,17 +57,17 @@ char *get_sha1sum(const char *p)
                 goto finish;
         }
 
-        if (!SHA1((unsigned char*)buffer, st.st_size, hash)) {
+        if (!SHA1((unsigned char *)buffer, st.st_size, hash)) {
                 goto finish;
         }
 
-        ret = calloc((max_len)+1, sizeof(char));
+        ret = calloc((max_len) + 1, sizeof(char));
         if (!ret) {
                 goto finish;
         }
 
         for (int i = 0; i < SHA_DIGEST_LENGTH; i++) {
-                snprintf(ret+(i*2), max_len, "%02x", hash[i]);
+                snprintf(ret + (i * 2), max_len, "%02x", hash[i]);
         }
         ret[max_len] = '\0';
 
@@ -161,7 +161,8 @@ char *get_boot_device()
         glob_t glo = { 0 };
         char read_buf[4096];
         glo.gl_offs = 1;
-        int fd = -1;;
+        int fd = -1;
+        ;
         ssize_t size = 0;
         autofree(char) *uuid = NULL;
         autofree(char) *p = NULL;
@@ -173,7 +174,7 @@ char *get_boot_device()
         }
 
         /* Read the uuid */
-        if ((fd = open(glo.gl_pathv[1], O_RDONLY|O_NOCTTY|O_CLOEXEC)) < 0) {
+        if ((fd = open(glo.gl_pathv[1], O_RDONLY | O_NOCTTY | O_CLOEXEC)) < 0) {
                 LOG("Unable to read LoaderDevicePartUUID\n");
                 return NULL;
         }
@@ -185,7 +186,7 @@ char *get_boot_device()
                 goto next;
         }
 
-        uuid = calloc(size+1, sizeof(char));
+        uuid = calloc(size + 1, sizeof(char));
         int j = 0;
         for (ssize_t i = 0; i < size; i++) {
                 char c = read_buf[i];
@@ -248,7 +249,8 @@ bool mkdir_p(const char *path, mode_t mode)
 /**
  * nftw callback
  */
-static int _rm_rf(const char *path, __attribute__ ((unused)) const struct stat *sb, int typeflag, __attribute__ ((unused)) struct FTW *ftwbuf)
+static int _rm_rf(const char *path, __attribute__((unused)) const struct stat *sb, int typeflag,
+                  __attribute__((unused)) struct FTW *ftwbuf)
 {
         if (typeflag == FTW_F) {
                 return unlink(path);
@@ -298,7 +300,7 @@ bool file_get_text(const char *path, char **out_buf)
         FILE *fp = NULL;
         char buffer[CHAR_MAX] = { 0 };
         bool ret = false;
-        __attribute__ ((unused)) int r;
+        __attribute__((unused)) int r;
 
         if (!out_buf) {
                 return false;
@@ -313,7 +315,7 @@ bool file_get_text(const char *path, char **out_buf)
                 ret = true;
                 *out_buf = strdup(buffer);
         }
-        fclose(fp); 
+        fclose(fp);
 
         return ret;
 }
@@ -336,7 +338,7 @@ bool copy_file(const char *src, const char *dst, mode_t mode)
                 return false;
         }
 
-        dest_fd = open(dst, O_WRONLY|O_TRUNC|O_APPEND|O_CREAT, mode);
+        dest_fd = open(dst, O_WRONLY | O_TRUNC | O_APPEND | O_CREAT, mode);
         if (dest_fd < 0) {
                 ret = false;
                 goto end;
@@ -401,7 +403,6 @@ char *cbm_get_mountpoint_for_device(const char *device)
         char buf[8192];
         autofree(char) *abs_path = NULL;
 
-
         abs_path = realpath(device, NULL);
         if (!abs_path) {
                 return NULL;
@@ -435,10 +436,10 @@ char *build_case_correct_path_va(const char *c, va_list ap)
 {
         char *p = NULL;
         char *root = NULL;
-        struct stat st = {0};
+        struct stat st = { 0 };
         struct dirent *ent = NULL;
 
-        p = (char*)c;
+        p = (char *)c;
 
         while (p) {
                 char *t = NULL;
@@ -481,7 +482,8 @@ char *build_case_correct_path_va(const char *c, va_list ap)
                         goto clean;
                 }
                 while ((ent = readdir(dirn)) != NULL) {
-                        if (strncmp(ent->d_name, ".", 1) == 0 || strncmp(ent->d_name, "..", 2) == 0) {
+                        if (strncmp(ent->d_name, ".", 1) == 0 ||
+                            strncmp(ent->d_name, "..", 2) == 0) {
                                 continue;
                         }
                         if (strcasecmp(ent->d_name, p) == 0) {
@@ -507,16 +509,15 @@ char *build_case_correct_path_va(const char *c, va_list ap)
                                 break;
                         }
                 }
-clean:
+        clean:
                 if (sav) {
                         free(sav);
                 }
-                p = va_arg(ap, char*);
+                p = va_arg(ap, char *);
         }
 
         return root;
 }
-
 
 char *build_case_correct_path(const char *c, ...)
 {

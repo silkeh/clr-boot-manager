@@ -13,33 +13,31 @@
 
 #include "systemd-class.h"
 
-static BootLoaderConfig systemd_boot_config = {
-        .vendor_dir = "systemd",
-        .efi_dir = "/usr/lib/systemd/boot/efi",
-        .x64_blob = "systemd-bootx64.efi",
-        .ia32_blob = "systemd-bootia32.efi",
-        .name = "systemd-boot"
-};
+static BootLoaderConfig systemd_boot_config = {.vendor_dir = "systemd",
+                                               .efi_dir = "/usr/lib/systemd/boot/efi",
+                                               .x64_blob = "systemd-bootx64.efi",
+                                               .ia32_blob = "systemd-bootia32.efi",
+                                               .name = "systemd-boot" };
 
 static bool systemd_boot_init(const BootManager *manager)
 {
         return sd_class_init(manager, &systemd_boot_config);
 }
 
-__cbm_export__ const BootLoader systemd_bootloader = {
-        .name = "systemd",
-        .init = systemd_boot_init,
-        .install_kernel = sd_class_install_kernel,
-        .is_kernel_installed = sd_class_is_kernel_installed,
-        .remove_kernel = sd_class_remove_kernel,
-        .set_default_kernel = sd_class_set_default_kernel,
-        .needs_install = sd_class_needs_install,
-        .needs_update = sd_class_needs_update,
-        .install = sd_class_install,
-        .update = sd_class_update,
-        .remove = sd_class_remove,
-        .destroy = sd_class_destroy
-};
+__cbm_export__ const BootLoader systemd_bootloader = {.name = "systemd",
+                                                      .init = systemd_boot_init,
+                                                      .install_kernel = sd_class_install_kernel,
+                                                      .is_kernel_installed =
+                                                          sd_class_is_kernel_installed,
+                                                      .remove_kernel = sd_class_remove_kernel,
+                                                      .set_default_kernel =
+                                                          sd_class_set_default_kernel,
+                                                      .needs_install = sd_class_needs_install,
+                                                      .needs_update = sd_class_needs_update,
+                                                      .install = sd_class_install,
+                                                      .update = sd_class_update,
+                                                      .remove = sd_class_remove,
+                                                      .destroy = sd_class_destroy };
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

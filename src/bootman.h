@@ -11,8 +11,8 @@
 
 #pragma once
 
-#include "util.h"
 #include "array.h"
+#include "util.h"
 
 typedef struct BootManager BootManager;
 
@@ -21,9 +21,9 @@ typedef struct BootManager BootManager;
  */
 typedef enum {
         KERNEL_TYPE_MIN = 0,
-        KERNEL_TYPE_NATIVE,     /**<Native kernel type */
-        KERNEL_TYPE_KVM,        /**<KVM kernel type */
-        KERNEL_TYPE_UNKNOWN,    /**<Shouldn't happen */
+        KERNEL_TYPE_NATIVE,  /**<Native kernel type */
+        KERNEL_TYPE_KVM,     /**<KVM kernel type */
+        KERNEL_TYPE_UNKNOWN, /**<Shouldn't happen */
         KERNEL_TYPE_MAX
 } KernelType;
 
@@ -40,18 +40,18 @@ typedef enum {
  * Represents a kernel in it's complete configuration
  */
 typedef struct Kernel {
-        char *path;             /**<Path to this kernel */
-        char *version;          /**<Version of this kernel */
-        int16_t release;        /**<Release number of this kernel */
-        KernelType type;        /**<Type of this kernel */
-        char *cmdline;          /**<Contents of the cmdline file */
-        char *cmdline_file;     /**<Path to the cmdline file */
-        char *kconfig_file;     /**<Path to the kconfig file */
-        char *module_dir;       /**<Path to the modules directory */
-        bool is_default;        /**<If this kernel is the default for its type */
-        bool is_running;        /**<Is this the running kernel? */
-        bool boots;             /**<Is this known to boot? */
-        char *kboot_file;       /**<Path to the k_booted_$(uname -r) file */
+        char *path;         /**<Path to this kernel */
+        char *version;      /**<Version of this kernel */
+        int16_t release;    /**<Release number of this kernel */
+        KernelType type;    /**<Type of this kernel */
+        char *cmdline;      /**<Contents of the cmdline file */
+        char *cmdline_file; /**<Path to the cmdline file */
+        char *kconfig_file; /**<Path to the kconfig file */
+        char *module_dir;   /**<Path to the modules directory */
+        bool is_default;    /**<If this kernel is the default for its type */
+        bool is_running;    /**<Is this the running kernel? */
+        bool boots;         /**<Is this known to boot? */
+        char *kboot_file;   /**<Path to the k_booted_$(uname -r) file */
 } Kernel;
 
 typedef CBMArray KernelArray;
@@ -59,12 +59,12 @@ typedef CBMArray KernelArray;
 static inline const char *str_kernel_type(KernelType type)
 {
         switch (type) {
-                case KERNEL_TYPE_NATIVE:
-                        return "native";
-                case KERNEL_TYPE_KVM:
-                        return "kvm";
-                default:
-                        return "unknown";
+        case KERNEL_TYPE_NATIVE:
+                return "native";
+        case KERNEL_TYPE_KVM:
+                return "kvm";
+        default:
+                return "unknown";
         }
 }
 
@@ -116,7 +116,7 @@ const char *boot_manager_get_prefix(BootManager *manager);
  * prefix
  *
  * @note This string is owned by BootManager, do not modify or free
- * 
+ *
  * @return current kernel directory
  */
 const char *boot_manager_get_kernel_dir(BootManager *manager);
@@ -242,7 +242,6 @@ int boot_manager_get_timeout_value(BootManager *manager);
  * @param timeout New timeout value
  */
 bool boot_manager_set_timeout_value(BootManager *manager, int timeout);
-
 
 bool boot_manager_needs_install(BootManager *manager);
 

@@ -13,47 +13,62 @@
 
 #define _GNU_SOURCE
 
-#include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 /**
  * Implemented in a *similar* fashion to how g_autoptr is intended to
  * work in future, but without the concerns of MSVC, etc..
  */
-#define DEF_AUTOFREE(N,C) \
-        static inline void _autofree_func_##N (void *p) {\
-                if (p && *(N**)p) { \
-                        C (*(N**)p);\
-                        (*(void**)p) = NULL;\
-                } \
+#define DEF_AUTOFREE(N, C)                                                                         \
+        static inline void _autofree_func_##N(void *p)                                             \
+        {                                                                                          \
+                if (p && *(N **)p) {                                                               \
+                        C(*(N **)p);                                                               \
+                        (*(void **)p) = NULL;                                                      \
+                }                                                                                  \
         }
 
-#define autofree(N) __attribute__ ((cleanup( _autofree_func_##N ))) N
+#define autofree(N) __attribute__((cleanup(_autofree_func_##N))) N
 
-#define streq(x,y) strcmp(x,y) == 0 ? true : false
+#define streq(x, y) strcmp(x, y) == 0 ? true : false
 
 /** Revisit in future */
-#define LOG(...)  fprintf(stderr, __VA_ARGS__)
+#define LOG(...) fprintf(stderr, __VA_ARGS__)
 
-#define FATAL(...) do { fprintf(stderr, "%s()[%d]: %s\n", __func__, __LINE__, __VA_ARGS__); } while (0);
+#define FATAL(...)                                                                                 \
+        do {                                                                                       \
+                fprintf(stderr, "%s()[%d]: %s\n", __func__, __LINE__, __VA_ARGS__);                \
+        } while (0);
 
 #define DECLARE_OOM() FATAL("Out Of Memory")
 
-#define OOM_CHECK(x) { if (!x) { DECLARE_OOM(); abort(); } }
-#define OOM_CHECK_RET(x,y) { if (!x) { DECLARE_OOM(); return y; } }
+#define OOM_CHECK(x)                                                                               \
+        {                                                                                          \
+                if (!x) {                                                                          \
+                        DECLARE_OOM();                                                             \
+                        abort();                                                                   \
+                }                                                                                  \
+        }
+#define OOM_CHECK_RET(x, y)                                                                        \
+        {                                                                                          \
+                if (!x) {                                                                          \
+                        DECLARE_OOM();                                                             \
+                        return y;                                                                  \
+                }                                                                                  \
+        }
 
 DEF_AUTOFREE(char, free)
 DEF_AUTOFREE(FILE, fclose)
-
 
 /**
  * Dump any leaked file descriptors
  */
 void dump_file_descriptor_leaks(void);
 
-void* greedy_realloc(void **p, size_t *allocated, size_t need);
+void *greedy_realloc(void **p, size_t *allocated, size_t need);
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

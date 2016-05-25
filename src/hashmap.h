@@ -24,12 +24,12 @@
 
 #define _GNU_SOURCE
 
+#include "util.h"
 #include <stdbool.h>
 #include <stdint.h>
-#include "util.h"
 
 /* Convert between uint and void* */
-#define HASH_KEY(x) ((void*)((uintptr_t)(x)))
+#define HASH_KEY(x) ((void *)((uintptr_t)(x)))
 #define HASH_VALUE(x) HASH_KEY(x)
 #define UNHASH_KEY(x) ((unsigned int)((uintptr_t)(x)))
 #define UNHASH_VALUE(x) UNHASH_KEY(x)
@@ -44,7 +44,6 @@ typedef struct CbmHashmapIter {
         void *n1;
         void *n2;
 } CbmHashmapIter;
-
 
 /**
  * Hash comparison function definition
@@ -109,7 +108,7 @@ static inline bool string_compare(const void *l, const void *r)
         if (!l || !r) {
                 return false;
         }
-        return (strcmp(l,r) == 0);
+        return (strcmp(l, r) == 0);
 }
 
 /**
@@ -119,7 +118,6 @@ static inline bool simple_compare(const void *l, const void *r)
 {
         return (l == r);
 }
-
 
 /**
  * Create a new CbmHashmap
@@ -141,7 +139,8 @@ CbmHashmap *cbm_hashmap_new(hash_create_func hash, hash_compare_func compare);
  *
  * @return A newly allocated CbmHashmap
  */
-CbmHashmap *cbm_hashmap_new_full(hash_create_func hash, hash_compare_func compare, hash_free_func key_free, hash_free_func value_free);
+CbmHashmap *cbm_hashmap_new_full(hash_create_func hash, hash_compare_func compare,
+                                 hash_free_func key_free, hash_free_func value_free);
 
 /**
  * Store a key/value pair in the hashmap

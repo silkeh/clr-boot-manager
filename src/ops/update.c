@@ -11,21 +11,21 @@
 
 #define _GNU_SOURCE
 
+#include <errno.h>
 #include <getopt.h>
 #include <string.h>
-#include <errno.h>
 #include <sys/mount.h>
 #include <unistd.h>
 
-#include "util.h"
 #include "bootman.h"
 #include "cli.h"
 #include "files.h"
+#include "util.h"
 
 static int kernel_compare_reverse(const void *a, const void *b)
 {
-        const Kernel *ka = *(const Kernel**)a;
-        const Kernel *kb = *(const Kernel**)b;
+        const Kernel *ka = *(const Kernel **)a;
+        const Kernel *kb = *(const Kernel **)b;
 
         if (ka->release > kb->release) {
                 return -1;
@@ -59,7 +59,6 @@ bool cbm_command_update(int argc, char **argv)
                 return false;
         }
 
-
         boot_dir = boot_manager_get_boot_dir(manager);
         if (!boot_dir) {
                 DECLARE_OOM();
@@ -76,7 +75,7 @@ bool cbm_command_update(int argc, char **argv)
         if (boot_manager_is_image_mode(manager)) {
                 /* Highest release number wins */
                 for (int i = 0; i < avail_kernels->len; i++) {
-                        Kernel *cur = cbm_array_get((CBMArray*)avail_kernels, i);
+                        Kernel *cur = cbm_array_get((CBMArray *)avail_kernels, i);
                         if (!candidate) {
                                 candidate = cur;
                                 continue;
@@ -92,12 +91,16 @@ bool cbm_command_update(int argc, char **argv)
 
                 /* Get the bootloader in order (NOCHECK) to prevent second hash checks */
                 if (boot_manager_needs_install(manager)) {
-                        if (!boot_manager_modify_bootloader(manager, BOOTLOADER_OPERATION_INSTALL|BOOTLOADER_OPERATION_NO_CHECK)) {
+                        if (!boot_manager_modify_bootloader(manager,
+                                                            BOOTLOADER_OPERATION_INSTALL |
+                                                                BOOTLOADER_OPERATION_NO_CHECK)) {
                                 fprintf(stderr, "Failed to install bootloader\n");
                                 goto cleanup;
                         }
                 } else if (boot_manager_needs_update(manager)) {
-                        if (!boot_manager_modify_bootloader(manager, BOOTLOADER_OPERATION_UPDATE|BOOTLOADER_OPERATION_NO_CHECK)) {
+                        if (!boot_manager_modify_bootloader(manager,
+                                                            BOOTLOADER_OPERATION_UPDATE |
+                                                                BOOTLOADER_OPERATION_NO_CHECK)) {
                                 fprintf(stderr, "Failed to update bootloader\n");
                                 goto cleanup;
                         }
@@ -105,7 +108,7 @@ bool cbm_command_update(int argc, char **argv)
 
                 /* Install all the kernels */
                 for (int i = 0; i < avail_kernels->len; i++) {
-                        Kernel *k = cbm_array_get((CBMArray*)avail_kernels, i);
+                        Kernel *k = cbm_array_get((CBMArray *)avail_kernels, i);
                         if (!boot_manager_install_kernel(manager, k)) {
                                 fprintf(stderr, "Failed to install kernel %s\n", k->path);
                                 goto cleanup;
@@ -142,7 +145,8 @@ bool cbm_command_update(int argc, char **argv)
                         if (abs_bootdir) {
                                 /* User has already mounted the ESP somewhere else, use that */
                                 if (!boot_manager_set_boot_dir(manager, abs_bootdir)) {
-                                        fprintf(stderr, "FATAL: Cannot initialise with premounted ESP\n");
+                                        fprintf(stderr,
+                                                "FATAL: Cannot initialise with premounted ESP\n");
                                         return false;
                                 }
                         } else {
@@ -150,21 +154,29 @@ bool cbm_command_update(int argc, char **argv)
                                         mkdir_p(boot_dir, 0755);
                                 }
                                 if (mount(root_base, boot_dir, "vfat", MS_MGC_VAL, "") < 0) {
-                                        fprintf(stderr, "FATAL: Cannot mount boot device %s on %s: %s\n", root_base, boot_dir, strerror(errno));
+                                        fprintf(stderr,
+                                                "FATAL: Cannot mount boot device %s on %s: %s\n",
+                                                root_base,
+                                                boot_dir,
+                                                strerror(errno));
                                         return false;
                                 }
                                 did_mount = true;
-                        } 
+                        }
                 }
 
                 /* Get the bootloader in order (NOCHECK) to prevent second hash checks */
                 if (boot_manager_needs_install(manager)) {
-                        if (!boot_manager_modify_bootloader(manager, BOOTLOADER_OPERATION_INSTALL|BOOTLOADER_OPERATION_NO_CHECK)) {
+                        if (!boot_manager_modify_bootloader(manager,
+                                                            BOOTLOADER_OPERATION_INSTALL |
+                                                                BOOTLOADER_OPERATION_NO_CHECK)) {
                                 fprintf(stderr, "Failed to install bootloader\n");
                                 goto cleanup;
                         }
                 } else if (boot_manager_needs_update(manager)) {
-                        if (!boot_manager_modify_bootloader(manager, BOOTLOADER_OPERATION_UPDATE|BOOTLOADER_OPERATION_NO_CHECK)) {
+                        if (!boot_manager_modify_bootloader(manager,
+                                                            BOOTLOADER_OPERATION_UPDATE |
+                                                                BOOTLOADER_OPERATION_NO_CHECK)) {
                                 fprintf(stderr, "Failed to update bootloader\n");
                                 goto cleanup;
                         }
@@ -172,7 +184,7 @@ bool cbm_command_update(int argc, char **argv)
 
                 /* Yes, it's ugly, but we need to determine the running one first. */
                 for (int i = 0; i < avail_kernels->len; i++) {
-                        Kernel *k = cbm_array_get((CBMArray*)avail_kernels, i);
+                        Kernel *k = cbm_array_get((CBMArray *)avail_kernels, i);
                         /* Determine the running kernel. */
                         if (k->is_running) {
                                 running = k;
@@ -203,7 +215,8 @@ bool cbm_command_update(int argc, char **argv)
                 /* Attempt to keep the last booted kernel of the same type */
                 for (int i = 0; i < avail_kernels->len; i++) {
                         Kernel *k = cbm_array_get(avail_kernels, i);
-                        if (k != running && k->release < running->release && k->type == running->type && k->boots) {
+                        if (k != running && k->release < running->release &&
+                            k->type == running->type && k->boots) {
                                 last_good = k;
                                 break;
                         }
