@@ -70,6 +70,11 @@ void dump_file_descriptor_leaks(void);
 
 void *greedy_realloc(void **p, size_t *allocated, size_t need);
 
+/**
+ * Determine whether the system is booted using UEFI
+ */
+bool cbm_system_has_uefi(void);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

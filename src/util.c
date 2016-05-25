@@ -20,6 +20,7 @@
 #include <sys/param.h>
 #include <unistd.h>
 
+#include "files.h"
 #include "util.h"
 
 void dump_file_descriptor_leaks(void)
@@ -98,6 +99,11 @@ void *greedy_realloc(void **p, size_t *allocated, size_t need)
         *p = q;
         *allocated = a;
         return q;
+}
+
+bool cbm_system_has_uefi()
+{
+        return cbm_file_exists("/sys/firmware/efi");
 }
 
 /*
