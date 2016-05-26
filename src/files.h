@@ -152,6 +152,11 @@ __attribute__((sentinel(0))) char *build_case_correct_path(const char *c, ...);
 
 char *build_case_correct_path_va(const char *c, va_list ap);
 
+/**
+ * Determine whether the system is booted using UEFI
+ */
+bool cbm_system_has_uefi(void);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

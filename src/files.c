@@ -561,6 +561,12 @@ char *build_case_correct_path(const char *c, ...)
 
         return ret;
 }
+
+bool cbm_system_has_uefi()
+{
+        return cbm_file_exists("/sys/firmware/efi");
+}
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

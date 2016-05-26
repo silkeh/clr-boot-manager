@@ -101,11 +101,6 @@ void *greedy_realloc(void **p, size_t *allocated, size_t need)
         return q;
 }
 
-bool cbm_system_has_uefi()
-{
-        return cbm_file_exists("/sys/firmware/efi");
-}
-
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
