@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -320,51 +321,81 @@ bool file_get_text(const char *path, char **out_buf)
         return ret;
 }
 
-bool copy_file(const char *src, const char *dst, mode_t mode)
+bool copy_file(const char *src, const char *target, mode_t mode)
 {
-        int src_fd = -1;
-        int dest_fd = -1;
-        bool ret = true;
-        char buffer[COPY_BUFFER_SIZE] = { 0 };
-        int r = 0;
+        struct stat sst = { 0 };
+        size_t sz;
+        int sfd = -1;
+        int dfd = -1;
+        bool ret = false;
+        ssize_t written;
 
-        if (cbm_file_exists(dst) && unlink(dst) < 0) {
+        sfd = open(src, O_RDONLY);
+        if (sfd < 0) {
                 return false;
         }
-        sync();
-
-        src_fd = open(src, O_RDONLY);
-        if (src_fd < 0) {
-                return false;
+        dfd = open(target, O_WRONLY | O_TRUNC | O_CREAT, mode);
+        if (dfd < 0) {
+                goto end;
         }
-
-        dest_fd = open(dst, O_WRONLY | O_TRUNC | O_APPEND | O_CREAT, mode);
-        if (dest_fd < 0) {
-                ret = false;
+        if (fstat(sfd, &sst) != 0) {
                 goto end;
         }
 
-        while (true) {
-                if ((r = read(src_fd, &buffer, sizeof(buffer))) < 0) {
-                        ret = false;
+        sz = sst.st_size;
+        for (;;) {
+                written = sendfile(dfd, sfd, NULL, sz);
+                if ((size_t)written == sz) {
                         break;
+                } else if (written < 0) {
+                        goto end;
                 }
-                if (write(dest_fd, buffer, sizeof(buffer)) != r) {
-                        break;
-                }
+                sz -= written;
+        }
+        ret = true;
+
+end:
+        if (sfd > 0) {
+                close(sfd);
+        }
+        if (dfd > 0) {
+                close(dfd);
+        }
+        return ret;
+}
+
+bool copy_file_atomic(const char *src, const char *target, mode_t mode)
+{
+        char *new_name = NULL;
+        struct stat st = { 0 };
+
+        if (!asprintf(&new_name, "%s.TmpWrite", target)) {
+                return false;
         }
 
-        ret = true;
-end:
-        if (src_fd >= 0) {
-                close(src_fd);
-        }
-        if (dest_fd >= 0) {
-                close(dest_fd);
+        if (!copy_file(src, new_name, mode)) {
+                (void)unlink(new_name);
+                return false;
         }
         sync();
 
-        return ret;
+        /* Delete target if needed  */
+        if (stat(target, &st) == 0) {
+                if (!S_ISDIR(st.st_mode) && unlink(target) != 0) {
+                        return false;
+                }
+                sync();
+        } else {
+                errno = 0;
+        }
+
+        if (rename(new_name, target) != 0) {
+                return false;
+        }
+        /* vfat protect */
+        sync();
+
+        return true;
 }
 
 bool cbm_is_mounted(const char *path, bool *error)

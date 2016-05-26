@@ -111,6 +111,8 @@ bool file_get_text(const char *path, char **out_buf);
  * not preserve stat information (As we're interested in copying
  * to an ESP only)
  *
+ * Note that the implementation uses sendfile() for performance reasons.
+ *
  * @param src Path to the source file
  * @param dst Path to the destination file
  * @param mode Mode of the new file when creating
@@ -118,6 +120,17 @@ bool file_get_text(const char *path, char **out_buf);
  * @return True if this succeeded
  */
 bool copy_file(const char *src, const char *dst, mode_t mode);
+
+/**
+ * Wrapper around copy_file to ensure an atomic update of files. This requires
+ * that a new file first be written with a new unique name, and only when this
+ * has happened, and is sync()'d, we remove the target path if it exists,
+ * renaming our newly copied file to match the originally intended filename.
+ *
+ * This is designed to make the file replacement operation as atomic as
+ * possible.
+ */
+bool copy_file_atomic(const char *src, const char *dst, mode_t mode);
 
 /**
  * Attempt to determine if the given path is actually mounted or not
