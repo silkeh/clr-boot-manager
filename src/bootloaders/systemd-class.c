@@ -282,7 +282,7 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
                 return false;
         }
 
-        if (!copy_file(kernel->path, kfile_target, 00644)) {
+        if (!copy_file_atomic(kernel->path, kfile_target, 00644)) {
                 LOG("Failed to install kernel %s: %s\n", kfile_target, strerror(errno));
                 return false;
         }
@@ -499,14 +499,16 @@ static bool sd_class_install_x64(const BootManager *manager)
         }
 
         /* Install vendor x64 blob */
-        if (!copy_file(sd_class_config.x64_source, sd_class_config.x64_dest, 00644)) {
+        if (!copy_file_atomic(sd_class_config.x64_source, sd_class_config.x64_dest, 00644)) {
                 LOG("Failed to install %s: %s\n", sd_class_config.x64_dest, strerror(errno));
                 return false;
         }
         sync();
 
         /* Install default x64 blob */
-        if (!copy_file(sd_class_config.x64_source, sd_class_config.default_path_x64, 00644)) {
+        if (!copy_file_atomic(sd_class_config.x64_source,
+                              sd_class_config.default_path_x64,
+                              00644)) {
                 LOG("Failed to install %s: %s\n",
                     sd_class_config.default_path_x64,
                     strerror(errno));
@@ -524,14 +526,16 @@ static bool sd_class_install_ia32(const BootManager *manager)
         }
 
         /* Install vendor ia32 blob */
-        if (!copy_file(sd_class_config.ia32_source, sd_class_config.ia32_dest, 00644)) {
+        if (!copy_file_atomic(sd_class_config.ia32_source, sd_class_config.ia32_dest, 00644)) {
                 LOG("Failed to install %s: %s\n", sd_class_config.ia32_dest, strerror(errno));
                 return false;
         }
         sync();
 
         /* Install default ia32 blob */
-        if (!copy_file(sd_class_config.ia32_source, sd_class_config.default_path_ia32, 00644)) {
+        if (!copy_file_atomic(sd_class_config.ia32_source,
+                              sd_class_config.default_path_ia32,
+                              00644)) {
                 LOG("Failed to install %s: %s\n",
                     sd_class_config.default_path_ia32,
                     strerror(errno));
@@ -579,7 +583,9 @@ static bool sd_class_update_ia32(const BootManager *manager)
         }
 
         if (!cbm_files_match(sd_class_config.ia32_source, sd_class_config.ia32_dest)) {
-                if (!copy_file(sd_class_config.ia32_source, sd_class_config.ia32_dest, 00644)) {
+                if (!copy_file_atomic(sd_class_config.ia32_source,
+                                      sd_class_config.ia32_dest,
+                                      00644)) {
                         LOG("Failed to update %s: %s\n",
                             sd_class_config.ia32_dest,
                             strerror(errno));
@@ -589,9 +595,9 @@ static bool sd_class_update_ia32(const BootManager *manager)
         sync();
 
         if (!cbm_files_match(sd_class_config.ia32_source, sd_class_config.default_path_ia32)) {
-                if (!copy_file(sd_class_config.ia32_source,
-                               sd_class_config.default_path_ia32,
-                               00644)) {
+                if (!copy_file_atomic(sd_class_config.ia32_source,
+                                      sd_class_config.default_path_ia32,
+                                      00644)) {
                         LOG("Failed to update %s: %s\n",
                             sd_class_config.default_path_ia32,
                             strerror(errno));
@@ -610,7 +616,9 @@ static bool sd_class_update_x64(const BootManager *manager)
         }
 
         if (!cbm_files_match(sd_class_config.x64_source, sd_class_config.x64_dest)) {
-                if (!copy_file(sd_class_config.x64_source, sd_class_config.x64_dest, 00644)) {
+                if (!copy_file_atomic(sd_class_config.x64_source,
+                                      sd_class_config.x64_dest,
+                                      00644)) {
                         LOG("Failed to update %s: %s\n", sd_class_config.x64_dest, strerror(errno));
                         return false;
                 }
@@ -618,9 +626,9 @@ static bool sd_class_update_x64(const BootManager *manager)
         sync();
 
         if (!cbm_files_match(sd_class_config.x64_source, sd_class_config.default_path_x64)) {
-                if (!copy_file(sd_class_config.x64_source,
-                               sd_class_config.default_path_x64,
-                               00644)) {
+                if (!copy_file_atomic(sd_class_config.x64_source,
+                                      sd_class_config.default_path_x64,
+                                      00644)) {
                         LOG("Failed to update %s: %s\n",
                             sd_class_config.default_path_x64,
                             strerror(errno));
