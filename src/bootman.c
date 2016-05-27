@@ -448,14 +448,22 @@ KernelArray *boot_manager_get_kernels(BootManager *self)
                         abort();
                 }
 
+                /* Some kind of broken link */
                 if (lstat(path, &st) != 0) {
                         continue;
                 }
 
+                /* Regular only */
                 if (!S_ISREG(st.st_mode)) {
                         continue;
                 }
 
+                /* empty files are skipped too */
+                if (st.st_size == 0) {
+                        continue;
+                }
+
+                /* Now see if its a kernel */
                 kern = boot_manager_inspect_kernel(self, path);
                 if (!kern) {
                         continue;
