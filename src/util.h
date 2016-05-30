@@ -51,8 +51,6 @@
  */
 void dump_file_descriptor_leaks(void);
 
-void *greedy_realloc(void **p, size_t *allocated, size_t need);
-
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

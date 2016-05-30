@@ -77,30 +77,6 @@ void dump_file_descriptor_leaks(void)
 
         closedir(dir);
 }
-
-void *greedy_realloc(void **p, size_t *allocated, size_t need)
-{
-        size_t a;
-        void *q;
-
-        assert(p);
-        assert(allocated);
-
-        if (*allocated >= need) {
-                return *p;
-        }
-
-        a = MAX(64u, need * 2);
-        q = realloc(*p, a);
-        if (!q) {
-                return NULL;
-        }
-
-        *p = q;
-        *allocated = a;
-        return q;
-}
-
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

@@ -43,7 +43,8 @@ AM_CFLAGS += --coverage
 endif
 
 noinst_LTLIBRARIES = \
-	libnica.la
+	libnica.la       \
+	libcbm.la
 
 libnica_la_SOURCES =     \
 	src/nica/array.c     \
@@ -69,25 +70,35 @@ libnica_la_CFLAGS =      \
 
 bin_PROGRAMS = clr-boot-manager
 
-clr_boot_manager_SOURCES = \
-	src/bootloader.h \
+libcbm_la_SOURCES =					\
+	src/bootloader.h				\
 	src/bootloaders/systemd-class.h \
 	src/bootloaders/systemd-class.c \
-	src/bootloaders/systemd-boot.c \
-	src/bootloaders/gummiboot.c \
-	src/bootloaders/goofiboot.c \
-	src/util.h \
-	src/util.c \
-	src/files.h \
-	src/files.c \
-	src/bootman.h \
-	src/bootman.c \
-	src/cli.h \
-	src/cli.c \
-	src/ops/update.h \
-	src/ops/update.c \
-	src/ops/timeout.h \
-	src/ops/timeout.c \
+	src/bootloaders/systemd-boot.c	\
+	src/bootloaders/gummiboot.c		\
+	src/bootloaders/goofiboot.c		\
+	src/util.h						\
+	src/util.c						\
+	src/files.h						\
+	src/files.c						\
+	src/bootman.h					\
+	src/bootman.c
+
+libcbm_la_CFLAGS =		\
+	$(CRYPTO_CFLAGS)	\
+	$(BLKID_CFLAGS)		\
+	$(AM_CFLAGS)
+
+libcbm_LIBADD =			\
+	libnica.la
+
+clr_boot_manager_SOURCES =  \
+	src/cli.h 				\
+	src/cli.c				\
+	src/ops/update.h		\
+	src/ops/update.c		\
+	src/ops/timeout.h		\
+	src/ops/timeout.c		\
 	src/main.c
 
 clr_boot_manager_CFLAGS = \
@@ -98,7 +109,8 @@ clr_boot_manager_CFLAGS = \
 clr_boot_manager_LDADD = \
 	$(CRYPTO_LIBS) \
 	$(BLKID_LIBS) \
-	libnica.la
+	libnica.la \
+	libcbm.la
 
 install-exec-hook:
 	perl ${top_srcdir}/findstatic.pl ${top_builddir}/src/*.o ${top_builddir}/src/*/*.o | grep -v Checking ||:
@@ -128,7 +140,9 @@ check_core_CFLAGS = \
 check_core_LDADD = \
 	$(CRYPTO_LIBS) \
 	$(BLKID_LIBS) \
-	$(CHECK_LIBS)
+	$(CHECK_LIBS) \
+	libcbm.la	  \
+	libnica.la
 
 check_files_SOURCES = \
 	tests/check-files.c
@@ -140,9 +154,11 @@ check_files_CFLAGS = \
 	$(AM_CFLAGS)
 
 check_files_LDADD = \
-	$(CRYPTO_LIBS) \
-	$(BLKID_LIBS) \
-	$(CHECK_LIBS)
+	$(CRYPTO_LIBS)	\
+	$(BLKID_LIBS)	\
+	$(CHECK_LIBS)	\
+	libcbm.la		\
+	libnica.la
 
 @VALGRIND_CHECK_RULES@
 

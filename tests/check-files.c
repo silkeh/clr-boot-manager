@@ -14,10 +14,12 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "util.h"
 
-#include "files.c"
+#include "nica/files.h"
+#include "files.h"
 
 START_TEST(bootman_hash_test)
 {
@@ -52,7 +54,7 @@ END_TEST
 
 START_TEST(bootman_find_boot)
 {
-        if (!cbm_file_exists("/sys/firmware/efi")) {
+        if (!nc_file_exists("/sys/firmware/efi")) {
                 LOG("Skipping UEFI host-specific test\n");
                 return;
         }
