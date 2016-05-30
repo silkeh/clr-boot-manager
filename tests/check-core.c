@@ -15,12 +15,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "util.h"
+#include "bootman.h"
 #include "config.h"
 #include "files.h"
 #include "nica/array.h"
-#include "bootman.h"
 #include "nica/files.h"
+#include "util.h"
 #include "util.h"
 
 /**
@@ -140,11 +140,11 @@ START_TEST(bootman_install_kernel_test)
         fail_if(!boot_manager_install_kernel(m, kernel), "Failed to install kernel");
 
         fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                               "/loader/entries/Clear-linux-native-4.2.3-138.conf"),
+                                              "/loader/entries/Clear-linux-native-4.2.3-138.conf"),
                 "Failed to find loader .conf entry");
 
         fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                               "/org.clearlinux.native.4.2.3-138"),
+                                              "/org.clearlinux.native.4.2.3-138"),
                 "Failed to find kernel file after install");
 }
 END_TEST
@@ -194,11 +194,11 @@ START_TEST(bootman_remove_kernel_test)
         fail_if(!boot_manager_remove_kernel(m, kernel), "Failed to remove kernel");
 
         fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                              "/loader/entries/Clear-linux-native-4.2.3-138.conf"),
+                                             "/loader/entries/Clear-linux-native-4.2.3-138.conf"),
                 "Failed to remove loader .conf entry");
 
         fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                              "/org.clearlinux.native.4.2.3-138"),
+                                             "/org.clearlinux.native.4.2.3-138"),
                 "Failed to remove kernel file after install");
 }
 END_TEST
@@ -249,36 +249,36 @@ START_TEST(bootman_install_bootloader_test)
 
         if (boot_manager_get_architecture_size(m) == 64) {
                 fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                       "/EFI/Boot/BOOTX64.EFI"),
+                                                      "/EFI/Boot/BOOTX64.EFI"),
                         "Main x64 bootloader missing");
 #if defined(HAVE_SYSTEMD_BOOT)
                 fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                       "/EFI/systemd/systemd-bootx64.efi"),
+                                                      "/EFI/systemd/systemd-bootx64.efi"),
                         "Systemd x64 bootloader missing");
 #elif defined(HAVE_GUMMIBOOT)
                 fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                       "/EFI/gummiboot/gummibootx64.efi"),
+                                                      "/EFI/gummiboot/gummibootx64.efi"),
                         "gummiboot x64 bootloader missing");
 #else
                 fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                       "/EFI/goofiboot/goofibootx64.efi"),
+                                                      "/EFI/goofiboot/goofibootx64.efi"),
                         "goofiboot x64 bootloader missing");
 #endif
         } else {
                 fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                       "/EFI/Boot/BOOTIA32.EFI"),
+                                                      "/EFI/Boot/BOOTIA32.EFI"),
                         "Main ia32 bootloader missing");
 #if defined(HAVE_SYSTEMD_BOOT)
                 fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                       "/EFI/systemd/systemd-bootia32.efi"),
+                                                      "/EFI/systemd/systemd-bootia32.efi"),
                         "systemd-boot ia32 bootloader missing");
 #elif defined(HAVE_GUMMIBOOT)
                 fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                       "/EFI/gummiboot/gummibootia32.efi"),
+                                                      "/EFI/gummiboot/gummibootia32.efi"),
                         "gummiboot ia32 bootloader missing");
 #else
                 fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                       "/EFI/goofiboot/goofibootia32.efi"),
+                                                      "/EFI/goofiboot/goofibootia32.efi"),
                         "goofiboot ia32 bootloader missing");
 #endif
         }
@@ -305,42 +305,42 @@ START_TEST(bootman_remove_bootloader_test)
         /* Ensure that it is indeed removed. */
         if (boot_manager_get_architecture_size(m) == 64) {
                 fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install" BOOT_DIRECTORY
-                                                      "/EFI/Boot/BOOTX64.EFI"),
+                                                     "/EFI/Boot/BOOTX64.EFI"),
                         "Main x64 bootloader present");
 #if defined(HAVE_SYSTEMD_BOOT)
                 fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                      "/EFI/systemd"),
+                                                     "/EFI/systemd"),
                         "Systemd x64 bootloader present");
 #elif defined(HAVE_GUMMIBOOT)
                 fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                      "/EFI/gummiboot"),
+                                                     "/EFI/gummiboot"),
                         "gummiboot x64 bootloader present");
 #else
                 fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                      "/EFI/goofiboot"),
+                                                     "/EFI/goofiboot"),
                         "goofiboot x64 bootloader present");
 #endif
         } else {
                 fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                      "/EFI/Boot/BOOTIA32.EFI"),
+                                                     "/EFI/Boot/BOOTIA32.EFI"),
                         "Main ia32 bootloader present");
 #if defined(HAVE_SYSTEMD_BOOT)
                 fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                      "/EFI/systemd"),
+                                                     "/EFI/systemd"),
                         "systemd-boot ia32 bootloader present");
 #elif defined(HAVE_GUMMIBOOT)
                 fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                      "/EFI/gummiboot"),
+                                                     "/EFI/gummiboot"),
                         "gummiboot ia32 bootloader present");
 #else
                 fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                                      "/EFI/goofiboot"),
+                                                     "/EFI/goofiboot"),
                         "goofiboot ia32 bootloader present");
 #endif
         }
 
         fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                              "/loader/loader.conf"),
+                                             "/loader/loader.conf"),
                 "systemd-class loader.conf present");
         /* DEBUG:
         __attribute__ ((unused)) int r = system("tree " TOP_BUILD_DIR "/tests/dummy_install");*/

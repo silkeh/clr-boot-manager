@@ -20,11 +20,11 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 
-#include "nica/array.h"
 #include "bootloader.h"
 #include "bootman.h"
-#include "nica/files.h"
 #include "files.h"
+#include "nica/array.h"
+#include "nica/files.h"
 #include "util.h"
 
 #include "config.h"

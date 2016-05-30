@@ -18,8 +18,8 @@
 
 #include "util.h"
 
-#include "nica/files.h"
 #include "files.h"
+#include "nica/files.h"
 
 START_TEST(bootman_hash_test)
 {

@@ -18,8 +18,8 @@
 
 #include "bootloader.h"
 #include "bootman.h"
-#include "nica/files.h"
 #include "files.h"
+#include "nica/files.h"
 #include "systemd-class.h"
 #include "util.h"
 
@@ -102,10 +102,10 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         sd_class_config.ia32_source = ia32_source;
 
         ia32_dest = nc_build_case_correct_path(sd_class_config.base_path,
-                                            "EFI",
-                                            sd_config->vendor_dir,
-                                            sd_config->ia32_blob,
-                                            NULL);
+                                               "EFI",
+                                               sd_config->vendor_dir,
+                                               sd_config->ia32_blob,
+                                               NULL);
         OOM_CHECK_RET(ia32_source, false);
         sd_class_config.ia32_dest = ia32_dest;
 
@@ -118,22 +118,28 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         sd_class_config.x64_source = x64_source;
 
         x64_dest = nc_build_case_correct_path(sd_class_config.base_path,
-                                           "EFI",
-                                           sd_config->vendor_dir,
-                                           sd_config->x64_blob,
-                                           NULL);
+                                              "EFI",
+                                              sd_config->vendor_dir,
+                                              sd_config->x64_blob,
+                                              NULL);
         OOM_CHECK_RET(x64_dest, false);
         sd_class_config.x64_dest = x64_dest;
 
         /* default x64 path */
-        default_path_x64 =
-            nc_build_case_correct_path(sd_class_config.base_path, "EFI", "Boot", "BOOTX64.EFI", NULL);
+        default_path_x64 = nc_build_case_correct_path(sd_class_config.base_path,
+                                                      "EFI",
+                                                      "Boot",
+                                                      "BOOTX64.EFI",
+                                                      NULL);
         OOM_CHECK_RET(default_path_x64, false);
         sd_class_config.default_path_x64 = default_path_x64;
 
         /* default ia32 path */
-        default_path_ia32 =
-            nc_build_case_correct_path(sd_class_config.base_path, "EFI", "Boot", "BOOTIA32.EFI", NULL);
+        default_path_ia32 = nc_build_case_correct_path(sd_class_config.base_path,
+                                                       "EFI",
+                                                       "Boot",
+                                                       "BOOTIA32.EFI",
+                                                       NULL);
         OOM_CHECK_RET(default_path_ia32, false);
         sd_class_config.default_path_ia32 = default_path_ia32;
 
@@ -183,10 +189,10 @@ static char *get_entry_path_for_kernel(BootManager *manager, const Kernel *kerne
         }
 
         return nc_build_case_correct_path(sd_class_config.base_path,
-                                       "loader",
-                                       "entries",
-                                       item_name,
-                                       NULL);
+                                          "loader",
+                                          "entries",
+                                          item_name,
+                                          NULL);
 }
 
 static bool sd_class_ensure_dirs(__attribute__((unused)) const BootManager *manager)

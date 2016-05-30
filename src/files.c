@@ -30,8 +30,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "nica/files.h"
 #include "files.h"
+#include "nica/files.h"
 #include "util.h"
 
 #define COPY_BUFFER_SIZE 8192

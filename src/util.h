@@ -45,7 +45,6 @@
                 }                                                                                  \
         }
 
-
 /**
  * Dump any leaked file descriptors
  */
