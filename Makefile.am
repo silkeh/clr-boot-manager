@@ -164,4 +164,4 @@ check_files_LDADD = \
 
 
 VALGRIND_SUPPRESSIONS_FILES = \
-	${top_srcdir}/sgcheck.suppressions
+	${abs_top_srcdir}/sgcheck.suppressions
