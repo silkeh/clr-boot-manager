@@ -42,6 +42,31 @@ coverage:
 AM_CFLAGS += --coverage
 endif
 
+noinst_LTLIBRARIES = \
+	libnica.la
+
+libnica_la_SOURCES =     \
+	src/nica/array.c     \
+	src/nica/array.h     \
+	src/nica/files.c     \
+	src/nica/files.h     \
+	src/nica/hashmap.c   \
+	src/nica/hashmap.h   \
+	src/nica/inifile.c   \
+	src/nica/inifile.h   \
+	src/nica/list.c      \
+	src/nica/list.h      \
+	src/nica/macros.h    \
+	src/nica/nica.h      \
+	src/nica/util.c      \
+	src/nica/util.h
+
+libnica_la_CFLAGS =      \
+	$(AM_CFLAGS)         \
+	-DLIBNICA_INTERNAL   \
+	-fvisibility=hidden
+
+
 bin_PROGRAMS = clr-boot-manager
 
 clr_boot_manager_SOURCES = \
