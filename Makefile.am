@@ -78,14 +78,10 @@ clr_boot_manager_SOURCES = \
 	src/bootloaders/goofiboot.c \
 	src/util.h \
 	src/util.c \
-	src/array.h \
-	src/array.c \
 	src/files.h \
 	src/files.c \
 	src/bootman.h \
 	src/bootman.c \
-	src/hashmap.h \
-	src/hashmap.c \
 	src/cli.h \
 	src/cli.c \
 	src/ops/update.h \
@@ -101,7 +97,8 @@ clr_boot_manager_CFLAGS = \
 
 clr_boot_manager_LDADD = \
 	$(CRYPTO_LIBS) \
-	$(BLKID_LIBS)
+	$(BLKID_LIBS) \
+	libnica.la
 
 install-exec-hook:
 	perl ${top_srcdir}/findstatic.pl ${top_builddir}/src/*.o ${top_builddir}/src/*/*.o | grep -v Checking ||:
@@ -115,9 +112,7 @@ distclean-local:
 
 TESTS = \
 	check_core \
-	check_files \
-	check_array \
-	check_hashmap
+	check_files
 
 check_PROGRAMS = $(TESTS)
 
@@ -135,17 +130,6 @@ check_core_LDADD = \
 	$(BLKID_LIBS) \
 	$(CHECK_LIBS)
 
-check_array_SOURCES = \
-	tests/check-array.c
-
-check_array_CFLAGS = \
-	$(CHECK_CFLAGS) \
-	$(AM_CFLAGS)
-
-check_array_LDADD = \
-	$(CHECK_LIBS)
-
-
 check_files_SOURCES = \
 	tests/check-files.c
 
@@ -158,16 +142,6 @@ check_files_CFLAGS = \
 check_files_LDADD = \
 	$(CRYPTO_LIBS) \
 	$(BLKID_LIBS) \
-	$(CHECK_LIBS)
-
-check_hashmap_SOURCES = \
-	tests/check-hashmap.c
-
-check_hashmap_CFLAGS = \
-	$(CHECK_CFLAGS) \
-	$(AM_CFLAGS)
-
-check_hashmap_LDADD = \
 	$(CHECK_LIBS)
 
 @VALGRIND_CHECK_RULES@

@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include "array.h"
+#include "nica/array.h"
 #include "util.h"
 
 typedef struct BootManager BootManager;
@@ -54,7 +54,7 @@ typedef struct Kernel {
         char *kboot_file;   /**<Path to the k_booted_$(uname -r) file */
 } Kernel;
 
-typedef CBMArray KernelArray;
+typedef NcArray KernelArray;
 
 static inline const char *str_kernel_type(KernelType type)
 {
@@ -148,7 +148,7 @@ const char *boot_manager_get_os_name(BootManager *manager);
 /**
  * Discover a list of known kernels
  *
- * @return a newly allocated CBMArray of Kernel's
+ * @return a newly allocated NcArray of Kernel's
  */
 KernelArray *boot_manager_get_kernels(BootManager *manager);
 
@@ -256,7 +256,7 @@ void free_kernel(Kernel *t);
 static inline void kernel_array_free(void *v)
 {
         KernelArray *a = v;
-        cbm_array_free(&a, (array_free_func)free_kernel);
+        nc_array_free(&a, (array_free_func)free_kernel);
 }
 
 DEF_AUTOFREE(BootManager, boot_manager_free)

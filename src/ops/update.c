@@ -20,6 +20,7 @@
 #include "bootman.h"
 #include "cli.h"
 #include "files.h"
+#include "nica/files.h"
 #include "util.h"
 
 static int kernel_compare_reverse(const void *a, const void *b)
@@ -75,7 +76,7 @@ bool cbm_command_update(int argc, char **argv)
         if (boot_manager_is_image_mode(manager)) {
                 /* Highest release number wins */
                 for (int i = 0; i < avail_kernels->len; i++) {
-                        Kernel *cur = cbm_array_get((CBMArray *)avail_kernels, i);
+                        Kernel *cur = nc_array_get((NcArray *)avail_kernels, i);
                         if (!candidate) {
                                 candidate = cur;
                                 continue;
@@ -85,8 +86,8 @@ bool cbm_command_update(int argc, char **argv)
                         }
                 }
 
-                if (!cbm_file_exists(boot_dir)) {
-                        mkdir_p(boot_dir, 0755);
+                if (!nc_file_exists(boot_dir)) {
+                        nc_mkdir_p(boot_dir, 0755);
                 }
 
                 /* Get the bootloader in order (NOCHECK) to prevent second hash checks */
@@ -108,7 +109,7 @@ bool cbm_command_update(int argc, char **argv)
 
                 /* Install all the kernels */
                 for (int i = 0; i < avail_kernels->len; i++) {
-                        Kernel *k = cbm_array_get((CBMArray *)avail_kernels, i);
+                        Kernel *k = nc_array_get((NcArray *)avail_kernels, i);
                         if (!boot_manager_install_kernel(manager, k)) {
                                 fprintf(stderr, "Failed to install kernel %s\n", k->path);
                                 goto cleanup;
@@ -126,7 +127,7 @@ bool cbm_command_update(int argc, char **argv)
                 Kernel *running = NULL;
                 Kernel *last_good = NULL;
 
-                cbm_array_qsort(avail_kernels, kernel_compare_reverse);
+                nc_array_qsort(avail_kernels, kernel_compare_reverse);
 
                 /* Native install mode */
                 if (!cbm_is_mounted(boot_dir, NULL)) {
@@ -150,8 +151,8 @@ bool cbm_command_update(int argc, char **argv)
                                         return false;
                                 }
                         } else {
-                                if (!cbm_file_exists(boot_dir)) {
-                                        mkdir_p(boot_dir, 0755);
+                                if (!nc_file_exists(boot_dir)) {
+                                        nc_mkdir_p(boot_dir, 0755);
                                 }
                                 if (mount(root_base, boot_dir, "vfat", MS_MGC_VAL, "") < 0) {
                                         fprintf(stderr,
@@ -184,7 +185,7 @@ bool cbm_command_update(int argc, char **argv)
 
                 /* Yes, it's ugly, but we need to determine the running one first. */
                 for (int i = 0; i < avail_kernels->len; i++) {
-                        Kernel *k = cbm_array_get((CBMArray *)avail_kernels, i);
+                        Kernel *k = nc_array_get((NcArray *)avail_kernels, i);
                         /* Determine the running kernel. */
                         if (k->is_running) {
                                 running = k;
@@ -193,7 +194,7 @@ bool cbm_command_update(int argc, char **argv)
                 }
 
                 /* Only ever install the *newest* kernel */
-                tip = cbm_array_get(avail_kernels, 0);
+                tip = nc_array_get(avail_kernels, 0);
 
                 /* This is mostly to allow a repair-situation */
                 if (running && !boot_manager_is_kernel_installed(manager, running)) {
@@ -214,7 +215,7 @@ bool cbm_command_update(int argc, char **argv)
                 }
                 /* Attempt to keep the last booted kernel of the same type */
                 for (int i = 0; i < avail_kernels->len; i++) {
-                        Kernel *k = cbm_array_get(avail_kernels, i);
+                        Kernel *k = nc_array_get(avail_kernels, i);
                         if (k != running && k->release < running->release &&
                             k->type == running->type && k->boots) {
                                 last_good = k;
@@ -224,7 +225,7 @@ bool cbm_command_update(int argc, char **argv)
                 if (!last_good) {
                         /* Fallback to the last good kernel even though type didn't match*/
                         for (int i = 0; i < avail_kernels->len; i++) {
-                                Kernel *k = cbm_array_get(avail_kernels, i);
+                                Kernel *k = nc_array_get(avail_kernels, i);
                                 if (k != running && k->release < running->release && k->boots) {
                                         last_good = k;
                                         break;
@@ -248,7 +249,7 @@ bool cbm_command_update(int argc, char **argv)
 
                 /* Now remove the older kernels */
                 for (int i = 0; i < avail_kernels->len; i++) {
-                        Kernel *k = cbm_array_get(avail_kernels, i);
+                        Kernel *k = nc_array_get(avail_kernels, i);
                         if (k != tip && k != running && k != last_good) {
                                 if (!boot_manager_remove_kernel(manager, k)) {
                                         fprintf(stderr, "Failed to remove kernel: %s\n", k->path);

@@ -46,8 +46,6 @@ char *get_part_uuid(const char *path);
  */
 char *get_boot_device(void);
 
-bool cbm_file_exists(const char *path);
-
 /**
  * Determine if the files match in content by comparing
  * their checksums
@@ -62,25 +60,6 @@ bool cbm_files_match(const char *p1, const char *p2);
  * @return a newly allocated string
  */
 char *cbm_get_file_parent(const char *p);
-
-/**
- * Recursively make the directories for the given path
- *
- * @param path Path to directory to create
- * @param mode Mode to create new directories with
- *
- * @return A boolean value, indicating success or failure
- */
-bool mkdir_p(const char *path, mode_t mode);
-
-/**
- * Recursively remove the tree at @path
- *
- * @param path The path to remove (and all children)
- *
- * @return A boolean value, indicating success or failure
- */
-bool rm_rf(const char *path);
 
 /**
  * Quick utility function to write small text files
@@ -143,14 +122,6 @@ bool cbm_is_mounted(const char *path, bool *error);
  * Determine the mountpoint for the given device
  */
 char *cbm_get_mountpoint_for_device(const char *device);
-
-/**
- * Gradually build up a valid path, which may point within an existing
- * tree, to mitigate any case sensitivity issues on FAT32
- */
-__attribute__((sentinel(0))) char *build_case_correct_path(const char *c, ...);
-
-char *build_case_correct_path_va(const char *c, va_list ap);
 
 /**
  * Determine whether the system is booted using UEFI

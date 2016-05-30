@@ -39,3 +39,6 @@ ltmain.sh
 m4/*.m4
 
 *.plist
+.libs
+*.la
+*.lo

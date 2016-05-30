@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "nica/files.h"
 #include "files.h"
 #include "util.h"
 
@@ -151,12 +152,6 @@ clean:
         return ret;
 }
 
-bool cbm_file_exists(const char *path)
-{
-        struct stat st = { 0 };
-        return (lstat(path, &st) == 0);
-}
-
 char *get_boot_device()
 {
         glob_t glo = { 0 };
@@ -208,12 +203,12 @@ char *get_boot_device()
                 return NULL;
         }
 
-        if (cbm_file_exists(p)) {
+        if (nc_file_exists(p)) {
                 return strdup(p);
         }
 next:
 
-        if (cbm_file_exists("/dev/disk/by-partlabel/ESP")) {
+        if (nc_file_exists("/dev/disk/by-partlabel/ESP")) {
                 return strdup("/dev/disk/by-partlabel/ESP");
         }
         return NULL;
@@ -228,51 +223,12 @@ char *cbm_get_file_parent(const char *p)
         return dirname(r);
 }
 
-bool mkdir_p(const char *path, mode_t mode)
-{
-        autofree(char) *cl = NULL;
-        char *cl_base = NULL;
-
-        if (streq(path, ".") || streq(path, "/") || streq(path, "//")) {
-                return true;
-        }
-
-        cl = strdup(path);
-        cl_base = dirname(cl);
-
-        if (!mkdir_p(cl_base, mode) && errno != EEXIST) {
-                return false;
-        }
-
-        return !((mkdir(path, mode) < 0 && errno != EEXIST));
-}
-
-/**
- * nftw callback
- */
-static int _rm_rf(const char *path, __attribute__((unused)) const struct stat *sb, int typeflag,
-                  __attribute__((unused)) struct FTW *ftwbuf)
-{
-        if (typeflag == FTW_F) {
-                return unlink(path);
-        }
-        return rmdir(path);
-}
-
-bool rm_rf(const char *path)
-{
-        bool ret = nftw(path, _rm_rf, 35, FTW_DEPTH) == 0;
-
-        sync();
-        return ret;
-}
-
 bool file_set_text(const char *path, char *text)
 {
         FILE *fp = NULL;
         bool ret = false;
 
-        if (cbm_file_exists(path) && unlink(path) < 0) {
+        if (nc_file_exists(path) && unlink(path) < 0) {
                 return false;
         }
         sync();
@@ -459,112 +415,9 @@ char *cbm_get_mountpoint_for_device(const char *device)
         return NULL;
 }
 
-/*
- * The following functions are taken from Ikey Doherty's goofiboot
- * project
- */
-char *build_case_correct_path_va(const char *c, va_list ap)
-{
-        char *p = NULL;
-        char *root = NULL;
-        struct stat st = { 0 };
-        struct dirent *ent = NULL;
-
-        p = (char *)c;
-
-        while (p) {
-                char *t = NULL;
-                char *sav = NULL;
-                autofree(DIR) *dirn = NULL;
-
-                if (!root) {
-                        root = strdup(p);
-                } else {
-                        sav = strdup(root);
-
-                        if (!asprintf(&t, "%s/%s", root, p)) {
-                                DECLARE_OOM();
-                                va_end(ap);
-                                if (sav) {
-                                        free(sav);
-                                }
-                                return NULL;
-                        }
-                        free(root);
-                        root = t;
-                        t = NULL;
-                }
-
-                autofree(char) *dirp = strdup(root);
-                char *dir = dirname(dirp);
-
-                if (stat(dir, &st) != 0) {
-                        goto clean;
-                }
-                if (!S_ISDIR(st.st_mode)) {
-                        goto clean;
-                }
-                /* Iterate the directory and find the case insensitive name, using
-                 * this if it exists. Otherwise continue with the non existent
-                 * path
-                 */
-                dirn = opendir(dir);
-                if (!dirn) {
-                        goto clean;
-                }
-                while ((ent = readdir(dirn)) != NULL) {
-                        if (strncmp(ent->d_name, ".", 1) == 0 ||
-                            strncmp(ent->d_name, "..", 2) == 0) {
-                                continue;
-                        }
-                        if (strcasecmp(ent->d_name, p) == 0) {
-                                if (sav) {
-                                        if (!asprintf(&t, "%s/%s", sav, ent->d_name)) {
-                                                DECLARE_OOM();
-                                                return NULL;
-                                        }
-                                        free(root);
-                                        root = t;
-                                        t = NULL;
-                                } else {
-                                        if (root) {
-                                                sav = strdup(root);
-                                                free(root);
-                                                root = NULL;
-                                                if (!sav) {
-                                                        DECLARE_OOM();
-                                                        return NULL;
-                                                }
-                                        }
-                                }
-                                break;
-                        }
-                }
-        clean:
-                if (sav) {
-                        free(sav);
-                }
-                p = va_arg(ap, char *);
-        }
-
-        return root;
-}
-
-char *build_case_correct_path(const char *c, ...)
-{
-        va_list ap;
-
-        char *ret = NULL;
-        va_start(ap, c);
-        ret = build_case_correct_path_va(c, ap);
-        va_end(ap);
-
-        return ret;
-}
-
 bool cbm_system_has_uefi()
 {
-        return cbm_file_exists("/sys/firmware/efi");
+        return nc_file_exists("/sys/firmware/efi");
 }
 
 /*

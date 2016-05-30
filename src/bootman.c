@@ -20,9 +20,10 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 
-#include "array.h"
+#include "nica/array.h"
 #include "bootloader.h"
 #include "bootman.h"
+#include "nica/files.h"
 #include "files.h"
 #include "util.h"
 
@@ -288,7 +289,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         /* TODO: We may actually be uninstalling a partially flopped kernel,
          * so validity of existing kernels may be questionable
          * Thus, flag it, and return kernel */
-        if (!cbm_file_exists(cmdline)) {
+        if (!nc_file_exists(cmdline)) {
                 LOG("Valid kernel found with no cmdline: %s (expected %s)\n", path, cmdline);
                 return NULL;
         }
@@ -306,7 +307,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         }
 
         /* Fallback to an older namespace */
-        if (!cbm_file_exists(module_dir)) {
+        if (!nc_file_exists(module_dir)) {
                 free(module_dir);
                 if (!asprintf(&module_dir,
                               "%s/%s/%s-%d",
@@ -317,7 +318,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                         DECLARE_OOM();
                         abort();
                 }
-                if (!cbm_file_exists(module_dir)) {
+                if (!nc_file_exists(module_dir)) {
                         LOG("Valid kernel with no modules: %s %s\n", path, module_dir);
                         return NULL;
                 }
@@ -333,10 +334,10 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         kern->version = strdup(version);
         kern->module_dir = strdup(module_dir);
 
-        if (cbm_file_exists(kconfig_file)) {
+        if (nc_file_exists(kconfig_file)) {
                 kern->kconfig_file = strdup(kconfig_file);
         }
-        if (cbm_file_exists(kboot_file)) {
+        if (nc_file_exists(kboot_file)) {
                 kern->kboot_file = strdup(kboot_file);
                 kern->boots = true;
         }
@@ -429,13 +430,13 @@ KernelArray *boot_manager_get_kernels(BootManager *self)
                 return NULL;
         }
 
-        ret = cbm_array_new();
+        ret = nc_array_new();
         OOM_CHECK_RET(ret, NULL);
 
         dir = opendir(self->kernel_dir);
         if (!dir) {
                 LOG("Error opening %s: %s\n", self->kernel_dir, strerror(errno));
-                cbm_array_free(&ret, NULL);
+                nc_array_free(&ret, NULL);
                 return NULL;
         }
 
@@ -468,7 +469,7 @@ KernelArray *boot_manager_get_kernels(BootManager *self)
                 if (!kern) {
                         continue;
                 }
-                if (!cbm_array_add(ret, kern)) {
+                if (!nc_array_add(ret, kern)) {
                         DECLARE_OOM();
                         abort();
                 }
@@ -690,7 +691,7 @@ bool boot_manager_set_timeout_value(BootManager *self, int timeout)
 
         if (timeout <= 0) {
                 /* Nothing to be done here. */
-                if (!cbm_file_exists(path)) {
+                if (!nc_file_exists(path)) {
                         return true;
                 }
                 if (unlink(path) < 0) {
@@ -729,7 +730,7 @@ int boot_manager_get_timeout_value(BootManager *self)
         }
 
         /* Default timeout being -1, i.e. don't use one */
-        if (!cbm_file_exists(path)) {
+        if (!nc_file_exists(path)) {
                 return -1;
         }
 

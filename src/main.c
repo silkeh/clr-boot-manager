@@ -15,7 +15,7 @@
 
 #include "cli.h"
 #include "config.h"
-#include "hashmap.h"
+#include "nica/hashmap.h"
 #include "util.h"
 
 #include "ops/timeout.h"
@@ -27,7 +27,7 @@ static SubCommand cmd_version;
 static SubCommand cmd_set_timeout;
 static SubCommand cmd_get_timeout;
 static char *binary_name = NULL;
-static CbmHashmap *g_commands = NULL;
+static NcHashmap *g_commands = NULL;
 static bool explicit_help = false;
 
 /**
@@ -35,7 +35,7 @@ static bool explicit_help = false;
  */
 static bool print_usage(int argc, char **argv)
 {
-        CbmHashmapIter iter;
+        NcHashmapIter iter;
         const char *id = NULL;
         const SubCommand *command = NULL;
 
@@ -43,7 +43,7 @@ static bool print_usage(int argc, char **argv)
                 fprintf(stderr, "Usage: %s help [topic]\n", binary_name);
                 return false;
         } else if (argc == 1 && !explicit_help) {
-                command = cbm_hashmap_get(g_commands, argv[0]);
+                command = nc_hashmap_get(g_commands, argv[0]);
                 if (!command) {
                         fprintf(stderr, "Unknown topic '%s'\n", argv[0]);
                         return false;
@@ -59,8 +59,8 @@ static bool print_usage(int argc, char **argv)
 
         fprintf(stderr, "Usage: %s\n\n", binary_name);
 
-        cbm_hashmap_iter_init(g_commands, &iter);
-        while (cbm_hashmap_iter_next(&iter, (void **)&id, (void **)&command)) {
+        nc_hashmap_iter_init(g_commands, &iter);
+        while (nc_hashmap_iter_next(&iter, (void **)&id, (void **)&command)) {
                 fprintf(stdout, "%15s - %s\n", id, command->blurb);
         }
 
@@ -85,13 +85,13 @@ int main(int argc, char **argv)
 {
         atexit(dump_file_descriptor_leaks);
 
-        autofree(CbmHashmap) *commands = NULL;
+        autofree(NcHashmap) *commands = NULL;
         const char *command = NULL;
         SubCommand *s_command = NULL;
 
         binary_name = argv[0];
 
-        commands = cbm_hashmap_new_full(string_hash, string_compare, NULL, NULL);
+        commands = nc_hashmap_new_full(nc_string_hash, nc_string_compare, NULL, NULL);
         if (!commands) {
                 DECLARE_OOM();
                 return EXIT_FAILURE;
@@ -114,7 +114,7 @@ time.",
                 .requires_root = true
         };
 
-        if (!cbm_hashmap_put(commands, cmd_update.name, &cmd_update)) {
+        if (!nc_hashmap_put(commands, cmd_update.name, &cmd_update)) {
                 DECLARE_OOM();
                 return EXIT_FAILURE;
         }
@@ -133,7 +133,7 @@ to forcibly delay the system boot for a specified number of seconds.",
                 .requires_root = true,
         };
 
-        if (!cbm_hashmap_put(commands, cmd_set_timeout.name, &cmd_set_timeout)) {
+        if (!nc_hashmap_put(commands, cmd_set_timeout.name, &cmd_set_timeout)) {
                 DECLARE_OOM();
                 return EXIT_FAILURE;
         }
@@ -152,7 +152,7 @@ to forcibly delay the system boot for a specified number of seconds.",
                 .requires_root = false,
         };
 
-        if (!cbm_hashmap_put(commands, cmd_get_timeout.name, &cmd_get_timeout)) {
+        if (!nc_hashmap_put(commands, cmd_get_timeout.name, &cmd_get_timeout)) {
                 DECLARE_OOM();
                 return EXIT_FAILURE;
         }
@@ -166,7 +166,7 @@ to forcibly delay the system boot for a specified number of seconds.",
                 .help = NULL,
                 .requires_root = false,
         };
-        if (!cbm_hashmap_put(commands, cmd_version.name, &cmd_version)) {
+        if (!nc_hashmap_put(commands, cmd_version.name, &cmd_version)) {
                 DECLARE_OOM();
                 return EXIT_FAILURE;
         }
@@ -179,7 +179,7 @@ to forcibly delay the system boot for a specified number of seconds.",
                                 .help = NULL,
                                 .requires_root = false };
 
-        if (!cbm_hashmap_put(commands, cmd_help.name, &cmd_help)) {
+        if (!nc_hashmap_put(commands, cmd_help.name, &cmd_help)) {
                 DECLARE_OOM();
                 return EXIT_FAILURE;
         }
@@ -205,7 +205,7 @@ to forcibly delay the system boot for a specified number of seconds.",
         ++argv;
         --argc;
 
-        s_command = cbm_hashmap_get(commands, command);
+        s_command = nc_hashmap_get(commands, command);
         if (!s_command) {
                 fprintf(stderr, "Unknown command: %s\n", command);
                 return EXIT_FAILURE;

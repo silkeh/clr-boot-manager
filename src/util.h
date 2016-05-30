@@ -13,27 +13,12 @@
 
 #define _GNU_SOURCE
 
+#include "nica/util.h"
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-/**
- * Implemented in a *similar* fashion to how g_autoptr is intended to
- * work in future, but without the concerns of MSVC, etc..
- */
-#define DEF_AUTOFREE(N, C)                                                                         \
-        static inline void _autofree_func_##N(void *p)                                             \
-        {                                                                                          \
-                if (p && *(N **)p) {                                                               \
-                        C(*(N **)p);                                                               \
-                        (*(void **)p) = NULL;                                                      \
-                }                                                                                  \
-        }
-
-#define autofree(N) __attribute__((cleanup(_autofree_func_##N))) N
-
-#define streq(x, y) strcmp(x, y) == 0 ? true : false
 
 /** Revisit in future */
 #define LOG(...) fprintf(stderr, __VA_ARGS__)
@@ -60,8 +45,6 @@
                 }                                                                                  \
         }
 
-DEF_AUTOFREE(char, free)
-DEF_AUTOFREE(FILE, fclose)
 
 /**
  * Dump any leaked file descriptors
