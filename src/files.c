@@ -322,7 +322,7 @@ end:
 
 bool copy_file_atomic(const char *src, const char *target, mode_t mode)
 {
-        char *new_name = NULL;
+        autofree(char) *new_name = NULL;
         struct stat st = { 0 };
 
         if (!asprintf(&new_name, "%s.TmpWrite", target)) {
