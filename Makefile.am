@@ -58,7 +58,6 @@ libnica_la_SOURCES =     \
 	src/nica/list.c      \
 	src/nica/list.h      \
 	src/nica/macros.h    \
-	src/nica/nica.h      \
 	src/nica/util.c      \
 	src/nica/util.h
 
