@@ -13,6 +13,9 @@ missing
 .dirstamp
 *.o
 stamp-h1
+GTAGS
+GPATH
+GRTAGS
 
 # test suite junk
 check_core
