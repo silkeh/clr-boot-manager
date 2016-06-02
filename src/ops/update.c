@@ -260,7 +260,7 @@ bool cbm_command_update(int argc, char **argv)
                 ret = true;
         }
 cleanup:
-        sync();
+        cbm_sync();
 
         if (did_mount) {
                 if (umount(boot_dir) < 0) {

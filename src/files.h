@@ -133,6 +133,12 @@ bool cbm_system_has_uefi(void);
  */
 void cbm_set_sync_filesystems(bool should_sync);
 
+/**
+ * Sync filesystem if should_sync is set
+ * If not set, then this is a no-op
+ */
+void cbm_sync(void);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

@@ -44,7 +44,7 @@ DEF_AUTOFREE(DIR, closedir)
  */
 static bool cbm_should_sync = true;
 
-__cbm_inline__ static inline void cbm_sync(void)
+void cbm_sync(void)
 {
         if (cbm_should_sync) {
                 sync();

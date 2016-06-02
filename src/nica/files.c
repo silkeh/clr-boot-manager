@@ -76,7 +76,6 @@ bool nc_rm_rf(const char *path)
 {
         bool ret = nftw(path, _rm_rf, 35, FTW_DEPTH) == 0;
 
-        sync();
         return ret;
 }
 

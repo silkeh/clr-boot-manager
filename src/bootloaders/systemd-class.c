@@ -201,19 +201,19 @@ static bool sd_class_ensure_dirs(__attribute__((unused)) const BootManager *mana
                 LOG("Failed to create %s: %s\n", sd_class_config.efi_dir, strerror(errno));
                 return false;
         }
-        sync();
+        cbm_sync();
 
         if (!nc_mkdir_p(sd_class_config.vendor_dir, 00755)) {
                 LOG("Failed to create %s: %s\n", sd_class_config.vendor_dir, strerror(errno));
                 return false;
         }
-        sync();
+        cbm_sync();
 
         if (!nc_mkdir_p(sd_class_config.entries_dir, 00755)) {
                 LOG("Failed to create %s: %s\n", sd_class_config.entries_dir, strerror(errno));
                 return false;
         }
-        sync();
+        cbm_sync();
 
         return true;
 }
@@ -281,7 +281,7 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
                 return false;
         }
 
-        sync();
+        cbm_sync();
 
         /* Now copy the kernel file to it's new location */
         if (!asprintf(&kfile_target, "%s/%s", sd_class_config.base_path, kname_base)) {
@@ -318,7 +318,7 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
                             conf_path,
                             strerror(errno));
                 } else {
-                        sync();
+                        cbm_sync();
                 }
         } else {
                 LOG("sd_class_remove_kernel: Warning: %s does not exist\n", conf_path);
@@ -338,7 +338,7 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
                     kfile_target,
                     strerror(errno));
         } else {
-                sync();
+                cbm_sync();
         }
 
         /* Purge the kernel modules from disk */
@@ -348,7 +348,7 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
                             kernel->module_dir,
                             strerror(errno));
                 } else {
-                        sync();
+                        cbm_sync();
                 }
         } else {
                 LOG("sd_class_remove_kernel: Missing module tree for %s\n", kernel->path);
@@ -433,7 +433,7 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
                 return false;
         }
 
-        sync();
+        cbm_sync();
 
         return true;
 }
@@ -510,7 +510,7 @@ static bool sd_class_install_x64(const BootManager *manager)
                 LOG("Failed to install %s: %s\n", sd_class_config.x64_dest, strerror(errno));
                 return false;
         }
-        sync();
+        cbm_sync();
 
         /* Install default x64 blob */
         if (!copy_file_atomic(sd_class_config.x64_source,
@@ -521,7 +521,7 @@ static bool sd_class_install_x64(const BootManager *manager)
                     strerror(errno));
                 return false;
         }
-        sync();
+        cbm_sync();
 
         return true;
 }
@@ -537,7 +537,7 @@ static bool sd_class_install_ia32(const BootManager *manager)
                 LOG("Failed to install %s: %s\n", sd_class_config.ia32_dest, strerror(errno));
                 return false;
         }
-        sync();
+        cbm_sync();
 
         /* Install default ia32 blob */
         if (!copy_file_atomic(sd_class_config.ia32_source,
@@ -548,7 +548,7 @@ static bool sd_class_install_ia32(const BootManager *manager)
                     strerror(errno));
                 return false;
         }
-        sync();
+        cbm_sync();
 
         return true;
 }
@@ -599,7 +599,7 @@ static bool sd_class_update_ia32(const BootManager *manager)
                         return false;
                 }
         }
-        sync();
+        cbm_sync();
 
         if (!cbm_files_match(sd_class_config.ia32_source, sd_class_config.default_path_ia32)) {
                 if (!copy_file_atomic(sd_class_config.ia32_source,
@@ -611,7 +611,7 @@ static bool sd_class_update_ia32(const BootManager *manager)
                         return false;
                 }
         }
-        sync();
+        cbm_sync();
 
         return true;
 }
@@ -630,7 +630,7 @@ static bool sd_class_update_x64(const BootManager *manager)
                         return false;
                 }
         }
-        sync();
+        cbm_sync();
 
         if (!cbm_files_match(sd_class_config.x64_source, sd_class_config.default_path_x64)) {
                 if (!copy_file_atomic(sd_class_config.x64_source,
@@ -642,7 +642,7 @@ static bool sd_class_update_x64(const BootManager *manager)
                         return false;
                 }
         }
-        sync();
+        cbm_sync();
 
         return true;
 }
@@ -688,7 +688,7 @@ bool sd_class_remove(const BootManager *manager)
                 LOG("Failed to remove vendor dir: %s\n", strerror(errno));
                 return false;
         }
-        sync();
+        cbm_sync();
 
         if (nc_file_exists(sd_class_config.default_path_ia32) &&
             unlink(sd_class_config.default_path_ia32) < 0) {
@@ -697,21 +697,21 @@ bool sd_class_remove(const BootManager *manager)
                     strerror(errno));
                 return false;
         }
-        sync();
+        cbm_sync();
 
         if (nc_file_exists(sd_class_config.default_path_x64) &&
             unlink(sd_class_config.default_path_x64) < 0) {
                 LOG("Failed to remove %s: %s\n", sd_class_config.default_path_x64, strerror(errno));
                 return false;
         }
-        sync();
+        cbm_sync();
 
         if (nc_file_exists(sd_class_config.loader_config) &&
             unlink(sd_class_config.loader_config) < 0) {
                 LOG("Failed to remove %s: %s\n", sd_class_config.loader_config, strerror(errno));
                 return false;
         }
-        sync();
+        cbm_sync();
 
         return true;
 }
