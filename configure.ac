@@ -36,9 +36,24 @@ AM_CONDITIONAL([COVERAGE], [test "$have_coverage" = "yes"])
 
 AC_ARG_WITH([bootloader], AS_HELP_STRING([--with-bootloader=BOOTLOADER],
         [the bootloader to use]), [bootloader=${withval}],
-        [bootloader="systemd-boot"])
+        [bootloader="auto"])
 
+if test x$bootloader = "xauto"; then
+        AC_MSG_CHECKING([whether an EFI bootloader is available])
+        if test -e "/usr/lib/systemd/boot/efi"; then
+                bootloader="systemd-boot"
+        elif test -e "/usr/lib/goofiboot"; then
+                bootloader="goofiboot"
+        # use newer goofiboot, may be dual installed
+        elif test -e "/usr/lib/gummiboot"; then
+                bootloader="gummiboot"
+        else
+                AC_MSG_ERROR([Cannot find a valid EFI bootloader])
+        fi
+        AC_MSG_RESULT([$bootloader])
+fi
 
+# Now test the option
 if test x$bootloader = "xsystemd-boot"; then
         have_systemdboot="yes"
         AC_DEFINE([HAVE_SYSTEMD_BOOT], [1], [Using systemd-boot])

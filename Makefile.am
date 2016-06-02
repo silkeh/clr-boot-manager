@@ -14,10 +14,6 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 NULL =
 CLEANFILES =
 
-# For local distcheck testing
-#DISTCHECK_CONFIGURE_FLAGS = \
-#	--with-bootloader=goofiboot
-
 AM_CFLAGS = -fstack-protector -Wall -pedantic \
         -Wstrict-prototypes -Wundef -fno-common \
         -Werror-implicit-function-declaration \
