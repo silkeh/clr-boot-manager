@@ -46,11 +46,6 @@
         }
 
 /**
- * Dump any leaked file descriptors
- */
-void dump_file_descriptor_leaks(void);
-
-/**
  * Always inline the function
  */
 #define __cbm_inline__ __attribute__((always_inline))

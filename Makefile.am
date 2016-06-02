@@ -75,7 +75,6 @@ libcbm_la_SOURCES =			\
 	src/bootloaders/gummiboot.c	\
 	src/bootloaders/goofiboot.c	\
 	src/util.h			\
-	src/util.c			\
 	src/files.h			\
 	src/files.c			\
 	src/bootman.h			\
