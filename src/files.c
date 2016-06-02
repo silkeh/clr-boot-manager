@@ -38,6 +38,19 @@
 
 DEF_AUTOFREE(DIR, closedir)
 
+/**
+ * By default we call sync() - for testing however we disable this due to timeout
+ * issues.
+ */
+static bool cbm_should_sync = true;
+
+__cbm_inline__ static inline void cbm_sync(void)
+{
+        if (cbm_should_sync) {
+                sync();
+        }
+}
+
 char *get_sha1sum(const char *p)
 {
         unsigned char hash[SHA_DIGEST_LENGTH] = { 0 };
@@ -231,7 +244,7 @@ bool file_set_text(const char *path, char *text)
         if (nc_file_exists(path) && unlink(path) < 0) {
                 return false;
         }
-        sync();
+        cbm_sync();
 
         fp = fopen(path, "w");
 
@@ -247,7 +260,7 @@ end:
         if (fp) {
                 fclose(fp);
         }
-        sync();
+        cbm_sync();
 
         return ret;
 }
@@ -333,14 +346,14 @@ bool copy_file_atomic(const char *src, const char *target, mode_t mode)
                 (void)unlink(new_name);
                 return false;
         }
-        sync();
+        cbm_sync();
 
         /* Delete target if needed  */
         if (stat(target, &st) == 0) {
                 if (!S_ISDIR(st.st_mode) && unlink(target) != 0) {
                         return false;
                 }
-                sync();
+                cbm_sync();
         } else {
                 errno = 0;
         }
@@ -349,7 +362,7 @@ bool copy_file_atomic(const char *src, const char *target, mode_t mode)
                 return false;
         }
         /* vfat protect */
-        sync();
+        cbm_sync();
 
         return true;
 }
@@ -418,6 +431,11 @@ char *cbm_get_mountpoint_for_device(const char *device)
 bool cbm_system_has_uefi()
 {
         return nc_file_exists("/sys/firmware/efi");
+}
+
+void cbm_set_sync_filesystems(bool should_sync)
+{
+        cbm_should_sync = should_sync;
 }
 
 /*

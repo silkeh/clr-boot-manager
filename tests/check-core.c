@@ -377,6 +377,9 @@ int main(void)
         SRunner *sr;
         int fail;
 
+        /* syncing can be problematic during test suite runs */
+        cbm_set_sync_filesystems(false);
+
         s = core_suite();
         sr = srunner_create(s);
         srunner_run_all(sr, CK_VERBOSE);

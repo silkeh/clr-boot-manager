@@ -128,6 +128,11 @@ char *cbm_get_mountpoint_for_device(const char *device);
  */
 bool cbm_system_has_uefi(void);
 
+/**
+ * Override the default syncing behaviour.
+ */
+void cbm_set_sync_filesystems(bool should_sync);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
