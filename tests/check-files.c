@@ -67,6 +67,10 @@ END_TEST
 
 START_TEST(bootman_mount_test)
 {
+        if (!nc_file_exists("/proc/self/mounts")) {
+                LOG("Skipping mount test as /proc/self/mounts is absent");
+                return;
+        }
         fail_if(!cbm_is_mounted("/", NULL), "Apparently / not mounted. Question physics.");
         fail_if(cbm_is_mounted("/,^roflcopter", NULL),
                 "Non-existent path mounted. Or you have a genuinely weird path");
