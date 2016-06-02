@@ -83,7 +83,7 @@ the Free Software Foundation; either version 2 of the License, or\n\
 
 int main(int argc, char **argv)
 {
-        atexit(dump_file_descriptor_leaks);
+        atexit(nc_dump_file_descriptor_leaks);
 
         autofree(NcHashmap) *commands = NULL;
         const char *command = NULL;
