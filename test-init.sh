@@ -58,15 +58,15 @@ if [[ ! -d "${top_builddir}/tests/dummy_install/usr/lib" ]]; then
 fi
 
 # Make bootloader files available during tests
-if [[ -e /usr/bin/goofiboot ]]; then
+if [[ -e /usr/lib/goofiboot ]]; then
         cp /usr/bin/goofiboot "${top_builddir}/tests/dummy_install/usr/bin/."
         cp -R /usr/lib/goofiboot "${top_builddir}/tests/dummy_install/usr/lib/."
 fi
-if [[ -e /usr/bin/gummiboot ]]; then
+if [[ -e /usr/lib/gummiboot ]]; then
         cp /usr/bin/gummiboot "${top_builddir}/tests/dummy_install/usr/bin/."
         cp -R /usr/lib/gummiboot "${top_builddir}/tests/dummy_install/usr/lib/."
 fi
-if [[ -e /usr/bin/bootctl ]]; then
+if [[ -e /usr/lib/systemd/boot/efi ]]; then
         cp /usr/bin/bootctl "${top_builddir}/tests/dummy_install/usr/bin/."
         mkdir -p "${top_builddir}/tests/dummy_install/usr/lib/systemd/boot/"
         cp -R /usr/lib/systemd/boot/efi "${top_builddir}/tests/dummy_install/usr/lib/systemd/boot"
