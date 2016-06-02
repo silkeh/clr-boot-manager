@@ -102,10 +102,10 @@ clr_boot_manager_CFLAGS =	\
 	$(AM_CFLAGS)
 
 clr_boot_manager_LDADD =	\
-	$(CRYPTO_LIBS)		\
-	$(BLKID_LIBS)		\
 	libnica.la		\
-	libcbm.la
+	libcbm.la		\
+	$(CRYPTO_LIBS)		\
+	$(BLKID_LIBS)
 
 install-exec-hook:
 	perl ${top_srcdir}/findstatic.pl ${top_builddir}/src/*.o ${top_builddir}/src/*/*.o | grep -v Checking ||:
@@ -133,11 +133,11 @@ check_core_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_core_LDADD =	\
+	libcbm.la	\
+	libnica.la	\
 	$(CRYPTO_LIBS)	\
 	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)	\
-	libcbm.la	\
-	libnica.la
+	$(CHECK_LIBS)
 
 check_files_SOURCES = \
 	tests/check-files.c
@@ -149,11 +149,11 @@ check_files_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_files_LDADD =	\
+	libcbm.la	\
+	libnica.la	\
 	$(CRYPTO_LIBS)	\
 	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)	\
-	libcbm.la	\
-	libnica.la
+	$(CHECK_LIBS)
 
 @VALGRIND_CHECK_RULES@
 
