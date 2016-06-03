@@ -181,7 +181,7 @@ static char *get_entry_path_for_kernel(BootManager *manager, const Kernel *kerne
         if (!asprintf(&item_name,
                       "%s-%s-%s-%d.conf",
                       prefix,
-                      str_kernel_type(kernel->type),
+                      kernel->ktype,
                       kernel->version,
                       kernel->release)) {
                 DECLARE_OOM();
@@ -408,7 +408,7 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
                               "timeout %d\ndefault %s-%s-%s-%d\n\n",
                               timeout,
                               prefix,
-                              str_kernel_type(kernel->type),
+                              kernel->ktype,
                               kernel->version,
                               kernel->release)) {
                         DECLARE_OOM();
@@ -419,7 +419,7 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
                 if (!asprintf(&item_name,
                               "default %s-%s-%s-%d\n",
                               prefix,
-                              str_kernel_type(kernel->type),
+                              kernel->ktype,
                               kernel->version,
                               kernel->release)) {
                         DECLARE_OOM();

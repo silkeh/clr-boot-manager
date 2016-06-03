@@ -217,7 +217,7 @@ bool cbm_command_update(int argc, char **argv)
                 for (int i = 0; i < avail_kernels->len; i++) {
                         Kernel *k = nc_array_get(avail_kernels, i);
                         if (k != running && k->release < running->release &&
-                            k->type == running->type && k->boots) {
+                            streq(k->ktype, running->ktype) && k->boots) {
                                 last_good = k;
                                 break;
                         }

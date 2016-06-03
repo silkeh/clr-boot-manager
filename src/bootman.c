@@ -333,6 +333,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         kern->bpath = strdup(bcp);
         kern->version = strdup(version);
         kern->module_dir = strdup(module_dir);
+        kern->ktype = strdup(type);
 
         if (nc_file_exists(kconfig_file)) {
                 kern->kconfig_file = strdup(kconfig_file);
@@ -342,14 +343,6 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                 kern->boots = true;
         }
 
-        if (streq(type, "kvm")) {
-                kern->type = KERNEL_TYPE_KVM;
-        } else if (streq(type, "native")) {
-                kern->type = KERNEL_TYPE_NATIVE;
-        } else {
-                kern->type = KERNEL_TYPE_UNKNOWN;
-                LOG("Kernel %s has unknown type: %s", cmp, type);
-        }
         kern->release = release;
 
         if (!asprintf(&run_match, "%s-%d.%s", version, release, type)) {
@@ -467,30 +460,15 @@ void free_kernel(Kernel *t)
         if (!t) {
                 return;
         }
-        if (t->path) {
-                free(t->path);
-        }
-        if (t->bpath) {
-                free(t->bpath);
-        }
-        if (t->version) {
-                free(t->version);
-        }
-        if (t->cmdline) {
-                free(t->cmdline);
-        }
-        if (t->module_dir) {
-                free(t->module_dir);
-        }
-        if (t->cmdline_file) {
-                free(t->cmdline_file);
-        }
-        if (t->kconfig_file) {
-                free(t->kconfig_file);
-        }
-        if (t->kboot_file) {
-                free(t->kboot_file);
-        }
+        free(t->path);
+        free(t->bpath);
+        free(t->version);
+        free(t->cmdline);
+        free(t->module_dir);
+        free(t->cmdline_file);
+        free(t->kconfig_file);
+        free(t->kboot_file);
+        free(t->ktype);
         free(t);
 }
 

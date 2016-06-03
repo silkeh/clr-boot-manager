@@ -16,17 +16,6 @@
 
 typedef struct BootManager BootManager;
 
-/**
- * Supported kernel types
- */
-typedef enum {
-        KERNEL_TYPE_MIN = 0,
-        KERNEL_TYPE_NATIVE,  /**<Native kernel type */
-        KERNEL_TYPE_KVM,     /**<KVM kernel type */
-        KERNEL_TYPE_UNKNOWN, /**<Shouldn't happen */
-        KERNEL_TYPE_MAX
-} KernelType;
-
 typedef enum {
         BOOTLOADER_OPERATION_MIN = 0,
         BOOTLOADER_OPERATION_REMOVE,
@@ -44,7 +33,7 @@ typedef struct Kernel {
         char *bpath;        /**<Basename of this kernel path */
         char *version;      /**<Version of this kernel */
         int16_t release;    /**<Release number of this kernel */
-        KernelType type;    /**<Type of this kernel */
+        char *ktype;        /**<Type of this kernel */
         char *cmdline;      /**<Contents of the cmdline file */
         char *cmdline_file; /**<Path to the cmdline file */
         char *kconfig_file; /**<Path to the kconfig file */
@@ -55,18 +44,6 @@ typedef struct Kernel {
 } Kernel;
 
 typedef NcArray KernelArray;
-
-static inline const char *str_kernel_type(KernelType type)
-{
-        switch (type) {
-        case KERNEL_TYPE_NATIVE:
-                return "native";
-        case KERNEL_TYPE_KVM:
-                return "kvm";
-        default:
-                return "unknown";
-        }
-}
 
 /**
  * Construct a new BootManager
