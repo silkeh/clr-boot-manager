@@ -12,6 +12,7 @@
 #pragma once
 
 #include "nica/array.h"
+#include "nica/hashmap.h"
 #include "util.h"
 
 typedef struct BootManager BootManager;
@@ -221,6 +222,13 @@ int boot_manager_get_timeout_value(BootManager *manager);
 Kernel *boot_manager_get_default_for_type(BootManager *manager, KernelArray *kernels, char *type);
 
 /**
+ * Map a discovered set of kernels into type->kernelarray.
+ * @note These new KernelArray's only contain references to the existing
+ * kernels in the mapping.
+ */
+NcHashmap *boot_manager_map_kernels(BootManager *manager, KernelArray *kernels);
+
+/**
  * Set the timeout to be used in the bootloader
  *
  * @param timeout New timeout value
@@ -232,6 +240,7 @@ bool boot_manager_needs_install(BootManager *manager);
 bool boot_manager_needs_update(BootManager *manager);
 
 bool boot_manager_is_kernel_installed(BootManager *manager, const Kernel *kernel);
+
 /**
  * Free a kernel type
  */

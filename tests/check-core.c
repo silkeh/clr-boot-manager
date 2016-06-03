@@ -123,6 +123,53 @@ START_TEST(bootman_list_kernels_test)
 }
 END_TEST
 
+START_TEST(bootman_map_kernels_test)
+{
+        autofree(BootManager) *m = NULL;
+        autofree(KernelArray) *list = NULL;
+        autofree(NcHashmap) *map = NULL;
+        KernelArray *get = NULL;
+        Kernel *default_kernel = NULL;
+
+        m = boot_manager_new();
+        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
+
+        list = boot_manager_get_kernels(m);
+        fail_if(!list, "Failed to list kernels");
+        map = boot_manager_map_kernels(m, list);
+        fail_if(!map, "Failed to map kernels");
+
+        fail_if(nc_hashmap_size(map) != 2, "Invalid size for mapping test");
+
+        /* KVM type test */
+        get = nc_hashmap_get(map, "kvm");
+        fail_if(!get, "Failed to get KVM type list");
+        fail_if(get->len != 2, "Incorrect list length for kvm");
+        get = NULL;
+
+        /* Native type test */
+        get = nc_hashmap_get(map, "native");
+        fail_if(!get, "Failed to get native type list");
+        fail_if(get->len != 2, "Incorrect list length for native");
+        get = NULL;
+
+        /* default-kvm = "org.clearlinux.kvm.4.2.3-124" */
+        default_kernel = boot_manager_get_default_for_type(m, list, "kvm");
+        fail_if(!default_kernel, "Failed to find default kvm kernel");
+        fail_if(default_kernel->release != 124, "Mismatched kvm default release");
+        fail_if(!streq(default_kernel->version, "4.2.3"), "Mismatched kvm default version");
+        fail_if(!streq(default_kernel->ktype, "kvm"), "Mismatched kvm default type");
+        default_kernel = NULL;
+
+        /* default-native = "org.clearlinux.native.4.2.3-138" */
+        default_kernel = boot_manager_get_default_for_type(m, list, "native");
+        fail_if(!default_kernel, "Failed to find default native kernel");
+        fail_if(default_kernel->release != 138, "Mismatched native default release");
+        fail_if(!streq(default_kernel->version, "4.2.3"), "Mismatched native default version");
+        fail_if(!streq(default_kernel->ktype, "native"), "Mismatched native default type");
+}
+END_TEST
+
 START_TEST(bootman_install_kernel_test)
 {
         autofree(BootManager) *m = NULL;
@@ -362,6 +409,7 @@ static Suite *core_suite(void)
 
         tc = tcase_create("bootman_kernel_functions");
         tcase_add_test(tc, bootman_list_kernels_test);
+        tcase_add_test(tc, bootman_map_kernels_test);
         tcase_add_test(tc, bootman_install_kernel_test);
         tcase_add_test(tc, bootman_set_default_kernel_test);
         tcase_add_test(tc, bootman_remove_kernel_test);

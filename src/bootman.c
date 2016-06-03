@@ -757,6 +757,49 @@ Kernel *boot_manager_get_default_for_type(BootManager *self, KernelArray *kernel
         return NULL;
 }
 
+static inline void kern_dup_free(void *v)
+{
+        NcArray *array = v;
+        nc_array_free(&array, NULL);
+}
+
+NcHashmap *boot_manager_map_kernels(BootManager *self, KernelArray *kernels)
+{
+        if (!self || !kernels) {
+                return NULL;
+        }
+
+        NcHashmap *map = NULL;
+
+        map = nc_hashmap_new_full(nc_string_hash, nc_string_compare, free, kern_dup_free);
+
+        for (int i = 0; i < kernels->len; i++) {
+                KernelArray *r = NULL;
+                Kernel *cur = nc_array_get(kernels, i);
+
+                r = nc_hashmap_get(map, cur->ktype);
+                if (!r) {
+                        r = nc_array_new();
+                        if (!r) {
+                                goto oom;
+                        }
+                        if (!nc_hashmap_put(map, strdup(cur->ktype), r)) {
+                                kern_dup_free(r);
+                                goto oom;
+                        }
+                }
+                if (!nc_array_add(r, cur)) {
+                        goto oom;
+                }
+        }
+
+        return map;
+oom:
+        DECLARE_OOM();
+        nc_hashmap_free(map);
+        return NULL;
+}
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
