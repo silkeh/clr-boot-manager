@@ -41,6 +41,7 @@ typedef enum {
  */
 typedef struct Kernel {
         char *path;         /**<Path to this kernel */
+        char *bpath;        /**<Basename of this kernel path */
         char *version;      /**<Version of this kernel */
         int16_t release;    /**<Release number of this kernel */
         KernelType type;    /**<Type of this kernel */
@@ -48,7 +49,6 @@ typedef struct Kernel {
         char *cmdline_file; /**<Path to the cmdline file */
         char *kconfig_file; /**<Path to the kconfig file */
         char *module_dir;   /**<Path to the modules directory */
-        bool is_default;    /**<If this kernel is the default for its type */
         bool is_running;    /**<Is this the running kernel? */
         bool boots;         /**<Is this known to boot? */
         char *kboot_file;   /**<Path to the k_booted_$(uname -r) file */
@@ -235,6 +235,13 @@ bool boot_manager_is_image_mode(BootManager *manager);
  * SYSCONFDIR/boot_timeout
  */
 int boot_manager_get_timeout_value(BootManager *manager);
+
+/**
+ * Determine the default kernel for the given type if it is in the set
+ * This does not create a new instance, simply a pointer to the existing
+ * kernel in the @kernels set.
+ */
+Kernel *boot_manager_get_default_for_type(BootManager *manager, KernelArray *kernels, char *type);
 
 /**
  * Set the timeout to be used in the bootloader

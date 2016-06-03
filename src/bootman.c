@@ -243,7 +243,6 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         autofree(char) *kconfig_file = NULL;
         autofree(char) *default_file = NULL;
         autofree(char) *kboot_file = NULL;
-        char linkbuf[PATH_MAX] = { 0 };
         /* Consider making this a namespace option */
         autofree(FILE) *f = NULL;
         size_t sn;
@@ -331,6 +330,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         }
 
         kern->path = strdup(path);
+        kern->bpath = strdup(bcp);
         kern->version = strdup(version);
         kern->module_dir = strdup(module_dir);
 
@@ -350,22 +350,6 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                 kern->type = KERNEL_TYPE_UNKNOWN;
                 LOG("Kernel %s has unknown type: %s", cmp, type);
         }
-
-        if (kern->type != KERNEL_TYPE_UNKNOWN) {
-                if (!asprintf(&default_file,
-                              "%s/default-%s",
-                              parent,
-                              str_kernel_type(kern->type))) {
-                        DECLARE_OOM();
-                        abort();
-                }
-                if (readlink(default_file, linkbuf, sizeof(linkbuf)) != -1) {
-                        if (streq(linkbuf, bcp) || streq(linkbuf, path)) {
-                                kern->is_default = true;
-                        }
-                }
-        }
-
         kern->release = release;
 
         if (!asprintf(&run_match, "%s-%d.%s", version, release, type)) {
@@ -387,7 +371,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
 
         if (!(f = fopen(cmdline, "r"))) {
                 LOG("Unable to open %s: %s\n", cmdline, strerror(errno));
-                free(kern);
+                free_kernel(kern);
                 return NULL;
         }
 
@@ -485,6 +469,9 @@ void free_kernel(Kernel *t)
         }
         if (t->path) {
                 free(t->path);
+        }
+        if (t->bpath) {
+                free(t->bpath);
         }
         if (t->version) {
                 free(t->version);
@@ -767,6 +754,29 @@ bool boot_manager_needs_update(BootManager *self)
 bool boot_manager_is_kernel_installed(BootManager *self, const Kernel *kernel)
 {
         return self->bootloader->is_kernel_installed(self, kernel);
+}
+
+Kernel *boot_manager_get_default_for_type(BootManager *self, KernelArray *kernels, char *type)
+{
+        autofree(char) *default_file = NULL;
+        char linkbuf[PATH_MAX] = { 0 };
+
+        if (asprintf(&default_file, "%s/default-%s", self->kernel_dir, type) < 0) {
+                return NULL;
+        }
+
+        if (readlink(default_file, linkbuf, sizeof(linkbuf)) < 0) {
+                return NULL;
+        }
+
+        for (int i = 0; i < kernels->len; i++) {
+                Kernel *k = nc_array_get(kernels, i);
+                if (streq(k->bpath, linkbuf)) {
+                        return k;
+                }
+        }
+
+        return NULL;
 }
 
 /*
