@@ -739,6 +739,10 @@ Kernel *boot_manager_get_default_for_type(BootManager *self, KernelArray *kernel
         autofree(char) *default_file = NULL;
         char linkbuf[PATH_MAX] = { 0 };
 
+        if (!self || !kernels || !type) {
+                return NULL;
+        }
+
         if (asprintf(&default_file, "%s/default-%s", self->kernel_dir, type) < 0) {
                 return NULL;
         }
