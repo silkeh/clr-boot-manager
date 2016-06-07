@@ -244,22 +244,6 @@ const char *boot_manager_get_os_name(BootManager *self)
 static inline char *boot_manager_get_kboot_file(BootManager *self, Kernel *k)
 {
         char *p = NULL;
-        /* /usr/lib/kernel/k_booted_4.4.0-120.lts - legacy */
-        if (asprintf(&p,
-                     "%s/k_booted_%s-%d.%s",
-                     self->kernel_dir,
-                     k->version,
-                     k->release,
-                     k->ktype) < 0) {
-                return NULL;
-        }
-        /* If it exists then we must use this path to ensure we clean things out */
-        if (nc_file_exists(p)) {
-                return p;
-        }
-        free(p);
-        p = NULL;
-
         /* /var/lib/kernel/k_booted_4.4.0-120.lts - new */
         if (asprintf(&p,
                      "%s/var/lib/kernel/k_booted_%s-%d.%s",

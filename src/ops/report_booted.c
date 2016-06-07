@@ -33,8 +33,7 @@ bool cbm_command_report_booted(__attribute__((unused)) int argc,
         SystemKernel sys = { 0 };
         struct utsname uts = { 0 };
         const char *lib_dir = "/var/lib/kernel";
-        autofree(char) *old_path = NULL;
-        autofree(char) *new_path = NULL;
+        autofree(char) *boot_rep_path = NULL;
 
         /* Try to parse the currently running kernel */
         if (uname(&uts) < 0) {
@@ -57,19 +56,8 @@ bool cbm_command_report_booted(__attribute__((unused)) int argc,
                 }
         }
 
-        /* /var/lib/kernel/k_booted_4.4.0-120.lts - old */
-        if (asprintf(&old_path,
-                     "%s/k_booted_%s-%d.%s",
-                     KERNEL_DIRECTORY,
-                     sys.version,
-                     sys.release,
-                     sys.ktype) < 0) {
-                DECLARE_OOM();
-                return false;
-        }
-
         /* /var/lib/kernel/k_booted_4.4.0-120.lts - new */
-        if (asprintf(&new_path,
+        if (asprintf(&boot_rep_path,
                      "/var/lib/kernel/k_booted_%s-%d.%s",
                      sys.version,
                      sys.release,
@@ -78,13 +66,8 @@ bool cbm_command_report_booted(__attribute__((unused)) int argc,
                 return false;
         }
 
-        /* Nuke legacy path */
-        if (nc_file_exists(old_path) && unlink(old_path) < 0) {
-                fprintf(stderr, "Warning: Cannot unlink %s: %s\n", old_path, strerror(errno));
-        }
-
         /* Report ourselves to new path */
-        if (!file_set_text(new_path, "clr-boot-manager file\n")) {
+        if (!file_set_text(boot_rep_path, "clr-boot-manager file\n")) {
                 fprintf(stderr, "Failed to set kernel boot status: %s\n", strerror(errno));
                 return false;
         }
