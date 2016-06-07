@@ -95,6 +95,8 @@ clr_boot_manager_SOURCES =	\
 	src/ops/update.c	\
 	src/ops/timeout.h	\
 	src/ops/timeout.c	\
+	src/ops/report_booted.h	\
+	src/ops/report_booted.c	\
 	src/main.c
 
 clr_boot_manager_CFLAGS =	\

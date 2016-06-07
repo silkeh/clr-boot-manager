@@ -18,6 +18,7 @@
 #include "nica/hashmap.h"
 #include "util.h"
 
+#include "ops/report_booted.h"
 #include "ops/timeout.h"
 #include "ops/update.h"
 
@@ -26,6 +27,7 @@ static SubCommand cmd_help;
 static SubCommand cmd_version;
 static SubCommand cmd_set_timeout;
 static SubCommand cmd_get_timeout;
+static SubCommand cmd_report_booted;
 static char *binary_name = NULL;
 static NcHashmap *g_commands = NULL;
 static bool explicit_help = false;
@@ -153,6 +155,18 @@ to forcibly delay the system boot for a specified number of seconds.",
         };
 
         if (!nc_hashmap_put(commands, cmd_get_timeout.name, &cmd_get_timeout)) {
+                DECLARE_OOM();
+                return EXIT_FAILURE;
+        }
+
+        /* Report the system as successfully booted */
+        cmd_report_booted =
+            (SubCommand){.name = "report-booted",
+                         .blurb = "Report the current kernel as successfully booted",
+                         .help = "This command is invoked at boot to track boot success",
+                         .callback = cbm_command_report_booted,
+                         .requires_root = true };
+        if (!nc_hashmap_put(commands, cmd_report_booted.name, &cmd_report_booted)) {
                 DECLARE_OOM();
                 return EXIT_FAILURE;
         }
