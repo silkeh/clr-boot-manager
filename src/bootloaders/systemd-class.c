@@ -389,7 +389,7 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
 
 bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kernel)
 {
-        if (!manager || !kernel) {
+        if (!manager) {
                 return false;
         }
 
@@ -399,6 +399,19 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
         const char *prefix = NULL;
 
         prefix = boot_manager_get_vendor_prefix((BootManager *)manager);
+
+        /* No default possible, set high time out */
+        if (!kernel) {
+                if (file_set_text(sd_class_config.loader_config, "timeout 10\n")) {
+                        cbm_sync();
+                        return true;
+                }
+
+                LOG("sd_class_set_default_kernel: Failed to write %s: %s\n",
+                    config_file,
+                    strerror(errno));
+                return false;
+        }
 
         timeout = boot_manager_get_timeout_value((BootManager *)manager);
 

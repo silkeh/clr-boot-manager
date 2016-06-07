@@ -232,7 +232,8 @@ int boot_manager_get_timeout_value(BootManager *manager);
  * This does not create a new instance, simply a pointer to the existing
  * kernel in the @kernels set.
  */
-Kernel *boot_manager_get_default_for_type(BootManager *manager, KernelArray *kernels, char *type);
+Kernel *boot_manager_get_default_for_type(BootManager *manager, KernelArray *kernels,
+                                          const char *type);
 
 /**
  * Map a discovered set of kernels into type->kernelarray.
@@ -266,6 +267,12 @@ const SystemKernel *boot_manager_get_system_kernel(BootManager *manager);
  * @note This just returns a pointer, this should not be freed.
  */
 Kernel *boot_manager_get_running_kernel(BootManager *manager, KernelArray *kernels);
+
+/**
+ * Attempt to find the newest (highest release number) last known booting
+ * kernel.
+ */
+Kernel *boot_manager_get_last_booted(BootManager *manager, KernelArray *kernels);
 
 /**
  * Free a kernel type

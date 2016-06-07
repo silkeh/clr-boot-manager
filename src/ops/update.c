@@ -46,6 +46,7 @@ bool cbm_command_update(int argc, char **argv)
         Kernel *candidate = NULL;
         bool ret = false;
         autofree(char) *abs_bootdir = NULL;
+        NcArray *removals = NULL;
 
         cli_default_args_init(&argc, &argv, &root);
 
@@ -123,11 +124,27 @@ bool cbm_command_update(int argc, char **argv)
                 }
                 ret = true;
         } else {
-                Kernel *tip = NULL;
                 Kernel *running = NULL;
-                Kernel *last_good = NULL;
+                autofree(NcHashmap) *mapped_kernels = NULL;
+                NcHashmapIter map_iter = { 0 };
+                const char *kernel_type = NULL;
+                KernelArray *typed_kernels = NULL;
+                Kernel *new_default = NULL;
 
                 nc_array_qsort(avail_kernels, kernel_compare_reverse);
+
+                /** Map kernels to type */
+                mapped_kernels = boot_manager_map_kernels(manager, avail_kernels);
+                if (!mapped_kernels || nc_hashmap_size(mapped_kernels) == 0) {
+                        goto cleanup;
+                }
+
+                /* Determine the running kernel */
+                running = boot_manager_get_running_kernel(manager, avail_kernels);
+                if (!running) {
+                        FATAL("Cannot dermine the currently running kernel");
+                        goto cleanup;
+                }
 
                 /* Native install mode */
                 if (!cbm_is_mounted(boot_dir, NULL)) {
@@ -183,12 +200,6 @@ bool cbm_command_update(int argc, char **argv)
                         }
                 }
 
-                /* Determine the running kernel */
-                running = boot_manager_get_running_kernel(manager, avail_kernels);
-
-                /* Only ever install the *newest* kernel */
-                tip = nc_array_get(avail_kernels, 0);
-
                 /* This is mostly to allow a repair-situation */
                 if (running && !boot_manager_is_kernel_installed(manager, running)) {
                         /* Not necessarily fatal. */
@@ -197,63 +208,99 @@ bool cbm_command_update(int argc, char **argv)
                         }
                 }
 
-                if (boot_manager_is_kernel_installed(manager, tip)) {
-                        ret = true;
-                        goto cleanup;
-                }
+                nc_hashmap_iter_init(mapped_kernels, &map_iter);
+                while (nc_hashmap_iter_next(&map_iter,
+                                            (void **)&kernel_type,
+                                            (void **)&typed_kernels)) {
+                        Kernel *tip = NULL;
+                        Kernel *last_good = NULL;
 
-                if (!running) {
-                        FATAL("Cannot dermine the currently running kernel");
-                        goto cleanup;
-                }
-                /* Attempt to keep the last booted kernel of the same type */
-                for (int i = 0; i < avail_kernels->len; i++) {
-                        Kernel *k = nc_array_get(avail_kernels, i);
-                        if (k != running && k->release < running->release &&
-                            streq(k->ktype, running->ktype) && k->boots) {
-                                last_good = k;
-                                break;
+                        /* Sort this kernel set highest to lowest */
+                        nc_array_qsort(typed_kernels, kernel_compare_reverse);
+
+                        /* Get the default kernel selection */
+                        tip =
+                            boot_manager_get_default_for_type(manager, typed_kernels, kernel_type);
+                        if (!tip) {
+                                /* Fallback to highest release number */
+                                tip = nc_array_get(avail_kernels, 0);
                         }
-                }
-                if (!last_good) {
-                        /* Fallback to the last good kernel even though type didn't match*/
-                        for (int i = 0; i < avail_kernels->len; i++) {
-                                Kernel *k = nc_array_get(avail_kernels, i);
-                                if (k != running && k->release < running->release && k->boots) {
-                                        last_good = k;
-                                        break;
+
+                        /* This guy has been checked */
+                        if (running && running == tip) {
+                                continue;
+                        }
+
+                        /* Ensure this tip kernel is installed */
+                        if (boot_manager_is_kernel_installed(manager, tip)) {
+                                continue;
+                        }
+
+                        if (!boot_manager_install_kernel(manager, tip)) {
+                                fprintf(stderr, "Failed to install kernel: %s\n", tip->path);
+                                goto cleanup;
+                        }
+
+                        /* Last known booting kernel, might be null. */
+                        last_good = boot_manager_get_last_booted(manager, typed_kernels);
+
+                        for (int i = 0; i < typed_kernels->len; i++) {
+                                Kernel *tk = nc_array_get(typed_kernels, i);
+                                /* Preserve running kernel */
+                                if (running && tk == running) {
+                                        continue;
+                                }
+                                /* Preserve tip */
+                                if (tip == running) {
+                                        continue;
+                                }
+                                /* Preserve last running */
+                                if (last_good && tk == last_good) {
+                                        continue;
+                                }
+                                if (!removals) {
+                                        removals = nc_array_new();
+                                }
+                                /* Schedule removal of kernel */
+                                if (!nc_array_add(removals, tk)) {
+                                        DECLARE_OOM();
+                                        goto cleanup;
                                 }
                         }
                 }
 
-                if (!boot_manager_install_kernel(manager, tip)) {
-                        fprintf(stderr, "Failed to install kernel: %s\n", tip->path);
-                        goto cleanup;
-                }
-                if (!boot_manager_set_default_kernel(manager, tip)) {
-                        fprintf(stderr, "Failed to set the default kernel to: %s\n", tip->path);
+                /* Might return NULL */
+                new_default =
+                    boot_manager_get_default_for_type(manager, avail_kernels, running->ktype);
+                if (!boot_manager_set_default_kernel(manager, new_default)) {
+                        fprintf(stderr,
+                                "Failed to set the default kernel to: %s\n",
+                                new_default ? new_default->path : "<timeout mode>");
                         goto cleanup;
                 }
 
-                if (avail_kernels->len < 3) {
+                ret = true;
+
+                if (!removals) {
                         /* We're done. */
                         goto cleanup;
                 }
 
                 /* Now remove the older kernels */
-                for (int i = 0; i < avail_kernels->len; i++) {
-                        Kernel *k = nc_array_get(avail_kernels, i);
-                        if (k != tip && k != running && k != last_good) {
-                                if (!boot_manager_remove_kernel(manager, k)) {
-                                        fprintf(stderr, "Failed to remove kernel: %s\n", k->path);
-                                        goto cleanup;
-                                }
+                for (int i = 0; i < removals->len; i++) {
+                        Kernel *k = nc_array_get(removals, i);
+                        if (!boot_manager_remove_kernel(manager, k)) {
+                                fprintf(stderr, "Failed to remove kernel: %s\n", k->path);
+                                ret = false;
+                                goto cleanup;
                         }
                 }
-                ret = true;
         }
 cleanup:
         cbm_sync();
+        if (removals) {
+                nc_array_free(&removals, NULL);
+        }
 
         if (did_mount) {
                 if (umount(boot_dir) < 0) {

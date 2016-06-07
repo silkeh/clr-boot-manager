@@ -499,7 +499,7 @@ bool boot_manager_remove_kernel(BootManager *self, const Kernel *kernel)
 
 bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
 {
-        if (!self || !kernel || !self->bootloader) {
+        if (!self || !self->bootloader) {
                 return false;
         }
 
@@ -724,7 +724,7 @@ bool boot_manager_is_kernel_installed(BootManager *self, const Kernel *kernel)
         return self->bootloader->is_kernel_installed(self, kernel);
 }
 
-Kernel *boot_manager_get_default_for_type(BootManager *self, KernelArray *kernels, char *type)
+Kernel *boot_manager_get_default_for_type(BootManager *self, KernelArray *kernels, const char *type)
 {
         autofree(char) *default_file = NULL;
         char linkbuf[PATH_MAX] = { 0 };
@@ -899,6 +899,28 @@ Kernel *boot_manager_get_running_kernel(BootManager *self, KernelArray *kernels)
                 }
         }
         return NULL;
+}
+
+Kernel *boot_manager_get_last_booted(BootManager *self, KernelArray *kernels)
+{
+        if (!self || !kernels) {
+                return NULL;
+        }
+        int high_rel = -1;
+        Kernel *candidate = NULL;
+
+        for (int i = 0; i < kernels->len; i++) {
+                Kernel *k = nc_array_get(kernels, i);
+                if (k->release < high_rel) {
+                        continue;
+                }
+                if (!k->boots) {
+                        continue;
+                }
+                candidate = k;
+                high_rel = k->release;
+        }
+        return candidate;
 }
 
 /*
