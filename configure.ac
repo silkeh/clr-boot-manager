@@ -109,10 +109,8 @@ AC_ARG_WITH([systemdsystemunitdir], AS_HELP_STRING([--with-systemdsystemunitdir=
 	[path to systemd system service directory]), [path_systemdsystemunit=${withval}],
 	[path_systemdsystemunit="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"])
 SYSTEMD_SYSTEMUNITDIR="${path_systemdsystemunit}"
+AC_SUBST(SYSTEMD_SYSTEMUNITDIR)
 AM_CONDITIONAL(SYSTEMD, test -n "${path_systemdsystemunit}")
-
-AC_DEFINE_UNQUOTED(SYSTEMD_SYSTEMUNITDIR, "$SYSTEMD_SYSTEMUNITDIR",
-                   [Installation directory for systemd services])
 
 AC_CONFIG_FILES([Makefile])
 

@@ -25,7 +25,7 @@ NULL =
 CLEANFILES =
 
 DISTCHECK_CONFIGURE_FLAGS = \
-      --with-systemdsystemunitdir=$(libdir)/systemd/system
+      --with-systemdsystemunitdir="${distdir}/${libdir}/systemd/system"
 
 
 AM_CFLAGS = -fstack-protector -Wall -pedantic \
