@@ -1,4 +1,4 @@
-AC_INIT([clr-boot-manager], 0.2, [michael.i.doherty@intel.com], [clr-boot-manager], [michael.i.doherty@intel.com])
+AC_INIT([clr-boot-manager], 0.3, [michael.i.doherty@intel.com], [clr-boot-manager], [michael.i.doherty@intel.com])
 AM_INIT_AUTOMAKE([-Wno-portability no-dist-gzip dist-xz foreign subdir-objects])
 AC_PROG_CC
 AC_PROG_CC_STDC
