@@ -226,23 +226,24 @@ bool cbm_command_update(int argc, char **argv)
                                 tip = nc_array_get(avail_kernels, 0);
                         }
 
-                        /* This guy has been checked */
-                        if (running && running == tip) {
-                                continue;
-                        }
-
                         /* Ensure this tip kernel is installed */
-                        if (boot_manager_is_kernel_installed(manager, tip)) {
-                                continue;
-                        }
-
-                        if (!boot_manager_install_kernel(manager, tip)) {
-                                fprintf(stderr, "Failed to install kernel: %s\n", tip->path);
-                                goto cleanup;
+                        if (!boot_manager_is_kernel_installed(manager, tip)) {
+                                if (!boot_manager_install_kernel(manager, tip)) {
+                                        fprintf(stderr, "Failed to install kernel: %s\n", tip->path);
+                                        goto cleanup;
+                                }
                         }
 
                         /* Last known booting kernel, might be null. */
                         last_good = boot_manager_get_last_booted(manager, typed_kernels);
+
+                        /* Ensure this guy is still installed/repaired */
+                        if (last_good && !boot_manager_is_kernel_installed(manager, last_good)) {
+                                if (!boot_manager_install_kernel(manager, tip)) {
+                                        fprintf(stderr, "Failed to install kernel: %s\n", tip->path);
+                                        goto cleanup;
+                                }
+                        }
 
                         for (int i = 0; i < typed_kernels->len; i++) {
                                 Kernel *tk = nc_array_get(typed_kernels, i);
@@ -251,7 +252,7 @@ bool cbm_command_update(int argc, char **argv)
                                         continue;
                                 }
                                 /* Preserve tip */
-                                if (tip == running) {
+                                if (tk && tk == tip) {
                                         continue;
                                 }
                                 /* Preserve last running */
