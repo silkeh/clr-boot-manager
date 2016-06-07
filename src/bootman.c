@@ -238,6 +238,40 @@ const char *boot_manager_get_os_name(BootManager *self)
         return (const char *)self->os_name;
 }
 
+/**
+ * Determine the applicable kboot file
+ */
+static inline char *boot_manager_get_kboot_file(BootManager *self, Kernel *k)
+{
+        char *p = NULL;
+        /* /usr/lib/kernel/k_booted_4.4.0-120.lts - legacy */
+        if (asprintf(&p,
+                     "%s/k_booted_%s-%d.%s",
+                     self->kernel_dir,
+                     k->version,
+                     k->release,
+                     k->ktype) < 0) {
+                return NULL;
+        }
+        /* If it exists then we must use this path to ensure we clean things out */
+        if (nc_file_exists(p)) {
+                return p;
+        }
+        free(p);
+        p = NULL;
+
+        /* /var/lib/kernel/k_booted_4.4.0-120.lts - new */
+        if (asprintf(&p,
+                     "%s/var/lib/kernel/k_booted_%s-%d.%s",
+                     self->prefix,
+                     k->version,
+                     k->release,
+                     k->ktype) < 0) {
+                return NULL;
+        }
+        return p;
+}
+
 Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
 {
         Kernel *kern = NULL;
@@ -250,7 +284,6 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         autofree(char) *module_dir = NULL;
         autofree(char) *kconfig_file = NULL;
         autofree(char) *default_file = NULL;
-        autofree(char) *kboot_file = NULL;
         /* Consider making this a namespace option */
         autofree(FILE) *f = NULL;
         size_t sn;
@@ -281,11 +314,6 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         }
 
         if (!asprintf(&kconfig_file, "%s/config-%s-%d.%s", parent, version, release, type)) {
-                DECLARE_OOM();
-                abort();
-        }
-
-        if (!asprintf(&kboot_file, "%s-%d-%s", version, release, type)) {
                 DECLARE_OOM();
                 abort();
         }
@@ -343,10 +371,6 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         if (nc_file_exists(kconfig_file)) {
                 kern->kconfig_file = strdup(kconfig_file);
         }
-        if (nc_file_exists(kboot_file)) {
-                kern->kboot_file = strdup(kboot_file);
-                kern->boots = true;
-        }
 
         kern->release = release;
 
@@ -382,6 +406,11 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                 free(buf);
         }
 
+        /** Determine if the kernel boots */
+        kern->kboot_file = boot_manager_get_kboot_file(self, kern);
+        if (nc_file_exists(kern->kboot_file)) {
+                kern->boots = true;
+        }
         return kern;
 }
 
