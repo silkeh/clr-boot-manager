@@ -852,11 +852,17 @@ static bool parse_system_kernel(const char *inp, SystemKernel *kernel)
 
         /* Copy version */
         len = c - inp;
+        if (len < 1) {
+                return false;
+        }
         strncpy(kernel->version, inp, len);
         kernel->version[len + 1] = '\0';
 
         /* Copy release */
         len = c2 - c - 1;
+        if (len < 1) {
+                return false;
+        }
         strncpy(krelease, c + 1, len);
         krelease[len + 1] = '\0';
 
