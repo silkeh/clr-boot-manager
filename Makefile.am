@@ -130,7 +130,7 @@ install-exec-hook:
 # Install systemd unit
 if SYSTEMD
 systemdsystemunitdir = @SYSTEMD_SYSTEMUNITDIR@
-systemdsystemunit_DATA = ${top_srcdir}/data/clr-boot-manager-booted.service
+dist_systemdsystemunit_DATA = ${top_srcdir}/data/clr-boot-manager-booted.service
 endif
 
 # Test suites
