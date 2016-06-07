@@ -27,6 +27,20 @@ typedef enum {
 } BootLoaderOperation;
 
 /**
+ * Maximum length for each component in a kernel identifier
+ */
+#define CBM_KELEM_LEN 15
+
+/**
+ * Represents the currently running system kernel
+ */
+typedef struct SystemKernel {
+        char version[CBM_KELEM_LEN + 1]; /**<Current version number */
+        char ktype[CBM_KELEM_LEN + 1];   /**<Kernel type */
+        int release;                     /**<Release number */
+} SystemKernel;
+
+/**
  * Represents a kernel in it's complete configuration
  */
 typedef struct Kernel {
@@ -240,6 +254,13 @@ bool boot_manager_needs_install(BootManager *manager);
 bool boot_manager_needs_update(BootManager *manager);
 
 bool boot_manager_is_kernel_installed(BootManager *manager, const Kernel *kernel);
+
+/**
+ * Get the SystemKernel, if any, for this BootManager.
+ *
+ * @note This should not be freed, this is static memory
+ */
+const SystemKernel *boot_manager_get_system_kernel(BootManager *manager);
 
 /**
  * Free a kernel type

@@ -39,6 +39,8 @@ extern const BootLoader systemd_bootloader;
 extern const BootLoader gummiboot_bootloader;
 extern const BootLoader goofiboot_bootloader;
 
+static bool parse_system_kernel(const char *inp, SystemKernel *kernel);
+
 struct BootManager {
         char *prefix;
         char *kernel_dir;
@@ -47,15 +49,23 @@ struct BootManager {
         char *os_name;
         char *root_uuid;
         char *abs_bootdir; /**<Absolute boot directory, i.e. already mounted */
+        SystemKernel sys_kernel;
+        bool have_sys_kernel;
 };
 
 BootManager *boot_manager_new()
 {
         struct BootManager *r = NULL;
+        struct utsname uts = { 0 };
 
         r = calloc(1, sizeof(struct BootManager));
         if (!r) {
                 return NULL;
+        }
+
+        /* Try to parse the currently running kernel */
+        if (uname(&uts) == 0) {
+                r->have_sys_kernel = parse_system_kernel(uts.release, &(r->sys_kernel));
         }
 
         /* Sane defaults. */
@@ -802,6 +812,84 @@ oom:
         DECLARE_OOM();
         nc_hashmap_free(map);
         return NULL;
+}
+
+/**
+ * Parse the running kernel and try to figure out the type, etc.
+ */
+static bool parse_system_kernel(const char *inp, SystemKernel *kernel)
+{
+        if (!kernel || !inp) {
+                return false;
+        }
+
+        /* Re-entrant, we might've mangled the kernel obj */
+        memset(kernel, 0, sizeof(struct SystemKernel));
+
+        char krelease[CBM_KELEM_LEN + 1] = { 0 };
+        int release = 0;
+        size_t len;
+        char *c, *c2, *junk = NULL;
+
+        c = strchr(inp, '-');
+        if (!c) {
+                return false;
+        }
+        if (c - inp >= CBM_KELEM_LEN) {
+                return false;
+        }
+        if (c + 1 == '\0') {
+                return false;
+        }
+        c2 = strchr(c + 1, '.');
+        if (!c2) {
+                return false;
+        }
+        /* Check length */
+        if (c2 - c >= CBM_KELEM_LEN) {
+                return false;
+        }
+
+        /* Copy version */
+        len = c - inp;
+        strncpy(kernel->version, inp, len);
+        kernel->version[len + 1] = '\0';
+
+        /* Copy release */
+        len = c2 - c - 1;
+        strncpy(krelease, c + 1, len);
+        krelease[len + 1] = '\0';
+
+        /* Sane release? */
+        release = strtol(krelease, &junk, 10);
+        if (junk && *junk != '\0') {
+                return false;
+        }
+        kernel->release = release;
+
+        /* Wind the type size **/
+        len = 0;
+        for (char *j = c2 + 1; *j; ++j) {
+                ++len;
+        }
+
+        if (len < 1 || len >= CBM_KELEM_LEN) {
+                return false;
+        }
+
+        /* Kernel type */
+        strncpy(kernel->ktype, c2 + 1, len);
+        kernel->ktype[len + 1] = '\0';
+
+        return true;
+}
+
+const SystemKernel *boot_manager_get_system_kernel(BootManager *self)
+{
+        if (!self || !self->have_sys_kernel) {
+                return NULL;
+        }
+        return (const SystemKernel *)&(self->sys_kernel);
 }
 
 /*
