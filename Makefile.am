@@ -24,6 +24,10 @@ bin_SCRIPTS = \
 NULL =
 CLEANFILES =
 
+DISTCHECK_CONFIGURE_FLAGS = \
+      --with-systemdsystemunitdir=$(libdir)/systemd/system
+
+
 AM_CFLAGS = -fstack-protector -Wall -pedantic \
         -Wstrict-prototypes -Wundef -fno-common \
         -Werror-implicit-function-declaration \
@@ -126,7 +130,7 @@ install-exec-hook:
 # Install systemd unit
 if SYSTEMD
 systemdsystemunitdir = @SYSTEMD_SYSTEMUNITDIR@
-systemdsystemunit_DATA = data/clr-boot-manager-booted.service
+systemdsystemunit_DATA = ${top_srcdir}/data/clr-boot-manager-booted.service
 endif
 
 # Test suites
