@@ -104,6 +104,15 @@ AC_SUBST(bootdir)
 AC_DEFINE_UNQUOTED(BOOT_DIRECTORY, "$bootdir",
                    [The normalised path to the boot/ESP mount])
 
+# Options
+AC_ARG_WITH([systemdsystemunitdir], AS_HELP_STRING([--with-systemdsystemunitdir=DIR],
+	[path to systemd system service directory]), [path_systemdsystemunit=${withval}],
+	[path_systemdsystemunit="`$PKG_CONFIG --variable=systemdsystemunitdir systemd`"])
+SYSTEMD_SYSTEMUNITDIR="${path_systemdsystemunit}"
+AC_SUBST(SYSTEMD_SYSTEMUNITDIR)
+AM_CONDITIONAL(SYSTEMD, test -n "${path_systemdsystemunit}")
+
+
 AC_CONFIG_FILES([Makefile])
 
 AC_OUTPUT

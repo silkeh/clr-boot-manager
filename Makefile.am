@@ -9,7 +9,8 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/tests/data/hashfile \
 	     ${top_srcdir}/tests/data/blobfile \
 	     ${top_srcdir}/test-init.sh \
-	     ${top_srcdir}/sgcheck.suppressions
+	     ${top_srcdir}/sgcheck.suppressions \
+	     ${top_srcdir}/data/clr-boot-manager-booted.service
 
 NULL =
 CLEANFILES =
@@ -112,6 +113,12 @@ clr_boot_manager_LDADD =	\
 
 install-exec-hook:
 	perl ${top_srcdir}/findstatic.pl ${top_builddir}/src/*.o ${top_builddir}/src/*/*.o | grep -v Checking ||:
+
+# Install systemd unit
+if SYSTEMD
+systemdsystemunitdir = @SYSTEMD_SYSTEMUNITDIR@
+systemdsystemunit_DATA = data/clr-boot-manager-booted.service
+endif
 
 # Test suites
 AM_TESTS_ENVIRONMENT = \
