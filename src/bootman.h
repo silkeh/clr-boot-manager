@@ -53,7 +53,6 @@ typedef struct Kernel {
         char *cmdline_file; /**<Path to the cmdline file */
         char *kconfig_file; /**<Path to the kconfig file */
         char *module_dir;   /**<Path to the modules directory */
-        bool is_running;    /**<Is this the running kernel? */
         bool boots;         /**<Is this known to boot? */
         char *kboot_file;   /**<Path to the k_booted_$(uname -r) file */
 } Kernel;
@@ -261,6 +260,12 @@ bool boot_manager_is_kernel_installed(BootManager *manager, const Kernel *kernel
  * @note This should not be freed, this is static memory
  */
 const SystemKernel *boot_manager_get_system_kernel(BootManager *manager);
+
+/**
+ * Attempt to find the currently matching kernel from the given kernel array
+ * @note This just returns a pointer, this should not be freed.
+ */
+Kernel *boot_manager_get_running_kernel(BootManager *manager, KernelArray *kernels);
 
 /**
  * Free a kernel type

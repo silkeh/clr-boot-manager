@@ -183,15 +183,8 @@ bool cbm_command_update(int argc, char **argv)
                         }
                 }
 
-                /* Yes, it's ugly, but we need to determine the running one first. */
-                for (int i = 0; i < avail_kernels->len; i++) {
-                        Kernel *k = nc_array_get((NcArray *)avail_kernels, i);
-                        /* Determine the running kernel. */
-                        if (k->is_running) {
-                                running = k;
-                                break;
-                        }
-                }
+                /* Determine the running kernel */
+                running = boot_manager_get_running_kernel(manager, avail_kernels);
 
                 /* Only ever install the *newest* kernel */
                 tip = nc_array_get(avail_kernels, 0);

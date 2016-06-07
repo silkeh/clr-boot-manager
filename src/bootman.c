@@ -259,9 +259,6 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         int r = 0;
         char *buf = NULL;
         char *bcp = NULL;
-        struct utsname running = { 0 };
-        autofree(char) *run_match = NULL;
-        autofree(char) *run_match_legacy = NULL;
 
         if (!self || !path) {
                 return NULL;
@@ -354,23 +351,6 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         }
 
         kern->release = release;
-
-        if (!asprintf(&run_match, "%s-%d.%s", version, release, type)) {
-                DECLARE_OOM();
-                abort();
-        }
-        if (!asprintf(&run_match_legacy, "%s-%d", version, release)) {
-                DECLARE_OOM();
-                abort();
-        }
-
-        if (uname(&running) == 0) {
-                if (streq(run_match, running.release)) {
-                        kern->is_running = true;
-                } else if (streq(run_match_legacy, running.release)) {
-                        kern->is_running = true;
-                }
-        }
 
         if (!(f = fopen(cmdline, "r"))) {
                 LOG("Unable to open %s: %s\n", cmdline, strerror(errno));
@@ -895,7 +875,30 @@ const SystemKernel *boot_manager_get_system_kernel(BootManager *self)
         if (!self || !self->have_sys_kernel) {
                 return NULL;
         }
+        if (boot_manager_is_image_mode(self)) {
+                return NULL;
+        }
         return (const SystemKernel *)&(self->sys_kernel);
+}
+
+Kernel *boot_manager_get_running_kernel(BootManager *self, KernelArray *kernels)
+{
+        if (!self || !kernels) {
+                return NULL;
+        }
+        const SystemKernel *k = boot_manager_get_system_kernel(self);
+        if (!k) {
+                return NULL;
+        }
+
+        for (int i = 0; i < kernels->len; i++) {
+                Kernel *cur = nc_array_get(kernels, i);
+                if (streq(cur->ktype, k->ktype) && streq(cur->version, k->version) &&
+                    cur->release == k->release) {
+                        return cur;
+                }
+        }
+        return NULL;
 }
 
 /*
