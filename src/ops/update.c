@@ -266,6 +266,10 @@ bool cbm_command_update(int argc, char **argv)
                                 if (!removals) {
                                         removals = nc_array_new();
                                 }
+                                /* Don't try to remove a non installed kernel */
+                                if (!boot_manager_is_kernel_installed(manager, k)) {
+                                        continue;
+                                }
                                 /* Schedule removal of kernel */
                                 if (!nc_array_add(removals, tk)) {
                                         DECLARE_OOM();
