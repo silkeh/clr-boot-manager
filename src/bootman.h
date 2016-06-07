@@ -275,6 +275,11 @@ Kernel *boot_manager_get_running_kernel(BootManager *manager, KernelArray *kerne
 Kernel *boot_manager_get_last_booted(BootManager *manager, KernelArray *kernels);
 
 /**
+ * Parse the running kernel and try to figure out the type, etc.
+ */
+bool cbm_parse_system_kernel(const char *inp, SystemKernel *kernel);
+
+/**
  * Free a kernel type
  */
 void free_kernel(Kernel *t);

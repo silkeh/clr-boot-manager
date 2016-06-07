@@ -39,8 +39,6 @@ extern const BootLoader systemd_bootloader;
 extern const BootLoader gummiboot_bootloader;
 extern const BootLoader goofiboot_bootloader;
 
-static bool parse_system_kernel(const char *inp, SystemKernel *kernel);
-
 struct BootManager {
         char *prefix;
         char *kernel_dir;
@@ -65,7 +63,7 @@ BootManager *boot_manager_new()
 
         /* Try to parse the currently running kernel */
         if (uname(&uts) == 0) {
-                r->have_sys_kernel = parse_system_kernel(uts.release, &(r->sys_kernel));
+                r->have_sys_kernel = cbm_parse_system_kernel(uts.release, &(r->sys_kernel));
         }
 
         /* Sane defaults. */
@@ -794,10 +792,7 @@ oom:
         return NULL;
 }
 
-/**
- * Parse the running kernel and try to figure out the type, etc.
- */
-static bool parse_system_kernel(const char *inp, SystemKernel *kernel)
+bool cbm_parse_system_kernel(const char *inp, SystemKernel *kernel)
 {
         if (!kernel || !inp) {
                 return false;
