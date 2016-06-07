@@ -229,7 +229,9 @@ bool cbm_command_update(int argc, char **argv)
                         /* Ensure this tip kernel is installed */
                         if (!boot_manager_is_kernel_installed(manager, tip)) {
                                 if (!boot_manager_install_kernel(manager, tip)) {
-                                        fprintf(stderr, "Failed to install kernel: %s\n", tip->path);
+                                        fprintf(stderr,
+                                                "Failed to install kernel: %s\n",
+                                                tip->path);
                                         goto cleanup;
                                 }
                         }
@@ -240,7 +242,9 @@ bool cbm_command_update(int argc, char **argv)
                         /* Ensure this guy is still installed/repaired */
                         if (last_good && !boot_manager_is_kernel_installed(manager, last_good)) {
                                 if (!boot_manager_install_kernel(manager, tip)) {
-                                        fprintf(stderr, "Failed to install kernel: %s\n", tip->path);
+                                        fprintf(stderr,
+                                                "Failed to install kernel: %s\n",
+                                                tip->path);
                                         goto cleanup;
                                 }
                         }
