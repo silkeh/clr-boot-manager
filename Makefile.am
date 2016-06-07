@@ -10,7 +10,16 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/tests/data/blobfile \
 	     ${top_srcdir}/test-init.sh \
 	     ${top_srcdir}/sgcheck.suppressions \
-	     ${top_srcdir}/data/clr-boot-manager-booted.service
+	     ${top_srcdir}/data/clr-boot-manager-booted.service \
+	     ${top_srcdir}/compat/kernel_updater.sh \
+	     ${top_srcdir}/compat/systemdboot_updater.sh \
+	     ${top_srcdir}/compat/gummiboot_updaters.sh
+
+
+bin_SCRIPTS = \
+	compat/kernel_updater.sh \
+	compat/systemdboot_updater.sh \
+	compat/gummiboot_updaters.sh
 
 NULL =
 CLEANFILES =
