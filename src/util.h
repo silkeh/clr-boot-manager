@@ -45,6 +45,9 @@
                 }                                                                                  \
         }
 
+/** Helper for array looping */
+#define ARRAY_SIZE(x) sizeof(x) / sizeof(x[0])
+
 /**
  * Always inline the function
  */

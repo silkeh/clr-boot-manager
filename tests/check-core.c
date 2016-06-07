@@ -29,6 +29,11 @@
 static bool reclaimed = false;
 typedef char memtestchar;
 
+struct TestKernel {
+        const char *test_str;
+        SystemKernel expected;
+};
+
 static void reaper(void *v)
 {
         free(v);
@@ -57,6 +62,39 @@ START_TEST(bootman_new_test)
 
         m = boot_manager_new();
         fail_if(!m, "Failed to construct BootManager instance");
+}
+END_TEST
+
+START_TEST(bootman_parser_test)
+{
+        /* We know these will fail */
+        const char *ridiculous[] = {
+                "0",    NULL,     "4.30", ".-",    ".",      "@",
+                "@!_+", "4.4.0-", ".0-",  ".-lts", "0.-lts", "4.0.20-190.",
+        };
+
+        const struct TestKernel valid[] = {
+                { "4.4.0-120.lts", { "4.4.0", "lts", 120 } },
+                { "4-120.l", { "4", "l", 120 } },
+                { "1.2.3.4.5-6.native", { "1.2.3.4.5", "native", 6 } },
+                { "4.4.4-120.kvm", { "4.4.4", "kvm", 120 } },
+        };
+
+        SystemKernel k = { 0 };
+
+        for (size_t i = 0; i < ARRAY_SIZE(ridiculous); i++) {
+                const char *sz = ridiculous[i];
+                fail_if(cbm_parse_system_kernel(sz, &k), "Parsed broken format");
+        }
+
+        for (size_t i = 0; i < ARRAY_SIZE(valid); i++) {
+                const struct TestKernel exp = valid[i];
+                bool parsed = cbm_parse_system_kernel(exp.test_str, &k);
+                fail_if(!parsed, "Failed to parse valid kernel name");
+                fail_if(!streq(exp.expected.ktype, k.ktype), "Failed to match kernel type");
+                fail_if(!streq(exp.expected.version, k.version), "Failed to match kernel version");
+                fail_if(exp.expected.release != k.release, "Failed to match kernel release");
+        }
 }
 END_TEST
 
@@ -405,6 +443,7 @@ static Suite *core_suite(void)
         tc = tcase_create("bootman_core_functions");
         tcase_add_test(tc, bootman_new_test);
         tcase_add_test(tc, bootman_memory_test);
+        tcase_add_test(tc, bootman_parser_test);
         suite_add_tcase(s, tc);
 
         tc = tcase_create("bootman_kernel_functions");
