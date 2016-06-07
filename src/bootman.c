@@ -408,7 +408,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
 
         /** Determine if the kernel boots */
         kern->kboot_file = boot_manager_get_kboot_file(self, kern);
-        if (nc_file_exists(kern->kboot_file)) {
+        if (kern->kboot_file && nc_file_exists(kern->kboot_file)) {
                 kern->boots = true;
         }
         return kern;
