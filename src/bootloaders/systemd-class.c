@@ -342,7 +342,7 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
         }
 
         /* Purge the kernel modules from disk */
-        if (kernel->module_dir) {
+        if (kernel->module_dir && nc_file_exists(kernel->module_dir)) {
                 if (!nc_rm_rf(kernel->module_dir)) {
                         LOG("sd_class_remove_kernel: Failed to remove (-rf) %s: %s\n",
                             kernel->module_dir,
@@ -354,21 +354,21 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
                 LOG("sd_class_remove_kernel: Missing module tree for %s\n", kernel->path);
         }
 
-        if (kernel->cmdline_file) {
+        if (kernel->cmdline_file && nc_file_exists(kernel->cmdline_file)) {
                 if (unlink(kernel->cmdline_file) < 0) {
                         LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
                             kernel->cmdline_file,
                             strerror(errno));
                 }
         }
-        if (kernel->kconfig_file) {
+        if (kernel->kconfig_file && nc_file_exists(kernel->kconfig_file)) {
                 if (unlink(kernel->kconfig_file) < 0) {
                         LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
                             kernel->kconfig_file,
                             strerror(errno));
                 }
         }
-        if (kernel->kboot_file) {
+        if (kernel->kboot_file && nc_file_exists(kernel->kboot_file)) {
                 if (unlink(kernel->kboot_file) < 0) {
                         LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
                             kernel->kboot_file,
