@@ -13,7 +13,8 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/data/clr-boot-manager-booted.service \
 	     ${top_srcdir}/compat/kernel_updater.sh \
 	     ${top_srcdir}/compat/systemdboot_updater.sh \
-	     ${top_srcdir}/compat/gummiboot_updaters.sh
+	     ${top_srcdir}/compat/gummiboot_updaters.sh \
+	     ${top_srcdir}/man/clr-boot-manager.1
 
 
 if COMPAT_SCRIPTS
@@ -134,6 +135,10 @@ if SYSTEMD
 systemdsystemunitdir = @SYSTEMD_SYSTEMUNITDIR@
 dist_systemdsystemunit_DATA = ${top_srcdir}/data/clr-boot-manager-booted.service
 endif
+
+manpagesdir = $(mandir)/man1
+manpages_DATA = \
+	man/clr-boot-manager.1
 
 # Test suites
 AM_TESTS_ENVIRONMENT = \

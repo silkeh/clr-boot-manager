@@ -1,0 +1,102 @@
+.TH "CLR\-BOOT\-MANAGER" "1" "" "clr\-boot\-manager 1" "clr\-boot\-manager"
+
+.SH "NAME"
+clr\-boot\-manager \- Boot Loader Management
+
+.SH "SYNOPSIS"
+.HP \w'\clr\-boot\-manager\fR\ 'u
+\fBclr\-boot\-manager\fR [OPTIONS...]
+
+.SH "DESCRIPTION"
+.PP
+\fBclr\-boot\-manager\fR
+exists to enable the correct maintainence of vendor kernels
+and appropriate garbage collection tactics over the course of upgrades.
+The implementation provides the means to enable correct cohabitation on
+a shared boot directory, such as the EFI System Partition for UEFI-booting
+operating systems.
+
+Special care is taken to ensure the ESP is handled gracefully, and in the
+instance that it is not already mounted, then \fBclr\-boot\-manager\fR will
+automatically discover and mount it, and automatically unmount the ESP again
+when it is complete.
+
+.SH "OPTIONS"
+.PP
+The following options are understood:
+.PP
+\fB\-h\fR, \fB\-\-help\fR, \fBhelp\fR
+.RS 4
+Prints a help message\&.
+.RE
+.PP
+\fB\-p\fR, \fB\-\-path\fR
+.RS 4
+Set the base path for boot management operations\&.
+.RE
+.PP
+
+.PP
+\fB\-v\fR, \fB\-\-version\fR, \fBversion\fR
+.RS 4
+Print the version of \clr\-boot\-manager\fR and exit\&.
+.RE
+
+.SH "COMMANDS"
+.PP
+The following commands are understood:
+
+.PP
+\fBreport-booted\fR
+.RS 4
+Report the current kernel as successfully booted. Ideally this should be
+invoked from the accompanying systemd unit upon boot, in order for
+\fBclr\-boot\-manager\fR to track known-booting kernels\&.
+.RE
+
+.PP
+\fBupdate\fR
+.RS 4
+Perform an update operation on the configured boot directory. This will
+analyze kernels available from the software distribution that are currently
+installed, and pick the ideal candidates for installation.
+
+This includes the current vendor selection for each kernel type,
+the currently running kernel, and the most recent successfully booted kernel
+of each type currently installed.
+
+All other kernels not fitting these parameters are
+then removed in accordance with vendor policy, and removed from the boot
+directory. For UEFI systems this is the EFI System Partition.\&.
+.RE
+
+.PP
+\fBset\-timeout\fR [TIMEOUT IN SECONDS]
+.RS 4
+Configure the timeout that will be used when next writing the boot loader
+configuration, i.e. when \fBclr\-boot\-manager update\fR is called.
+Setting this to a value of 0 will remove the timout entirely\&.
+.RE
+
+.PP
+\fBget\-timeout\fR
+.RS 4
+Returns the currently configured timeout as set by \fBclr\-boot\-manager set\-timeout\fR\&.
+.RE
+
+.SH "EXIT STATUS"
+.PP
+On success, 0 is returned, a non\-zero failure code otherwise\&
+
+
+.SH "COPYRIGHT"
+.PP
+Copyright © 2016 Intel Corporation\&. License: Creative Commons
+Attribution\-ShareAlike 3.0 Unported\s-2\u[1]\d\s+2\&.
+
+.SH "NOTES"
+.IP " 1." 4
+Creative Commons Attribution\-ShareAlike 3.0 Unported
+.RS 4
+\%http://creativecommons.org/licenses/by-sa/3.0/
+.RE
