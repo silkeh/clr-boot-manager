@@ -16,10 +16,12 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/compat/gummiboot_updaters.sh
 
 
+if COMPAT_SCRIPTS
 bin_SCRIPTS = \
 	compat/kernel_updater.sh \
 	compat/systemdboot_updater.sh \
 	compat/gummiboot_updaters.sh
+endif
 
 NULL =
 CLEANFILES =
