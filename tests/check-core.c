@@ -65,6 +65,27 @@ START_TEST(bootman_new_test)
 }
 END_TEST
 
+START_TEST(bootman_uname_test)
+{
+        autofree(BootManager) *m = boot_manager_new();
+        const SystemKernel *kernel = NULL;
+
+        fail_if(!boot_manager_set_uname(m, "4.4.0-120.lts"),
+                "Failed to set correct uname on BootManager");
+        fail_if(boot_manager_set_uname(m, "0.1."), "Should have failed on invalid uname");
+
+        kernel = boot_manager_get_system_kernel(m);
+        fail_if(kernel, "Shouldn't have kernel for bad uname");
+        fail_if(!boot_manager_set_uname(m, "4.6.0-192.native"), "Failed to update uname");
+
+        kernel = boot_manager_get_system_kernel(m);
+        fail_if(!kernel, "Failed to get valid system kernel");
+        fail_if(!streq(kernel->version, "4.6.0"), "Returned kernel doesn't match version");
+        fail_if(!streq(kernel->ktype, "native"), "Returned kernel doesn't match type");
+        fail_if(kernel->release != 192, "Returned kernel doesn't match release");
+}
+END_TEST
+
 START_TEST(bootman_parser_test)
 {
         /* We know these will fail */
@@ -447,6 +468,7 @@ static Suite *core_suite(void)
         suite_add_tcase(s, tc);
 
         tc = tcase_create("bootman_kernel_functions");
+        tcase_add_test(tc, bootman_uname_test);
         tcase_add_test(tc, bootman_list_kernels_test);
         tcase_add_test(tc, bootman_map_kernels_test);
         tcase_add_test(tc, bootman_install_kernel_test);

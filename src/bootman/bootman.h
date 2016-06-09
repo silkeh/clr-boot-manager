@@ -76,6 +76,17 @@ BootManager *boot_manager_new(void);
 void boot_manager_free(BootManager *manager);
 
 /**
+ * Update the uname for this BootManager
+ *
+ * @note We already initialise with the host uname on creation, however this
+ * uname may be overriden for the purposes of validation
+ *
+ * @param uname The new uname to use (utsname.release)
+ * @return True if this was a valid uname to use and we could parse it.
+ */
+bool boot_manager_set_uname(BootManager *manager, const char *uname);
+
+/**
  * Set the prefix to apply to all filesystem paths
  *
  * @note The path must exist for this function call to work

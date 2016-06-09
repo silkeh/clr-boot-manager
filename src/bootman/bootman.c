@@ -63,7 +63,9 @@ BootManager *boot_manager_new()
 
         /* Try to parse the currently running kernel */
         if (uname(&uts) == 0) {
-                r->have_sys_kernel = cbm_parse_system_kernel(uts.release, &(r->sys_kernel));
+                if (!boot_manager_set_uname(r, uts.release)) {
+                        fprintf(stderr, "Warning: Unable to parse kernel\n");
+                }
         }
 
         /* Sane defaults. */
@@ -929,6 +931,23 @@ Kernel *boot_manager_get_last_booted(BootManager *self, KernelArray *kernels)
                 high_rel = k->release;
         }
         return candidate;
+}
+
+bool boot_manager_set_uname(BootManager *self, const char *uname)
+{
+        if (!self || !uname) {
+                return false;
+        }
+        SystemKernel k = { 0 };
+        bool have_sys_kernel = cbm_parse_system_kernel(uname, &k);
+        if (!have_sys_kernel) {
+                self->have_sys_kernel = false;
+                return false;
+        }
+
+        memcpy(&(self->sys_kernel), &k, sizeof(struct SystemKernel));
+        self->have_sys_kernel = have_sys_kernel;
+        return self->have_sys_kernel;
 }
 
 /*
