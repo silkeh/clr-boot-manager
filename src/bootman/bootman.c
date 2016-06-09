@@ -12,8 +12,6 @@
 #define _GNU_SOURCE
 #include <errno.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/utsname.h>
 #include <unistd.h>
 
