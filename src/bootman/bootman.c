@@ -224,24 +224,6 @@ const char *boot_manager_get_os_name(BootManager *self)
         return (const char *)self->os_name;
 }
 
-/**
- * Determine the applicable kboot file
- */
-static inline char *boot_manager_get_kboot_file(BootManager *self, Kernel *k)
-{
-        char *p = NULL;
-        /* /var/lib/kernel/k_booted_4.4.0-120.lts - new */
-        if (asprintf(&p,
-                     "%s/var/lib/kernel/k_booted_%s-%d.%s",
-                     self->prefix,
-                     k->version,
-                     k->release,
-                     k->ktype) < 0) {
-                return NULL;
-        }
-        return p;
-}
-
 const char *boot_manager_get_root_uuid(BootManager *self)
 {
         if (!self) {

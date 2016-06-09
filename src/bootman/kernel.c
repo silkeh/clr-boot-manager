@@ -28,7 +28,7 @@
 /**
  * Determine the applicable kboot file
  */
-static inline char *boot_manager_get_kboot_file(BootManager *self, Kernel *k)
+__cbm_inline__ static inline char *boot_manager_get_kboot_file(BootManager *self, Kernel *k)
 {
         char *p = NULL;
         /* /var/lib/kernel/k_booted_4.4.0-120.lts - new */
