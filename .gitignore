@@ -33,6 +33,7 @@ test-driver
 
 /tests/kernels
 /tests/dummy_install
+/tests/update_playground
 
 clr-boot-manager-*.tar.xz
 
