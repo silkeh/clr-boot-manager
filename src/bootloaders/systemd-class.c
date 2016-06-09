@@ -752,6 +752,7 @@ bool sd_class_remove(const BootManager *manager)
 bool sd_class_is_kernel_installed(const BootManager *manager, const Kernel *kernel)
 {
         autofree(char) *path = NULL;
+        autofree(char) *path2 = NULL;
         autofree(char) *kname_copy = NULL;
         char *kname_base = NULL;
 
@@ -766,12 +767,12 @@ bool sd_class_is_kernel_installed(const BootManager *manager, const Kernel *kern
         }
         kname_base = basename(path);
 
-        if (!asprintf(&path, "%s/%s", sd_class_config.base_path, kname_base)) {
+        if (!asprintf(&path2, "%s/%s", sd_class_config.base_path, kname_base)) {
                 DECLARE_OOM();
                 abort();
         }
 
-        return nc_file_exists(path);
+        return nc_file_exists(path2);
 }
 
 /*
