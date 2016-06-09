@@ -11,10 +11,44 @@
 
 #define _GNU_SOURCE
 
+#include <assert.h>
+
 #include "bootman.h"
 #include "bootman_private.h"
 
-bool boot_manager_update(__attribute__((unused)) BootManager *self)
+static bool boot_manager_update_image(BootManager *self);
+static bool boot_manager_update_native(BootManager *self);
+
+bool boot_manager_update(BootManager *self)
+{
+        assert(self != NULL);
+        bool ret = false;
+
+        /* TODO: Insert prep code here */
+
+        /* Perform the main operation */
+        if (boot_manager_is_image_mode(self)) {
+                ret = boot_manager_update_image(self);
+        } else {
+                ret = boot_manager_update_native(self);
+        }
+
+        /* TODO: Insert cleanup code here */
+        return ret;
+}
+
+/**
+ * Update the target with logical view of an image creation
+ */
+static bool boot_manager_update_image(__attribute__((unused)) BootManager *self)
+{
+        return false;
+}
+
+/**
+ * Update the target with logical view of a native installation
+ */
+static bool boot_manager_update_native(__attribute__((unused)) BootManager *self)
 {
         return false;
 }
