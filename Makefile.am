@@ -97,6 +97,7 @@ libcbm_la_SOURCES =			\
 	src/bootman/util.h		\
 	src/bootman/files.h		\
 	src/bootman/files.c		\
+	src/bootman/kernel.c		\
 	src/bootman/bootman.h		\
 	src/bootman/bootman_private.h	\
 	src/bootman/bootman.c
