@@ -43,6 +43,7 @@
  */
 #define BOOT_FULL PLAYGROUND_ROOT "/" BOOT_DIRECTORY
 
+#define EFI_START BOOT_FULL "/EFI"
 /**
  * i.e. $dir/EFI/Boot/BOOTX64.EFI
  */
@@ -51,15 +52,38 @@
 /**
  * Places that need to exist..
  */
+
+/**
+ * Systemd support
+ */
 #if defined(HAVE_SYSTEMD_BOOT)
-#define ESP_BOOT_DIR BOOT_FULL "/systemd"
+#define ESP_BOOT_DIR EFI_START "/systemd"
 #define ESP_BOOT_STUB ESP_BOOT_DIR "/systemd-boot" EFI_STUB_SUFFIX_L
+
+#define BOOT_COPY_SOURCE "/usr/lib/systemd/boot/efi/systemd-boot" EFI_STUB_SUFFIX_L
+#define BOOT_COPY_TARGET PLAYGROUND_ROOT "/usr/lib/systemd/boot/efi/systemd-boot" EFI_STUB_SUFFIX_L
+#define BOOT_COPY_DIR PLAYGROUND_ROOT "/usr/lib/systemd/boot/efi"
+
+/**
+ * gummiboot support
+ */
 #elif defined(HAVE_GUMMIBOOT)
-#define ESP_BOOT_DIR BOOT_FULL "/gummiboot"
+#define ESP_BOOT_DIR EFI_START "/gummiboot"
 #define ESP_BOOT_STUB ESP_BOOT_DIR "/gummiboot" EFI_STUB_SUFFIX_L
+
+#define BOOT_COPY_SOURCE "/usr/lib/gummiboot/gummiboot" EFI_STUB_SUFFIX_L
+#define BOOT_COPY_TARGET PLAYGROUND_ROOT "/usr/lib/gummiboot/gummiboot" EFI_STUB_SUFFIX_L
+#define BOOT_COPY_DIR PLAYGROUND_ROOT "/usr/lib/gummiboot"
+
+/**
+ * goofiboot support
+ */
 #elif defined(HAVE_GOOFIBOOT)
-#define ESP_BOOT_DIR BOOT_FULL "/goofiboot"
+#define ESP_BOOT_DIR EFI_START "/goofiboot"
 #define ESP_BOOT_STUB ESP_BOOT_DIR "/goofiboot" EFI_STUB_SUFFIX_L
+#define BOOT_COPY_SOURCE "/usr/lib/goofiboot/goofiboot" EFI_STUB_SUFFIX_L
+#define BOOT_COPY_TARGET PLAYGROUND_ROOT "/usr/lib/goofiboot/goofiboot" EFI_STUB_SUFFIX_L
+#define BOOT_COPY_DIR PLAYGROUND_ROOT "/usr/lib/goofiboot"
 #else
 #error No known ESP loader
 #endif
@@ -152,6 +176,14 @@ static BootManager *prepare_playground(PlaygroundConfig *config)
         }
 
         if (!nc_mkdir_p(PLAYGROUND_ROOT "/" BOOT_DIRECTORY, 00755)) {
+                goto fail;
+        }
+
+        /* Copy the bootloader bits into the tree */
+        if (!nc_mkdir_p(BOOT_COPY_DIR, 00755)) {
+                goto fail;
+        }
+        if (!copy_file(BOOT_COPY_SOURCE, BOOT_COPY_TARGET, 00644)) {
                 goto fail;
         }
 
