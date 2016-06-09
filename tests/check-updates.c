@@ -208,7 +208,7 @@ static BootManager *prepare_playground(PlaygroundConfig *config)
                 if (!asprintf(&link_target,
                               "%s/%s/default-%s",
                               PLAYGROUND_ROOT,
-                              KERNEL_MODULES_DIRECTORY,
+                              KERNEL_DIRECTORY,
                               k->ktype)) {
                         goto fail;
                 }
