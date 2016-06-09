@@ -22,6 +22,7 @@
 
 #include "bootloader.h"
 #include "bootman.h"
+#include "bootman_private.h"
 #include "files.h"
 #include "nica/array.h"
 #include "nica/files.h"
@@ -38,18 +39,6 @@
 extern const BootLoader systemd_bootloader;
 extern const BootLoader gummiboot_bootloader;
 extern const BootLoader goofiboot_bootloader;
-
-struct BootManager {
-        char *prefix;
-        char *kernel_dir;
-        const BootLoader *bootloader;
-        char *vendor_prefix;
-        char *os_name;
-        char *root_uuid;
-        char *abs_bootdir; /**<Absolute boot directory, i.e. already mounted */
-        SystemKernel sys_kernel;
-        bool have_sys_kernel;
-};
 
 BootManager *boot_manager_new()
 {

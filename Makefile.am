@@ -98,9 +98,11 @@ libcbm_la_SOURCES =			\
 	src/bootman/files.h		\
 	src/bootman/files.c		\
 	src/bootman/bootman.h		\
+	src/bootman/bootman_private.h	\
 	src/bootman/bootman.c
 
 libcbm_la_CFLAGS =		\
+	-D_BOOTMAN_INTERNAL_	\
 	$(CRYPTO_CFLAGS)	\
 	$(BLKID_CFLAGS)		\
 	$(AM_CFLAGS)
