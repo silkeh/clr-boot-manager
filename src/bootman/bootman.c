@@ -59,6 +59,8 @@ BootManager *boot_manager_new()
         /* Potentially consider a configure or os-release check */
         boot_manager_set_vendor_prefix(r, "Clear-linux");
         boot_manager_set_os_name(r, "Clear Linux Software for Intel Architecture");
+        /* CLI should override this */
+        boot_manager_set_can_mount(r, false);
 
 /* Use the bootloader selected at compile time */
 #if defined(HAVE_SYSTEMD_BOOT)
