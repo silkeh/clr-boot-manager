@@ -59,8 +59,9 @@ BootManager *boot_manager_new()
         /* Potentially consider a configure or os-release check */
         boot_manager_set_vendor_prefix(r, "Clear-linux");
         boot_manager_set_os_name(r, "Clear Linux Software for Intel Architecture");
-        /* CLI should override this */
+        /* CLI should override these */
         boot_manager_set_can_mount(r, false);
+        boot_manager_set_image_mode(r, false);
 
 /* Use the bootloader selected at compile time */
 #if defined(HAVE_SYSTEMD_BOOT)
@@ -401,10 +402,14 @@ bool boot_manager_is_image_mode(BootManager *self)
 {
         assert(self != NULL);
 
-        if (!self->prefix) {
-                return false;
-        }
-        return !streq(self->prefix, "/");
+        return self->image_mode;
+}
+
+void boot_manager_set_image_mode(BootManager *self, bool image_mode)
+{
+        assert(self != NULL);
+
+        self->image_mode = image_mode;
 }
 
 bool boot_manager_needs_install(BootManager *self)

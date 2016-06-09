@@ -34,6 +34,7 @@ struct BootManager {
         SystemKernel sys_kernel;      /**<Native kernel info, if any */
         bool have_sys_kernel;         /**<Whether sys_kernel is set */
         bool can_mount;               /**<Are we allowed to mount? */
+        bool image_mode;              /**<Are we in image mode? */
 };
 
 /*

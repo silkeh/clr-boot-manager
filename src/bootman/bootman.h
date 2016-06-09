@@ -243,6 +243,11 @@ uint8_t boot_manager_get_architecture_size(BootManager *manager);
 bool boot_manager_is_image_mode(BootManager *manager);
 
 /**
+ * Flip the boot manager into image mode
+ */
+void boot_manager_set_image_mode(BootManager *manager, bool image_mode);
+
+/**
  * Determine the default timeout based on the contents of
  * SYSCONFDIR/boot_timeout
  */
