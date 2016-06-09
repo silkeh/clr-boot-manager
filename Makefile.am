@@ -157,7 +157,8 @@ distclean-local:
 
 TESTS = \
 	check_core \
-	check_files
+	check_files \
+	check_updates
 
 check_PROGRAMS = $(TESTS)
 
@@ -187,6 +188,22 @@ check_files_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_files_LDADD =	\
+	libcbm.la	\
+	libnica.la	\
+	$(CRYPTO_LIBS)	\
+	$(BLKID_LIBS)	\
+	$(CHECK_LIBS)
+
+check_updates_SOURCES = \
+	tests/check-updates.c
+
+check_updates_CFLAGS =		\
+	$(CRYPTO_CFLAGS)	\
+	$(BLKID_CFLAGS)		\
+	$(CHECK_CFLAGS)		\
+	$(AM_CFLAGS)
+
+check_updates_LDADD =	\
 	libcbm.la	\
 	libnica.la	\
 	$(CRYPTO_LIBS)	\
