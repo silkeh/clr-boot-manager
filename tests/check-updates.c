@@ -103,6 +103,7 @@ START_TEST(bootman_image_test_simple)
 
         m = prepare_playground(&start_conf);
         fail_if(!m, "Fatal: Cannot initialise playground");
+        boot_manager_set_image_mode(m, true);
 }
 END_TEST
 
