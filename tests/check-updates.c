@@ -17,6 +17,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "bootman.h"
 #include "files.h"
@@ -99,6 +100,8 @@ static BootManager *prepare_playground(PlaygroundConfig *config)
                 autofree(char) *kfile = NULL;
                 autofree(char) *cmdfile = NULL;
                 autofree(char) *conffile = NULL;
+                autofree(char) *link_source = NULL;
+                autofree(char) *link_target = NULL;
 
                 /* $root/$kerneldir/$prefix.native.4.2.1-137 */
                 if (!asprintf(&kfile,
@@ -185,6 +188,34 @@ static BootManager *prepare_playground(PlaygroundConfig *config)
                                 fprintf(stderr, "Failed to touch: %s %s\n", t, strerror(errno));
                                 goto fail;
                         }
+                }
+
+                /* Not default so skip */
+                if (!k->default_for_type) {
+                        continue;
+                }
+
+                if (!asprintf(&link_source,
+                              "%s.%s.%s-%d",
+                              KERNEL_NAMESPACE,
+                              k->ktype,
+                              k->version,
+                              k->release)) {
+                        goto fail;
+                }
+
+                /* i.e. default-kvm */
+                if (!asprintf(&link_target,
+                              "%s/%s/default-%s",
+                              PLAYGROUND_ROOT,
+                              KERNEL_MODULES_DIRECTORY,
+                              k->ktype)) {
+                        goto fail;
+                }
+
+                if (symlink(link_source, link_target) < 0) {
+                        fprintf(stderr, "Failed to create default-%s symlink\n", k->ktype);
+                        goto fail;
                 }
         }
 
