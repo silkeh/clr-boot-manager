@@ -28,6 +28,43 @@
 #define PLAYGROUND_ROOT TOP_BUILD_DIR "/tests/update_playground"
 
 /**
+ * 64-bit vs 32-bit test
+ */
+#if UINTPTR_MAX == 0xffffffffffffffff
+#define EFI_STUB_SUFFIX "X64.EFI"
+#define EFI_STUB_SUFFIX_L "x64.efi"
+#else
+#define EFI_STUB_SUFFIX "IA32.EFI"
+#define EFI_STUB_SUFFIX_L "ia32.efi"
+#endif
+
+/**
+ * i.e. $root/boot
+ */
+#define BOOT_FULL PLAYGROUND_ROOT "/" BOOT_DIRECTORY
+
+/**
+ * i.e. $dir/EFI/Boot/BOOTX64.EFI
+ */
+#define EFI_STUB_MAIN BOOT_FULL "/EFI/Boot/BOOT" EFI_STUB_SUFFIX
+
+/**
+ * Places that need to exist..
+ */
+#if defined(HAVE_SYSTEMD_BOOT)
+#define ESP_BOOT_DIR BOOT_FULL "/systemd"
+#define ESP_BOOT_STUB ESP_BOOT_DIR "/systemd-boot" EFI_STUB_SUFFIX_L
+#elif defined(HAVE_GUMMIBOOT)
+#define ESP_BOOT_DIR BOOT_FULL "/gummiboot"
+#define ESP_BOOT_STUB ESP_BOOT_DIR "/gummiboot" EFI_STUB_SUFFIX_L
+#elif defined(HAVE_GOOFIBOOT)
+#define ESP_BOOT_DIR BOOT_FULL "/goofiboot"
+#define ESP_BOOT_STUB ESP_BOOT_DIR "/goofiboot" EFI_STUB_SUFFIX_L
+#else
+#error No known ESP loader
+#endif
+
+/**
  * Needed for intiialisation
  */
 typedef struct PlaygroundKernel {
@@ -45,6 +82,26 @@ typedef struct PlaygroundConfig {
         PlaygroundKernel *initial_kernels;
         size_t n_kernels;
 } PlaygroundConfig;
+
+/**
+ * Wrap nc_file_exists and spam to stderr
+ */
+__cbm_inline__ static inline bool noisy_file_exists(const char *p)
+{
+        bool b = nc_file_exists(p);
+        if (b) {
+                return b;
+        }
+        fprintf(stderr, "missing-file: %s does not exist\n", p);
+        return b;
+}
+
+static void confirm_bootloader(void)
+{
+        fail_if(!noisy_file_exists(EFI_STUB_MAIN), "Main EFI stub missing");
+        fail_if(!noisy_file_exists(ESP_BOOT_DIR), "ESP target directory missing");
+        fail_if(!noisy_file_exists(ESP_BOOT_STUB), "ESP target stub missing");
+}
 
 /**
  * Initialise a playground area to assert update behaviour
@@ -252,6 +309,8 @@ START_TEST(bootman_image_test_simple)
         boot_manager_set_image_mode(m, true);
 
         fail_if(!boot_manager_update(m), "Failed to update in image mode");
+
+        confirm_bootloader();
 }
 END_TEST
 
