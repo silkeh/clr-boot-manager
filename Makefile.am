@@ -94,13 +94,14 @@ libcbm_la_SOURCES =			\
 	src/bootloaders/systemd-boot.c	\
 	src/bootloaders/gummiboot.c	\
 	src/bootloaders/goofiboot.c	\
-	src/bootman/util.h		\
+	src/bootman/bootman.h		\
+	src/bootman/bootman_private.h	\
+	src/bootman/bootman.c		\
 	src/bootman/files.h		\
 	src/bootman/files.c		\
 	src/bootman/kernel.c		\
-	src/bootman/bootman.h		\
-	src/bootman/bootman_private.h	\
-	src/bootman/bootman.c
+	src/bootman/timeout.c		\
+	src/bootman/util.h
 
 libcbm_la_CFLAGS =		\
 	-D_BOOTMAN_INTERNAL_	\
