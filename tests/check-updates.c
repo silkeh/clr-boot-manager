@@ -77,7 +77,7 @@ static BootManager *prepare_playground(PlaygroundConfig *config)
 
         boot_manager_set_can_mount(m, false);
         boot_manager_set_image_mode(m, false);
-        if (!boot_manager_set_uname(m, config->uts_name)) {
+        if (config->uts_name && !boot_manager_set_uname(m, config->uts_name)) {
                 fprintf(stderr, "Cannot set given uname of %s\n", config->uts_name);
                 goto fail;
         }
@@ -97,9 +97,7 @@ START_TEST(bootman_image_test_simple)
                 { "4.4.4", "native", 160, false },
                 { "4.4.0", "native", 140, false },
         };
-        PlaygroundConfig start_conf = { "4.4.4-160.native",
-                                        init_kernels,
-                                        ARRAY_SIZE(init_kernels) };
+        PlaygroundConfig start_conf = { NULL, init_kernels, ARRAY_SIZE(init_kernels) };
 
         m = prepare_playground(&start_conf);
         fail_if(!m, "Fatal: Cannot initialise playground");
