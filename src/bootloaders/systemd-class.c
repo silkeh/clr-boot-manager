@@ -457,24 +457,37 @@ bool sd_class_needs_install(const BootManager *manager)
                 return false;
         }
 
-        if (nc_file_exists(sd_class_config.ia32_source) &&
-            !nc_file_exists(sd_class_config.ia32_dest)) {
+        const char *paths[2] = { 0 };
+        const char *source_path = NULL;
+
+        if (boot_manager_get_architecture_size((BootManager *)manager) == 64) {
+                if (boot_manager_get_platform_size((BootManager *)manager) != 64) {
+                        paths[0] = sd_class_config.ia32_dest;
+                        paths[1] = sd_class_config.default_path_ia32;
+                        source_path = sd_class_config.ia32_source;
+                } else {
+                        paths[0] = sd_class_config.x64_dest;
+                        paths[1] = sd_class_config.default_path_x64;
+                        source_path = sd_class_config.x64_source;
+                }
+        } else {
+                paths[0] = sd_class_config.ia32_dest;
+                paths[1] = sd_class_config.default_path_ia32;
+                source_path = sd_class_config.ia32_source;
+        }
+
+        /* Catch this in the install */
+        if (!nc_file_exists(source_path)) {
                 return true;
         }
 
-        if (nc_file_exists(sd_class_config.x64_source) &&
-            !nc_file_exists(sd_class_config.x64_dest)) {
-                return true;
-        }
+        /* Try to see if targets are missing */
+        for (size_t i = 0; i < ARRAY_SIZE(paths); i++) {
+                const char *check_p = paths[i];
 
-        if (nc_file_exists(sd_class_config.x64_source) &&
-            !nc_file_exists(sd_class_config.default_path_x64)) {
-                return true;
-        }
-
-        if (nc_file_exists(sd_class_config.ia32_source) &&
-            !nc_file_exists(sd_class_config.default_path_ia32)) {
-                return true;
+                if (!nc_file_exists(check_p)) {
+                        return true;
+                }
         }
 
         return false;
@@ -486,24 +499,31 @@ bool sd_class_needs_update(const BootManager *manager)
                 return false;
         }
 
-        if (nc_file_exists(sd_class_config.ia32_source) &&
-            !cbm_files_match(sd_class_config.ia32_source, sd_class_config.ia32_dest)) {
-                return true;
+        const char *paths[2] = { 0 };
+        const char *source_path = NULL;
+
+        if (boot_manager_get_architecture_size((BootManager *)manager) == 64) {
+                if (boot_manager_get_platform_size((BootManager *)manager) != 64) {
+                        paths[0] = sd_class_config.ia32_dest;
+                        paths[1] = sd_class_config.default_path_ia32;
+                        source_path = sd_class_config.ia32_source;
+                } else {
+                        paths[0] = sd_class_config.x64_dest;
+                        paths[1] = sd_class_config.default_path_x64;
+                        source_path = sd_class_config.x64_source;
+                }
+        } else {
+                paths[0] = sd_class_config.ia32_dest;
+                paths[1] = sd_class_config.default_path_ia32;
+                source_path = sd_class_config.ia32_source;
         }
 
-        if (nc_file_exists(sd_class_config.x64_source) &&
-            !cbm_files_match(sd_class_config.x64_source, sd_class_config.x64_dest)) {
-                return true;
-        }
+        for (size_t i = 0; i < ARRAY_SIZE(paths); i++) {
+                const char *check_p = paths[i];
 
-        if (nc_file_exists(sd_class_config.x64_source) &&
-            !cbm_files_match(sd_class_config.x64_source, sd_class_config.default_path_x64)) {
-                return true;
-        }
-
-        if (nc_file_exists(sd_class_config.ia32_source) &&
-            !cbm_files_match(sd_class_config.x64_source, sd_class_config.default_path_ia32)) {
-                return true;
+                if (nc_file_exists(check_p) && !cbm_files_match(source_path, check_p)) {
+                        return true;
+                }
         }
 
         return false;
