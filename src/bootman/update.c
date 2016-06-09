@@ -125,6 +125,7 @@ static bool boot_manager_update_image(BootManager *self)
         default_kernel = nc_array_get(kernels, 0);
         if (!boot_manager_set_default_kernel(self, default_kernel)) {
                 fprintf(stderr, "Failed to set the default kernel to: %s\n", default_kernel->path);
+                return false;
         }
 
         /* Everything succeeded */
