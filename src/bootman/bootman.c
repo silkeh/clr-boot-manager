@@ -111,10 +111,12 @@ void boot_manager_free(BootManager *self)
 
 bool boot_manager_set_prefix(BootManager *self, char *prefix)
 {
+        assert(self != NULL);
+
         char *kernel_dir = NULL;
         char *realp = NULL;
 
-        if (!self || !prefix) {
+        if (!prefix) {
                 return false;
         }
 
@@ -170,23 +172,23 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
 
 const char *boot_manager_get_prefix(BootManager *self)
 {
-        if (!self) {
-                return NULL;
-        }
+        assert(self != NULL);
+
         return (const char *)self->prefix;
 }
 
 const char *boot_manager_get_kernel_dir(BootManager *self)
 {
-        if (!self) {
-                return NULL;
-        }
+        assert(self != NULL);
+
         return (const char *)self->kernel_dir;
 }
 
 void boot_manager_set_vendor_prefix(BootManager *self, char *vendor_prefix)
 {
-        if (!self || !vendor_prefix) {
+        assert(self != NULL);
+
+        if (!vendor_prefix) {
                 return;
         }
         if (self->vendor_prefix) {
@@ -198,15 +200,16 @@ void boot_manager_set_vendor_prefix(BootManager *self, char *vendor_prefix)
 
 const char *boot_manager_get_vendor_prefix(BootManager *self)
 {
-        if (!self) {
-                return NULL;
-        }
+        assert(self != NULL);
+
         return (const char *)self->vendor_prefix;
 }
 
 void boot_manager_set_os_name(BootManager *self, char *os_name)
 {
-        if (!self || !os_name) {
+        assert(self != NULL);
+
+        if (!os_name) {
                 return;
         }
         if (self->os_name) {
@@ -218,23 +221,23 @@ void boot_manager_set_os_name(BootManager *self, char *os_name)
 
 const char *boot_manager_get_os_name(BootManager *self)
 {
-        if (!self) {
-                return NULL;
-        }
+        assert(self != NULL);
+
         return (const char *)self->os_name;
 }
 
 const char *boot_manager_get_root_uuid(BootManager *self)
 {
-        if (!self) {
-                return NULL;
-        }
+        assert(self != NULL);
+
         return (const char *)self->root_uuid;
 }
 
 bool boot_manager_install_kernel(BootManager *self, const Kernel *kernel)
 {
-        if (!self || !kernel || !self->bootloader) {
+        assert(self != NULL);
+
+        if (!kernel || !self->bootloader) {
                 return false;
         }
 
@@ -248,7 +251,9 @@ bool boot_manager_install_kernel(BootManager *self, const Kernel *kernel)
 
 bool boot_manager_remove_kernel(BootManager *self, const Kernel *kernel)
 {
-        if (!self || !kernel || !self->bootloader) {
+        assert(self != NULL);
+
+        if (!kernel || !self->bootloader) {
                 return false;
         }
 
@@ -261,7 +266,9 @@ bool boot_manager_remove_kernel(BootManager *self, const Kernel *kernel)
 
 bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
 {
-        if (!self || !self->bootloader) {
+        assert(self != NULL);
+
+        if (!self->bootloader) {
                 return false;
         }
 
@@ -270,6 +277,8 @@ bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
 
 char *boot_manager_get_boot_dir(BootManager *self)
 {
+        assert(self != NULL);
+
         char *ret = NULL;
 
         if (self->abs_bootdir) {
@@ -285,7 +294,9 @@ char *boot_manager_get_boot_dir(BootManager *self)
 
 bool boot_manager_set_boot_dir(BootManager *self, const char *bootdir)
 {
-        if (!self || !bootdir) {
+        assert(self != NULL);
+
+        if (!bootdir) {
                 return false;
         }
         if (self->abs_bootdir) {
@@ -311,7 +322,9 @@ bool boot_manager_set_boot_dir(BootManager *self, const char *bootdir)
 
 bool boot_manager_modify_bootloader(BootManager *self, BootLoaderOperation op)
 {
-        if (!self || !self->bootloader) {
+        assert(self != NULL);
+
+        if (!self->bootloader) {
                 return false;
         }
 
@@ -386,7 +399,9 @@ uint8_t boot_manager_get_platform_size(__attribute__((unused)) BootManager *mana
 
 bool boot_manager_is_image_mode(BootManager *self)
 {
-        if (!self || !self->prefix) {
+        assert(self != NULL);
+
+        if (!self->prefix) {
                 return false;
         }
         return !streq(self->prefix, "/");
@@ -394,28 +409,30 @@ bool boot_manager_is_image_mode(BootManager *self)
 
 bool boot_manager_needs_install(BootManager *self)
 {
-        if (!self) {
-                return false;
-        }
+        assert(self != NULL);
+
         return self->bootloader->needs_install(self);
 }
 
 bool boot_manager_needs_update(BootManager *self)
 {
-        if (!self) {
-                return false;
-        }
+        assert(self != NULL);
+
         return self->bootloader->needs_update(self);
 }
 
 bool boot_manager_is_kernel_installed(BootManager *self, const Kernel *kernel)
 {
+        assert(self != NULL);
+
         return self->bootloader->is_kernel_installed(self, kernel);
 }
 
 bool boot_manager_set_uname(BootManager *self, const char *uname)
 {
-        if (!self || !uname) {
+        assert(self != NULL);
+
+        if (!uname) {
                 return false;
         }
         SystemKernel k = { 0 };
