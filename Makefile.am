@@ -43,6 +43,7 @@ AM_CFLAGS = -fstack-protector -Wall -pedantic \
 AM_CPPFLAGS = 					\
 	-I $(top_srcdir)/src			\
 	-I $(top_srcdir)/src/bootman		\
+	-I $(top_srcdir)/src/cli		\
 	-I $(top_srcdir)/src/bootloaders	\
 	-DTOP_DIR=\"$(abs_top_srcdir)\"		\
 	-DTOP_BUILD_DIR=\"$(abs_top_builddir)\"
@@ -107,16 +108,16 @@ libcbm_la_CFLAGS =		\
 libcbm_LIBADD =			\
 	libnica.la
 
-clr_boot_manager_SOURCES =	\
-	src/cli.h 		\
-	src/cli.c		\
-	src/ops/update.h	\
-	src/ops/update.c	\
-	src/ops/timeout.h	\
-	src/ops/timeout.c	\
-	src/ops/report_booted.h	\
-	src/ops/report_booted.c	\
-	src/main.c
+clr_boot_manager_SOURCES =		\
+	src/cli/cli.h 			\
+	src/cli/cli.c			\
+	src/cli/ops/update.h		\
+	src/cli/ops/update.c		\
+	src/cli/ops/timeout.h		\
+	src/cli/ops/timeout.c		\
+	src/cli/ops/report_booted.h	\
+	src/cli/ops/report_booted.c	\
+	src/cli/main.c
 
 clr_boot_manager_CFLAGS =	\
 	$(CRYPTO_CFLAGS)	\
