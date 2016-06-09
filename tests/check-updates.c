@@ -346,6 +346,30 @@ START_TEST(bootman_image_test_simple)
 }
 END_TEST
 
+/**
+ * Identical to bootman_image_test_simple, but in native mode
+ */
+START_TEST(bootman_native_test_simple)
+{
+        autofree(BootManager) *m = NULL;
+
+        PlaygroundKernel init_kernels[] = {
+                { "4.6.0", "native", 180, true },
+                { "4.4.4", "native", 160, false },
+                { "4.4.0", "native", 140, false },
+        };
+        PlaygroundConfig start_conf = { NULL, init_kernels, ARRAY_SIZE(init_kernels) };
+
+        m = prepare_playground(&start_conf);
+        fail_if(!m, "Fatal: Cannot initialise playground");
+        boot_manager_set_image_mode(m, false);
+
+        fail_if(!boot_manager_update(m), "Failed to update in native mode");
+
+        confirm_bootloader();
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -354,6 +378,7 @@ static Suite *core_suite(void)
         s = suite_create("bootman_update");
         tc = tcase_create("bootman_update_functions");
         tcase_add_test(tc, bootman_image_test_simple);
+        tcase_add_test(tc, bootman_native_test_simple);
         suite_add_tcase(s, tc);
 
         return s;
