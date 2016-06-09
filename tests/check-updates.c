@@ -358,7 +358,9 @@ START_TEST(bootman_native_test_simple)
                 { "4.4.4", "native", 160, false },
                 { "4.4.0", "native", 140, false },
         };
-        PlaygroundConfig start_conf = { NULL, init_kernels, ARRAY_SIZE(init_kernels) };
+        PlaygroundConfig start_conf = { "4.6.0-160.native",
+                                        init_kernels,
+                                        ARRAY_SIZE(init_kernels) };
 
         m = prepare_playground(&start_conf);
         fail_if(!m, "Fatal: Cannot initialise playground");
