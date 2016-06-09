@@ -94,6 +94,10 @@ static BootManager *prepare_playground(PlaygroundConfig *config)
                 goto fail;
         }
 
+        if (!nc_mkdir_p(PLAYGROUND_ROOT "/" BOOT_DIRECTORY, 00755)) {
+                goto fail;
+        }
+
         /* TODO: Insert all the kernels into PLAYGROUND_ROOT */
         for (size_t i = 0; i < config->n_kernels; i++) {
                 PlaygroundKernel *k = &(config->initial_kernels[i]);
@@ -246,6 +250,8 @@ START_TEST(bootman_image_test_simple)
         m = prepare_playground(&start_conf);
         fail_if(!m, "Fatal: Cannot initialise playground");
         boot_manager_set_image_mode(m, true);
+
+        fail_if(!boot_manager_update(m), "Failed to update in image mode");
 }
 END_TEST
 
