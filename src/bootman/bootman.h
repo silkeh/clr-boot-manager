@@ -76,6 +76,16 @@ BootManager *boot_manager_new(void);
 void boot_manager_free(BootManager *manager);
 
 /**
+ * Main actor of the operation, apply all relevant update and GC operations
+ *
+ * @note In future this will switch to an int-error return for integration
+ * with other tooling.
+ *
+ * @return True if the operation succeeded.
+ */
+bool boot_manager_update(BootManager *manager);
+
+/**
  * Update the uname for this BootManager
  *
  * @note We already initialise with the host uname on creation, however this
