@@ -10,6 +10,8 @@
  */
 
 #define _GNU_SOURCE
+
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/utsname.h>
@@ -424,6 +426,18 @@ bool boot_manager_set_uname(BootManager *self, const char *uname)
         memcpy(&(self->sys_kernel), &k, sizeof(struct SystemKernel));
         self->have_sys_kernel = have_sys_kernel;
         return self->have_sys_kernel;
+}
+
+void boot_manager_set_can_mount(BootManager *self, bool can_mount)
+{
+        assert(self != NULL);
+        self->can_mount = can_mount;
+}
+
+bool boot_manager_get_can_mount(BootManager *self)
+{
+        assert(self != NULL);
+        return self->can_mount;
 }
 
 /*

@@ -291,6 +291,16 @@ Kernel *boot_manager_get_last_booted(BootManager *manager, KernelArray *kernels)
 bool cbm_parse_system_kernel(const char *inp, SystemKernel *kernel);
 
 /**
+ * Set whether or not we can actually mount
+ */
+void boot_manager_set_can_mount(BootManager *manager, bool can_mount);
+
+/**
+ * Return a boolean indicating whether we can mount or not
+ */
+bool boot_manager_get_can_mount(BootManager *manager);
+
+/**
  * Free a kernel type
  */
 void free_kernel(Kernel *t);
