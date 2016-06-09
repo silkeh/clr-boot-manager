@@ -40,9 +40,11 @@ AM_CFLAGS = -fstack-protector -Wall -pedantic \
         -std=c99 \
         -DSYSCONFDIR=\"$(sysconfdir)\"
 
-AM_CPPFLAGS = \
-	-I $(top_srcdir)/src \
-	-DTOP_DIR=\"$(abs_top_srcdir)\" \
+AM_CPPFLAGS = 					\
+	-I $(top_srcdir)/src			\
+	-I $(top_srcdir)/src/bootman		\
+	-I $(top_srcdir)/src/bootloaders	\
+	-DTOP_DIR=\"$(abs_top_srcdir)\"		\
 	-DTOP_BUILD_DIR=\"$(abs_top_builddir)\"
 
 AUTOMAKE_OPTIONS = color-tests parallel-tests
@@ -85,17 +87,17 @@ libnica_la_CFLAGS =      \
 bin_PROGRAMS = clr-boot-manager
 
 libcbm_la_SOURCES =			\
-	src/bootloader.h		\
+	src/bootloaders/bootloader.h	\
 	src/bootloaders/systemd-class.h \
 	src/bootloaders/systemd-class.c \
 	src/bootloaders/systemd-boot.c	\
 	src/bootloaders/gummiboot.c	\
 	src/bootloaders/goofiboot.c	\
-	src/util.h			\
-	src/files.h			\
-	src/files.c			\
-	src/bootman.h			\
-	src/bootman.c
+	src/bootman/util.h		\
+	src/bootman/files.h		\
+	src/bootman/files.c		\
+	src/bootman/bootman.h		\
+	src/bootman/bootman.c
 
 libcbm_la_CFLAGS =		\
 	$(CRYPTO_CFLAGS)	\
