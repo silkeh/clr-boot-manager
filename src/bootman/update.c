@@ -24,6 +24,7 @@
 
 static bool boot_manager_update_image(BootManager *self);
 static bool boot_manager_update_native(BootManager *self);
+static bool boot_manager_update_bootloader(BootManager *self);
 
 /**
  * Sort by release number, putting highest first
@@ -165,20 +166,8 @@ static bool boot_manager_update_image(BootManager *self)
         /* Sort them to find the newest kernel */
         nc_array_qsort(kernels, kernel_compare_reverse);
 
-        if (boot_manager_needs_install(self)) {
-                /* Attempt install of the bootloader */
-                int flags = BOOTLOADER_OPERATION_INSTALL | BOOTLOADER_OPERATION_NO_CHECK;
-                if (!boot_manager_modify_bootloader(self, flags)) {
-                        fprintf(stderr, "Failed to install bootloader\n");
-                        return false;
-                }
-        } else if (boot_manager_needs_update(self)) {
-                /* Attempt update of the bootloader */
-                int flags = BOOTLOADER_OPERATION_UPDATE | BOOTLOADER_OPERATION_NO_CHECK;
-                if (!boot_manager_modify_bootloader(self, flags)) {
-                        fprintf(stderr, "Failed to update bootloader\n");
-                        return false;
-                }
+        if (!boot_manager_update_bootloader(self)) {
+                return false;
         }
 
         /* Go ahead and install the kernels */
@@ -208,9 +197,174 @@ static bool boot_manager_update_image(BootManager *self)
 /**
  * Update the target with logical view of a native installation
  */
-static bool boot_manager_update_native(__attribute__((unused)) BootManager *self)
+static bool boot_manager_update_native(BootManager *self)
 {
-        return false;
+        assert(self != NULL);
+        autofree(KernelArray) *kernels = NULL;
+        autofree(NcHashmap) *mapped_kernels = NULL;
+        Kernel *running = NULL;
+        NcHashmapIter map_iter = { 0 };
+        const char *kernel_type = NULL;
+        KernelArray *typed_kernels = NULL;
+        NcArray *removals = NULL;
+        Kernel *new_default = NULL;
+        bool ret = false;
+
+        /* Grab the available kernels */
+        kernels = boot_manager_get_kernels(self);
+        if (!kernels || kernels->len == 0) {
+                fprintf(stderr, "No kernels discovered in %s, bailing\n", self->kernel_dir);
+                return false;
+        }
+
+        /* Get them sorted */
+        nc_array_qsort(kernels, kernel_compare_reverse);
+
+        running = boot_manager_get_running_kernel(self, kernels);
+
+        if (!running) {
+                fprintf(stderr, "Cannot dermine the currently running kernel");
+                return false;
+        }
+
+        /** Map kernels to type */
+        mapped_kernels = boot_manager_map_kernels(self, kernels);
+        if (!mapped_kernels || nc_hashmap_size(mapped_kernels) == 0) {
+                fprintf(stderr, "Failed to map kernels by type, bailing\n");
+                return false;
+        }
+
+        /* Get the bootloader sorted out */
+        if (!boot_manager_update_bootloader(self)) {
+                return false;
+        }
+
+        /* This is mostly to allow a repair-situation */
+        if (!boot_manager_is_kernel_installed(self, running)) {
+                /* Not necessarily fatal. */
+                if (!boot_manager_install_kernel(self, running)) {
+                        fprintf(stderr, "Failed to repair running kernel\n");
+                }
+        }
+
+        nc_hashmap_iter_init(mapped_kernels, &map_iter);
+        while (nc_hashmap_iter_next(&map_iter, (void **)&kernel_type, (void **)&typed_kernels)) {
+                /* TODO: Something useful */
+                Kernel *tip = NULL;
+                Kernel *last_good = NULL;
+
+                /* Sort this kernel set highest to lowest */
+                nc_array_qsort(typed_kernels, kernel_compare_reverse);
+
+                /* Get the default kernel selection */
+                tip = boot_manager_get_default_for_type(self, typed_kernels, kernel_type);
+                if (!tip) {
+                        /* Fallback to highest release number */
+                        tip = nc_array_get(typed_kernels, 0);
+                }
+
+                /* Ensure this tip kernel is installed */
+                if (!boot_manager_is_kernel_installed(self, tip)) {
+                        if (!boot_manager_install_kernel(self, tip)) {
+                                fprintf(stderr, "Failed to install kernel: %s\n", tip->path);
+                                goto cleanup;
+                        }
+                }
+
+                /* Last known booting kernel, might be null. */
+                last_good = boot_manager_get_last_booted(self, typed_kernels);
+
+                /* Ensure this guy is still installed/repaired */
+                if (last_good && !boot_manager_is_kernel_installed(self, last_good)) {
+                        if (!boot_manager_install_kernel(self, tip)) {
+                                fprintf(stderr, "Failed to install kernel: %s\n", tip->path);
+                                goto cleanup;
+                        }
+                }
+
+                for (int i = 0; i < typed_kernels->len; i++) {
+                        Kernel *tk = nc_array_get(typed_kernels, i);
+                        /* Preserve running kernel */
+                        if (tk == running) {
+                                continue;
+                        }
+                        /* Preserve tip */
+                        if (tip && tk == tip) {
+                                continue;
+                        }
+                        /* Preserve last running */
+                        if (last_good && tk == last_good) {
+                                continue;
+                        }
+                        if (!removals) {
+                                removals = nc_array_new();
+                        }
+                        /* Don't try to remove a non installed kernel */
+                        if (!boot_manager_is_kernel_installed(self, tk)) {
+                                continue;
+                        }
+                        /* Schedule removal of kernel */
+                        if (!nc_array_add(removals, tk)) {
+                                DECLARE_OOM();
+                                goto cleanup;
+                        }
+                }
+        }
+
+        /* Might return NULL */
+        new_default = boot_manager_get_default_for_type(self, kernels, running->ktype);
+        if (!boot_manager_set_default_kernel(self, new_default)) {
+                fprintf(stderr,
+                        "Failed to set the default kernel to: %s\n",
+                        new_default ? new_default->path : "<timeout mode>");
+                goto cleanup;
+        }
+
+        ret = true;
+
+        if (!removals) {
+                /* We're done. */
+                goto cleanup;
+        }
+
+        /* Now remove the older kernels */
+        for (int i = 0; i < removals->len; i++) {
+                Kernel *k = nc_array_get(removals, i);
+                if (!boot_manager_remove_kernel(self, k)) {
+                        fprintf(stderr, "Failed to remove kernel: %s\n", k->path);
+                        ret = false;
+                        goto cleanup;
+                }
+        }
+cleanup:
+        if (removals) {
+                nc_array_free(&removals, NULL);
+        }
+        return ret;
+}
+
+/**
+ * Handle the update logic for the bootloader as both methods require the
+ * same calls.
+ */
+static bool boot_manager_update_bootloader(BootManager *self)
+{
+        if (boot_manager_needs_install(self)) {
+                /* Attempt install of the bootloader */
+                int flags = BOOTLOADER_OPERATION_INSTALL | BOOTLOADER_OPERATION_NO_CHECK;
+                if (!boot_manager_modify_bootloader(self, flags)) {
+                        fprintf(stderr, "Failed to install bootloader\n");
+                        return false;
+                }
+        } else if (boot_manager_needs_update(self)) {
+                /* Attempt update of the bootloader */
+                int flags = BOOTLOADER_OPERATION_UPDATE | BOOTLOADER_OPERATION_NO_CHECK;
+                if (!boot_manager_modify_bootloader(self, flags)) {
+                        fprintf(stderr, "Failed to update bootloader\n");
+                        return false;
+                }
+        }
+        return true;
 }
 
 /*
