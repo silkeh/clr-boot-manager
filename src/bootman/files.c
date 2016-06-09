@@ -34,8 +34,6 @@
 #include "nica/files.h"
 #include "util.h"
 
-#define COPY_BUFFER_SIZE 8192
-
 DEF_AUTOFREE(DIR, closedir)
 
 /**
