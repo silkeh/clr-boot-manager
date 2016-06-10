@@ -66,6 +66,7 @@ START_TEST(bootman_native_test_simple)
         m = prepare_playground(&start_conf);
         fail_if(!m, "Fatal: Cannot initialise playground");
         boot_manager_set_image_mode(m, false);
+        fail_if(!set_kernel_booted(&init_kernels[1], true), "Failed to set kernel as booted");
 
         fail_if(!boot_manager_update(m), "Failed to update in native mode");
 

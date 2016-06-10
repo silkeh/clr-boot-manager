@@ -328,6 +328,11 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 return false;
         }
 
+        if (!nc_mkdir_p(PLAYGROUND_ROOT "/var/lib/kernel", 00755)) {
+                fprintf(stderr, "Cannot set up the booted dir: %s\n", strerror(errno));
+                return false;
+        }
+
         if (!boot_manager_set_prefix(m, PLAYGROUND_ROOT)) {
                 goto fail;
         }
