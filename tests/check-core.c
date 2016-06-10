@@ -295,7 +295,6 @@ START_TEST(bootman_set_default_kernel_test)
                 abort();
         }
 
-        m = prepare_playground(&core_config);
         list = boot_manager_get_kernels(m);
 
         nc_array_qsort(list, kernel_compare_reverse);
