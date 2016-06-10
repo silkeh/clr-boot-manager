@@ -59,7 +59,8 @@ if test x$bootloader = "xauto"; then
         elif test -e "/usr/lib/gummiboot"; then
                 bootloader="gummiboot"
         else
-                AC_MSG_ERROR([Cannot find a valid EFI bootloader])
+                AC_MSG_WARN([Cannot find a valid EFI bootloader, defaulting to systemd-boot])
+                bootloaader="systemd-boot"
         fi
         AC_MSG_RESULT([$bootloader])
 fi
