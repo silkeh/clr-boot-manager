@@ -132,6 +132,35 @@ START_TEST(bootman_loader_test_update_native)
 }
 END_TEST
 
+START_TEST(bootman_loader_test_autoupdate)
+{
+        autofree(BootManager) *m = NULL;
+
+        PlaygroundKernel init_kernels[] = {
+                { "4.6.0", "native", 180, true },
+                { "4.4.4", "native", 160, false },
+                { "4.4.0", "native", 140, false },
+        };
+        PlaygroundConfig start_conf = { "4.4.4-160.native",
+                                        init_kernels,
+                                        ARRAY_SIZE(init_kernels) };
+
+        m = prepare_playground(&start_conf);
+        fail_if(!m, "Fatal: Cannot initialise playground");
+        boot_manager_set_image_mode(m, false);
+
+        fail_if(!boot_manager_update(m), "Failed to initialise filesystem");
+        confirm_bootloader();
+
+        fail_if(!push_bootloader_update(2), "Failed to bump bootloader revision");
+
+        fail_if(!boot_manager_update(m), "Failed to resync the filesystem");
+        confirm_bootloader();
+
+        fail_if(!confirm_bootloader_match(), "Autoupdate of bootloader failed");
+}
+END_TEST
+
 START_TEST(bootman_test_retain_booted)
 {
         autofree(BootManager) *m = NULL;
@@ -174,35 +203,6 @@ START_TEST(bootman_test_retain_booted)
         /* Last booted good guy */
         fail_if(!confirm_kernel_installed(m, &(init_kernels[4])),
                 "Failed to retain the last running kernel");
-}
-END_TEST
-
-START_TEST(bootman_loader_test_autoupdate)
-{
-        autofree(BootManager) *m = NULL;
-
-        PlaygroundKernel init_kernels[] = {
-                { "4.6.0", "native", 180, true },
-                { "4.4.4", "native", 160, false },
-                { "4.4.0", "native", 140, false },
-        };
-        PlaygroundConfig start_conf = { "4.4.4-160.native",
-                                        init_kernels,
-                                        ARRAY_SIZE(init_kernels) };
-
-        m = prepare_playground(&start_conf);
-        fail_if(!m, "Fatal: Cannot initialise playground");
-        boot_manager_set_image_mode(m, false);
-
-        fail_if(!boot_manager_update(m), "Failed to initialise filesystem");
-        confirm_bootloader();
-
-        fail_if(!push_bootloader_update(2), "Failed to bump bootloader revision");
-
-        fail_if(!boot_manager_update(m), "Failed to resync the filesystem");
-        confirm_bootloader();
-
-        fail_if(!confirm_bootloader_match(), "Autoupdate of bootloader failed");
 }
 END_TEST
 
