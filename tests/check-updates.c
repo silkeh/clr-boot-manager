@@ -59,7 +59,7 @@ START_TEST(bootman_native_test_simple)
                 { "4.4.4", "native", 160, false },
                 { "4.4.0", "native", 140, false },
         };
-        PlaygroundConfig start_conf = { "4.6.0-160.native",
+        PlaygroundConfig start_conf = { "4.4.4-160.native",
                                         init_kernels,
                                         ARRAY_SIZE(init_kernels) };
 
