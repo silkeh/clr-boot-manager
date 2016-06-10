@@ -320,8 +320,6 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
                 } else {
                         cbm_sync();
                 }
-        } else {
-                LOG("sd_class_remove_kernel: Warning: %s does not exist\n", conf_path);
         }
 
         kname_copy = strdup(kernel->path);
@@ -333,7 +331,7 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
         }
 
         /* Remove the kernel from the ESP */
-        if (unlink(kfile_target) < 0) {
+        if (nc_file_exists(kfile_target) && unlink(kfile_target) < 0) {
                 LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
                     kfile_target,
                     strerror(errno));
@@ -350,8 +348,6 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
                 } else {
                         cbm_sync();
                 }
-        } else {
-                LOG("sd_class_remove_kernel: Missing module tree for %s\n", kernel->path);
         }
 
         if (kernel->cmdline_file && nc_file_exists(kernel->cmdline_file)) {
