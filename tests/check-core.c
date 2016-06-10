@@ -273,7 +273,6 @@ START_TEST(bootman_install_kernel_test)
                 abort();
         }
 
-        fprintf(stderr, "kern file is now %s\n", path2);
         fail_if(!nc_file_exists(path1), "Failed to find loader .conf entry");
 
         fail_if(!nc_file_exists(path2), "Failed to find kernel file after install");
