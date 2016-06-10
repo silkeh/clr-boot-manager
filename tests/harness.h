@@ -58,6 +58,17 @@ bool set_kernel_default(PlaygroundKernel *kernel);
 bool set_kernel_booted(PlaygroundKernel *kernel, bool did_boot);
 
 /**
+ * Push a faux-bootloader with the content specified by @version.
+ * This enables testing bootloader operations without requiring
+ * the real files, as well as testing update behaviour for source
+ * changes.
+ *
+ * @note The default revision is 0, so to push a faux update, make sure to
+ * use a higher revision number.
+ */
+bool push_bootloader_update(int revision);
+
+/**
  * Util - confirm the bootloader is installed in the current test
  */
 void confirm_bootloader(void);

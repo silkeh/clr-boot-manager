@@ -61,7 +61,6 @@
 #define ESP_BOOT_DIR EFI_START "/systemd"
 #define ESP_BOOT_STUB ESP_BOOT_DIR "/systemd-boot" EFI_STUB_SUFFIX_L
 
-#define BOOT_COPY_SOURCE "/usr/lib/systemd/boot/efi/systemd-boot" EFI_STUB_SUFFIX_L
 #define BOOT_COPY_TARGET PLAYGROUND_ROOT "/usr/lib/systemd/boot/efi/systemd-boot" EFI_STUB_SUFFIX_L
 #define BOOT_COPY_DIR PLAYGROUND_ROOT "/usr/lib/systemd/boot/efi"
 
@@ -72,7 +71,6 @@
 #define ESP_BOOT_DIR EFI_START "/gummiboot"
 #define ESP_BOOT_STUB ESP_BOOT_DIR "/gummiboot" EFI_STUB_SUFFIX_L
 
-#define BOOT_COPY_SOURCE "/usr/lib/gummiboot/gummiboot" EFI_STUB_SUFFIX_L
 #define BOOT_COPY_TARGET PLAYGROUND_ROOT "/usr/lib/gummiboot/gummiboot" EFI_STUB_SUFFIX_L
 #define BOOT_COPY_DIR PLAYGROUND_ROOT "/usr/lib/gummiboot"
 
@@ -82,7 +80,6 @@
 #elif defined(HAVE_GOOFIBOOT)
 #define ESP_BOOT_DIR EFI_START "/goofiboot"
 #define ESP_BOOT_STUB ESP_BOOT_DIR "/goofiboot" EFI_STUB_SUFFIX_L
-#define BOOT_COPY_SOURCE "/usr/lib/goofiboot/goofiboot" EFI_STUB_SUFFIX_L
 #define BOOT_COPY_TARGET PLAYGROUND_ROOT "/usr/lib/goofiboot/goofiboot" EFI_STUB_SUFFIX_L
 #define BOOT_COPY_DIR PLAYGROUND_ROOT "/usr/lib/goofiboot"
 #else
@@ -286,9 +283,27 @@ bool push_kernel_update(PlaygroundKernel *kernel)
         return true;
 }
 
-/**
- * Initialise a playground area to assert update behaviour
- */
+bool push_bootloader_update(int revision)
+{
+        autofree(char) *text = NULL;
+
+        if (!asprintf(&text, "faux-bootloader-revision: %d\n", revision)) {
+                return false;
+        }
+
+        if (!nc_file_exists(BOOT_COPY_DIR)) {
+                if (!nc_mkdir_p(BOOT_COPY_DIR, 00755)) {
+                        fprintf(stderr, "Failed to mkdir %s: %s\n", BOOT_COPY_DIR, strerror(errno));
+                        return false;
+                }
+        }
+        if (!file_set_text(BOOT_COPY_TARGET, text)) {
+                fprintf(stderr, "Failed to update bootloader: %s\n", strerror(errno));
+                return false;
+        }
+        return true;
+}
+
 BootManager *prepare_playground(PlaygroundConfig *config)
 {
         assert(config != NULL);
@@ -331,14 +346,11 @@ BootManager *prepare_playground(PlaygroundConfig *config)
         }
 
         /* Copy the bootloader bits into the tree */
-        if (!nc_mkdir_p(BOOT_COPY_DIR, 00755)) {
-                goto fail;
-        }
-        if (!copy_file(BOOT_COPY_SOURCE, BOOT_COPY_TARGET, 00644)) {
+        if (!push_bootloader_update(0)) {
                 goto fail;
         }
 
-        /* TODO: Insert all the kernels into PLAYGROUND_ROOT */
+        /* Insert all intitial kernels into the root */
         for (size_t i = 0; i < config->n_kernels; i++) {
                 PlaygroundKernel *k = &(config->initial_kernels[i]);
                 if (!push_kernel_update(k)) {
