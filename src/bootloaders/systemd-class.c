@@ -393,8 +393,12 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
                 return false;
         }
 
+        if (!sd_class_ensure_dirs(manager)) {
+                LOG("Failed to create required directories for %s\n", sd_config->name);
+                return false;
+        }
+
         autofree(char) *item_name = NULL;
-        autofree(char) *config_file = NULL;
         int timeout = 0;
         const char *prefix = NULL;
 
@@ -408,7 +412,7 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
                 }
 
                 LOG("sd_class_set_default_kernel: Failed to write %s: %s\n",
-                    config_file,
+                    sd_class_config.loader_config,
                     strerror(errno));
                 return false;
         }
@@ -441,7 +445,7 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
         }
         if (!file_set_text(sd_class_config.loader_config, item_name)) {
                 LOG("sd_class_set_default_kernel: Failed to write %s: %s\n",
-                    config_file,
+                    sd_class_config.loader_config,
                     strerror(errno));
                 return false;
         }
