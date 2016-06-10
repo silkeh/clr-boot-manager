@@ -206,6 +206,54 @@ START_TEST(bootman_test_retain_booted)
 }
 END_TEST
 
+/**
+ * Test retention of multiple types..
+ */
+START_TEST(bootman_test_retain_multi)
+{
+        autofree(BootManager) *m = NULL;
+
+        PlaygroundKernel init_kernels[] = {
+                { "4.6.0", "native", 180, true },  /* Tip native */
+                { "4.4.4", "native", 160, false }, /* Extranous */
+                { "4.2.2", "native", 140, false }, /* Did boot */
+
+                { "4.6.0", "kvm", 180, true },  /* Tip KVM */
+                { "4.4.4", "kvm", 160, false }, /* Current kernel */
+                { "4.2.2", "kvm", 140, false }, /* Never booted */
+        };
+
+        PlaygroundConfig start_conf = { "4.4.4-160.kvm", init_kernels, ARRAY_SIZE(init_kernels) };
+
+        m = prepare_playground(&start_conf);
+        fail_if(!m, "Fatal: Cannot initialise playground");
+        boot_manager_set_image_mode(m, false);
+
+        fail_if(!set_kernel_booted(&(init_kernels[2]), true), "Failed to set the booted kernel");
+
+        fail_if(!boot_manager_update(m), "Failed to update with multi kernels");
+
+        /* Check the tips */
+        fail_if(!confirm_kernel_installed(m, &(init_kernels[0])),
+                "Tip native kernel not installed");
+        fail_if(!confirm_kernel_installed(m, &(init_kernels[3])), "Tip kvm kernel not installed");
+
+        /* Extranous */
+        fail_if(confirm_kernel_installed(m, &(init_kernels[1])),
+                "Extranous native kernel should be uninstalled!");
+        fail_if(confirm_kernel_installed(m, &(init_kernels[5])),
+                "Never-booted excess KVM kernel shouldn't be installed");
+
+        /* Did boot, needs to stay */
+        fail_if(!confirm_kernel_installed(m, &(init_kernels[2])),
+                "Last booting native kernel isn't installed");
+
+        /* And finally, is our running kernel still around? Kinda important. */
+        fail_if(!confirm_kernel_installed(m, &(init_kernels[4])),
+                "Running kernel has gone walkabouts");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -223,6 +271,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_image_test_simple);
         tcase_add_test(tc, bootman_native_test_simple);
         tcase_add_test(tc, bootman_test_retain_booted);
+        tcase_add_test(tc, bootman_test_retain_multi);
         suite_add_tcase(s, tc);
 
         return s;
