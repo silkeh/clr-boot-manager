@@ -234,10 +234,14 @@ START_TEST(bootman_install_kernel_test)
         autofree(BootManager) *m = NULL;
         autofree(KernelArray) *list = NULL;
         __attribute__((unused)) const Kernel *kernel = NULL;
+        autofree(char) *path1 = NULL;
+        autofree(char) *path2 = NULL;
+        const char *vendor = NULL;
 
         m = boot_manager_new();
         boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
         list = boot_manager_get_kernels(m);
+        vendor = boot_manager_get_vendor_prefix(m);
 
         nc_array_qsort(list, kernel_compare_reverse);
         /* org.clearlinux.native.4.2.3-138 */
@@ -245,13 +249,26 @@ START_TEST(bootman_install_kernel_test)
 
         fail_if(!boot_manager_install_kernel(m, kernel), "Failed to install kernel");
 
-        fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                              "/loader/entries/Clear-linux-native-4.2.3-138.conf"),
-                "Failed to find loader .conf entry");
+        if (!asprintf(&path1,
+                      "%s/tests/dummy_install/%s/loader/entries/%s-native-4.2.3-138.conf",
+                      TOP_BUILD_DIR,
+                      BOOT_DIRECTORY,
+                      vendor)) {
+                abort();
+        }
 
-        fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                              "/org.clearlinux.native.4.2.3-138"),
-                "Failed to find kernel file after install");
+        if (!asprintf(&path2,
+                      "%s/tests/dummy_install/%s/%s.native.4.2.3-138",
+                      TOP_BUILD_DIR,
+                      BOOT_DIRECTORY,
+                      KERNEL_NAMESPACE)) {
+                abort();
+        }
+
+        fprintf(stderr, "kern file is now %s\n", path2);
+        fail_if(!nc_file_exists(path1), "Failed to find loader .conf entry");
+
+        fail_if(!nc_file_exists(path2), "Failed to find kernel file after install");
 }
 END_TEST
 
@@ -260,10 +277,17 @@ START_TEST(bootman_set_default_kernel_test)
         autofree(BootManager) *m = NULL;
         autofree(KernelArray) *list = NULL;
         __attribute__((unused)) const Kernel *kernel = NULL;
-        const char *expected = "default Clear-linux-native-4.2.3-138\n";
+        autofree(char) *expected = NULL;
         autofree(char) *got = NULL;
 
         m = boot_manager_new();
+
+        if (!asprintf(&expected,
+                      "default %s-native-4.2.3-138\n",
+                      boot_manager_get_vendor_prefix(m))) {
+                abort();
+        }
+
         boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
         list = boot_manager_get_kernels(m);
 
@@ -288,8 +312,12 @@ START_TEST(bootman_remove_kernel_test)
         autofree(BootManager) *m = NULL;
         autofree(KernelArray) *list = NULL;
         __attribute__((unused)) const Kernel *kernel = NULL;
+        autofree(char) *path1 = NULL;
+        autofree(char) *path2 = NULL;
+        const char *os_name = NULL;
 
         m = boot_manager_new();
+        os_name = boot_manager_get_vendor_prefix(m);
         boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
         list = boot_manager_get_kernels(m);
 
@@ -299,13 +327,25 @@ START_TEST(bootman_remove_kernel_test)
 
         fail_if(!boot_manager_remove_kernel(m, kernel), "Failed to remove kernel");
 
-        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                             "/loader/entries/Clear-linux-native-4.2.3-138.conf"),
-                "Failed to remove loader .conf entry");
+        if (!asprintf(&path1,
+                      "%s/tests/dummy_install/%s/loader/entries/%s-native-4.2.3-138.conf",
+                      TOP_BUILD_DIR,
+                      BOOT_DIRECTORY,
+                      os_name)) {
+                abort();
+        }
 
-        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
-                                             "/org.clearlinux.native.4.2.3-138"),
-                "Failed to remove kernel file after install");
+        if (!asprintf(&path2,
+                      "%s/tests/dummy_install/%s/%s.native-4.2.3-138",
+                      TOP_BUILD_DIR,
+                      BOOT_DIRECTORY,
+                      os_name)) {
+                abort();
+        }
+
+        fail_if(nc_file_exists(path1), "Failed to remove loader .conf entry");
+
+        fail_if(nc_file_exists(path2), "Failed to remove kernel file after install");
 }
 END_TEST
 
