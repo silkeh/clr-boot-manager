@@ -23,7 +23,6 @@ bool cbm_command_update(int argc, char **argv)
 {
         autofree(char) *root = NULL;
         autofree(BootManager) *manager = NULL;
-        bool ret = false;
         bool image_mode = false;
 
         cli_default_args_init(&argc, &argv, &root);

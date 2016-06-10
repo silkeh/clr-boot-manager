@@ -129,8 +129,8 @@ clr_boot_manager_CFLAGS =	\
 	$(AM_CFLAGS)
 
 clr_boot_manager_LDADD =	\
-	libnica.la		\
 	libcbm.la		\
+	libnica.la		\
 	$(CRYPTO_LIBS)		\
 	$(BLKID_LIBS)
 
