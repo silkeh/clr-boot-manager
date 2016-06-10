@@ -53,6 +53,11 @@ bool push_kernel_update(PlaygroundKernel *kernel);
 bool set_kernel_default(PlaygroundKernel *kernel);
 
 /**
+ * Mark the kernel as having booted
+ */
+bool set_kernel_booted(PlaygroundKernel *kernel, bool did_boot);
+
+/**
  * Util - confirm the bootloader is installed in the current test
  */
 void confirm_bootloader(void);

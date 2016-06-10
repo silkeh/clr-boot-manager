@@ -158,6 +158,37 @@ bool set_kernel_default(PlaygroundKernel *kernel)
         return true;
 }
 
+bool set_kernel_booted(PlaygroundKernel *kernel, bool did_boot)
+{
+        /*  /var/lib/kernel/k_booted_4.4.0-120.lts  */
+        if (!kernel) {
+                return false;
+        }
+        autofree(char) *p = NULL;
+
+        if (asprintf(&p,
+                     "%s/var/lib/kernel/k_booted_%s-%d.%s",
+                     PLAYGROUND_ROOT,
+                     kernel->version,
+                     kernel->release,
+                     kernel->ktype) < 0) {
+                return false;
+        }
+
+        if (!did_boot) {
+                if (nc_file_exists(p) && unlink(p) < 0) {
+                        fprintf(stderr, "Cannot unlink %s: %s\n", p, strerror(errno));
+                        return false;
+                }
+                return true;
+        }
+        if (!file_set_text((const char *)p, "clr-boot-manager file\n")) {
+                fprintf(stderr, "Cannot write k_boot file %s: %s\n", p, strerror(errno));
+                return false;
+        }
+        return true;
+}
+
 bool push_kernel_update(PlaygroundKernel *kernel)
 {
         autofree(char) *kfile = NULL;
