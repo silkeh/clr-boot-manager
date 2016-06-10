@@ -24,6 +24,7 @@
 #include "nica/files.h"
 
 #include "config.h"
+#include "harness.h"
 
 #define PLAYGROUND_ROOT TOP_BUILD_DIR "/tests/update_playground"
 
@@ -87,25 +88,6 @@
 #else
 #error No known ESP loader
 #endif
-
-/**
- * Needed for intiialisation
- */
-typedef struct PlaygroundKernel {
-        const char *version;
-        const char *ktype;
-        int release;
-        bool default_for_type;
-} PlaygroundKernel;
-
-/**
- * Playground initialisation
- */
-typedef struct PlaygroundConfig {
-        const char *uts_name;
-        PlaygroundKernel *initial_kernels;
-        size_t n_kernels;
-} PlaygroundConfig;
 
 /**
  * Wrap nc_file_exists and spam to stderr

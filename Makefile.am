@@ -194,8 +194,9 @@ check_files_LDADD =	\
 	$(BLKID_LIBS)	\
 	$(CHECK_LIBS)
 
-check_updates_SOURCES = \
-	tests/check-updates.c
+check_updates_SOURCES =		\
+	tests/check-updates.c	\
+	tests/harness.h
 
 check_updates_CFLAGS =		\
 	$(CRYPTO_CFLAGS)	\
