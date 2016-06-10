@@ -276,8 +276,8 @@ static bool boot_manager_update_native(BootManager *self)
 
                 /* Ensure this guy is still installed/repaired */
                 if (last_good && !boot_manager_is_kernel_installed(self, last_good)) {
-                        if (!boot_manager_install_kernel(self, tip)) {
-                                fprintf(stderr, "Failed to install kernel: %s\n", tip->path);
+                        if (!boot_manager_install_kernel(self, last_good)) {
+                                fprintf(stderr, "Failed to install kernel: %s\n", last_good->path);
                                 goto cleanup;
                         }
                 }
