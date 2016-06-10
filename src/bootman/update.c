@@ -299,11 +299,7 @@ static bool boot_manager_update_native(BootManager *self)
                         if (!removals) {
                                 removals = nc_array_new();
                         }
-                        /* Don't try to remove a non installed kernel */
-                        if (!boot_manager_is_kernel_installed(self, tk)) {
-                                continue;
-                        }
-                        /* Schedule removal of kernel */
+                        /* Schedule removal of kernel - regardless of install status */
                         if (!nc_array_add(removals, tk)) {
                                 DECLARE_OOM();
                                 goto cleanup;
