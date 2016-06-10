@@ -89,6 +89,15 @@
 #error No known ESP loader
 #endif
 
+/* $moduledir/$i */
+static const char *module_dirs[] = { "build", "source", "extra",   "kernel", "updates",
+                                     "arch",  "crypto", "drivers", "fs",     "lib",
+                                     "mm",    "net",    "sound" };
+/* $moduledir/kernel/$i */
+static const char *module_modules[] = { "arch/dummy.ko", "crypto/dummy.ko", "drivers/dummy.ko",
+                                        "fs/dummy.ko",   "lib/dummy.ko",    "mm/dummy.ko",
+                                        "net/dummy.ko",  "sound/dummy.ko" };
+
 /**
  * Wrap nc_file_exists and spam to stderr
  */
@@ -109,6 +118,143 @@ void confirm_bootloader(void)
         fail_if(!noisy_file_exists(ESP_BOOT_STUB), "ESP target stub missing");
 }
 
+bool set_kernel_default(PlaygroundKernel *kernel)
+{
+        if (!kernel) {
+                return false;
+        }
+        autofree(char) *link_source = NULL;
+        autofree(char) *link_target = NULL;
+
+        if (!asprintf(&link_source,
+                      "%s.%s.%s-%d",
+                      KERNEL_NAMESPACE,
+                      kernel->ktype,
+                      kernel->version,
+                      kernel->release)) {
+                return false;
+        }
+
+        /* i.e. default-kvm */
+        if (!asprintf(&link_target,
+                      "%s/%s/default-%s",
+                      PLAYGROUND_ROOT,
+                      KERNEL_DIRECTORY,
+                      kernel->ktype)) {
+                return false;
+        }
+
+        /* Purge old link */
+        if (nc_file_exists(link_target) && unlink(link_target) < 0) {
+                fprintf(stderr, "Cannot remove default symlink: %s\n", strerror(errno));
+                return false;
+        }
+
+        /* Set new link */
+        if (symlink(link_source, link_target) < 0) {
+                fprintf(stderr, "Failed to create default-%s symlink\n", kernel->ktype);
+                return false;
+        }
+        return true;
+}
+
+bool push_kernel_update(PlaygroundKernel *kernel)
+{
+        autofree(char) *kfile = NULL;
+        autofree(char) *cmdfile = NULL;
+        autofree(char) *conffile = NULL;
+        autofree(char) *link_source = NULL;
+        autofree(char) *link_target = NULL;
+
+        /* $root/$kerneldir/$prefix.native.4.2.1-137 */
+        if (!asprintf(&kfile,
+                      "%s/%s/%s.%s.%s-%d",
+                      PLAYGROUND_ROOT,
+                      KERNEL_DIRECTORY,
+                      KERNEL_NAMESPACE,
+                      kernel->ktype,
+                      kernel->version,
+                      kernel->release)) {
+                return false;
+        }
+
+        /* $root/$kerneldir/cmdline-$version-$release.$type */
+        if (!asprintf(&cmdfile,
+                      "%s/%s/cmdline-%s-%d.%s",
+                      PLAYGROUND_ROOT,
+                      KERNEL_DIRECTORY,
+                      kernel->version,
+                      kernel->release,
+                      kernel->ktype)) {
+                return false;
+        }
+        /* $root/$kerneldir/config-$version-$release.$type */
+        if (!asprintf(&conffile,
+                      "%s/%s/config-%s-%d.%s",
+                      PLAYGROUND_ROOT,
+                      KERNEL_DIRECTORY,
+                      kernel->version,
+                      kernel->release,
+                      kernel->ktype)) {
+                return false;
+        }
+
+        /* Write the "kernel blob" */
+        if (!file_set_text((const char *)kfile, (char *)kernel->version)) {
+                return false;
+        }
+        /* Write the "cmdline file" */
+        if (!file_set_text((const char *)cmdfile, (char *)kernel->version)) {
+                return false;
+        }
+        /* Write the "config file" */
+        if (!file_set_text((const char *)conffile, (char *)kernel->version)) {
+                return false;
+        }
+
+        /* Create all the dirs .. */
+        for (size_t i = 0; i < ARRAY_SIZE(module_dirs); i++) {
+                const char *p = module_dirs[i];
+                autofree(char) *t = NULL;
+
+                /* $root/$moduledir/$version-$rel/$p */
+                if (!asprintf(&t,
+                              "%s/%s/%s-%d/%s",
+                              PLAYGROUND_ROOT,
+                              KERNEL_MODULES_DIRECTORY,
+                              kernel->version,
+                              kernel->release,
+                              p)) {
+                        return false;
+                }
+                if (!nc_mkdir_p(t, 00755)) {
+                        fprintf(stderr, "Failed to mkdir: %s %s\n", p, strerror(errno));
+                        return false;
+                }
+        }
+        /* Create all the .ko's .. */
+        for (size_t i = 0; i < ARRAY_SIZE(module_modules); i++) {
+                const char *p = module_modules[i];
+                autofree(char) *t = NULL;
+
+                /* $root/$moduledir/$version-$rel/$p */
+                if (!asprintf(&t,
+                              "%s/%s/%s-%d/%s",
+                              PLAYGROUND_ROOT,
+                              KERNEL_MODULES_DIRECTORY,
+                              kernel->version,
+                              kernel->release,
+                              p)) {
+                        return false;
+                }
+                if (!file_set_text((const char *)t, (char *)kernel->version)) {
+                        fprintf(stderr, "Failed to touch: %s %s\n", t, strerror(errno));
+                        return false;
+                }
+        }
+        return true;
+}
+
 /**
  * Initialise a playground area to assert update behaviour
  */
@@ -117,14 +263,6 @@ BootManager *prepare_playground(PlaygroundConfig *config)
         assert(config != NULL);
 
         BootManager *m = NULL;
-        /* $moduledir/$i */
-        const char *module_dirs[] = { "build", "source", "extra",   "kernel", "updates",
-                                      "arch",  "crypto", "drivers", "fs",     "lib",
-                                      "mm",    "net",    "sound" };
-        /* $moduledir/kernel/$i */
-        const char *module_modules[] = { "arch/dummy.ko", "crypto/dummy.ko", "drivers/dummy.ko",
-                                         "fs/dummy.ko",   "lib/dummy.ko",    "mm/dummy.ko",
-                                         "net/dummy.ko",  "sound/dummy.ko" };
 
         m = boot_manager_new();
         if (!m) {
@@ -172,124 +310,14 @@ BootManager *prepare_playground(PlaygroundConfig *config)
         /* TODO: Insert all the kernels into PLAYGROUND_ROOT */
         for (size_t i = 0; i < config->n_kernels; i++) {
                 PlaygroundKernel *k = &(config->initial_kernels[i]);
-                autofree(char) *kfile = NULL;
-                autofree(char) *cmdfile = NULL;
-                autofree(char) *conffile = NULL;
-                autofree(char) *link_source = NULL;
-                autofree(char) *link_target = NULL;
-
-                /* $root/$kerneldir/$prefix.native.4.2.1-137 */
-                if (!asprintf(&kfile,
-                              "%s/%s/%s.%s.%s-%d",
-                              PLAYGROUND_ROOT,
-                              KERNEL_DIRECTORY,
-                              KERNEL_NAMESPACE,
-                              k->ktype,
-                              k->version,
-                              k->release)) {
+                if (!push_kernel_update(k)) {
                         goto fail;
                 }
-
-                /* $root/$kerneldir/cmdline-$version-$release.$type */
-                if (!asprintf(&cmdfile,
-                              "%s/%s/cmdline-%s-%d.%s",
-                              PLAYGROUND_ROOT,
-                              KERNEL_DIRECTORY,
-                              k->version,
-                              k->release,
-                              k->ktype)) {
-                        goto fail;
-                }
-                /* $root/$kerneldir/config-$version-$release.$type */
-                if (!asprintf(&conffile,
-                              "%s/%s/config-%s-%d.%s",
-                              PLAYGROUND_ROOT,
-                              KERNEL_DIRECTORY,
-                              k->version,
-                              k->release,
-                              k->ktype)) {
-                        goto fail;
-                }
-
-                /* Write the "kernel blob" */
-                if (!file_set_text((const char *)kfile, (char *)k->version)) {
-                        goto fail;
-                }
-                /* Write the "cmdline file" */
-                if (!file_set_text((const char *)cmdfile, (char *)k->version)) {
-                        goto fail;
-                }
-                /* Write the "config file" */
-                if (!file_set_text((const char *)conffile, (char *)k->version)) {
-                        goto fail;
-                }
-
-                /* Create all the dirs .. */
-                for (size_t i = 0; i < ARRAY_SIZE(module_dirs); i++) {
-                        const char *p = module_dirs[i];
-                        autofree(char) *t = NULL;
-
-                        /* $root/$moduledir/$version-$rel/$p */
-                        if (!asprintf(&t,
-                                      "%s/%s/%s-%d/%s",
-                                      PLAYGROUND_ROOT,
-                                      KERNEL_MODULES_DIRECTORY,
-                                      k->version,
-                                      k->release,
-                                      p)) {
-                                goto fail;
-                        }
-                        if (!nc_mkdir_p(t, 00755)) {
-                                fprintf(stderr, "Failed to mkdir: %s %s\n", p, strerror(errno));
-                                goto fail;
-                        }
-                }
-                /* Create all the .ko's .. */
-                for (size_t i = 0; i < ARRAY_SIZE(module_modules); i++) {
-                        const char *p = module_modules[i];
-                        autofree(char) *t = NULL;
-
-                        /* $root/$moduledir/$version-$rel/$p */
-                        if (!asprintf(&t,
-                                      "%s/%s/%s-%d/%s",
-                                      PLAYGROUND_ROOT,
-                                      KERNEL_MODULES_DIRECTORY,
-                                      k->version,
-                                      k->release,
-                                      p)) {
-                                goto fail;
-                        }
-                        if (!file_set_text((const char *)t, (char *)k->version)) {
-                                fprintf(stderr, "Failed to touch: %s %s\n", t, strerror(errno));
-                                goto fail;
-                        }
-                }
-
                 /* Not default so skip */
                 if (!k->default_for_type) {
                         continue;
                 }
-
-                if (!asprintf(&link_source,
-                              "%s.%s.%s-%d",
-                              KERNEL_NAMESPACE,
-                              k->ktype,
-                              k->version,
-                              k->release)) {
-                        goto fail;
-                }
-
-                /* i.e. default-kvm */
-                if (!asprintf(&link_target,
-                              "%s/%s/default-%s",
-                              PLAYGROUND_ROOT,
-                              KERNEL_DIRECTORY,
-                              k->ktype)) {
-                        goto fail;
-                }
-
-                if (symlink(link_source, link_target) < 0) {
-                        fprintf(stderr, "Failed to create default-%s symlink\n", k->ktype);
+                if (!set_kernel_default(k)) {
                         goto fail;
                 }
         }

@@ -42,6 +42,17 @@ typedef struct PlaygroundConfig {
 BootManager *prepare_playground(PlaygroundConfig *config);
 
 /**
+ * Push a new kernel into the root
+ */
+bool push_kernel_update(PlaygroundKernel *kernel);
+
+/**
+ * Set the current kernel as the default for it's type, overriding any
+ * previous configuration.
+ */
+bool set_kernel_default(PlaygroundKernel *kernel);
+
+/**
  * Util - confirm the bootloader is installed in the current test
  */
 void confirm_bootloader(void);
