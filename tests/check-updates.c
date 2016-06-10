@@ -138,14 +138,15 @@ static Suite *core_suite(void)
         TCase *tc = NULL;
 
         s = suite_create("bootman_update");
-        tc = tcase_create("bootman_update_functions");
-        tcase_add_test(tc, bootman_image_test_simple);
-        tcase_add_test(tc, bootman_native_test_simple);
-        suite_add_tcase(s, tc);
 
         tc = tcase_create("bootman_loader_functions");
         tcase_add_test(tc, bootman_loader_test_update_image);
         tcase_add_test(tc, bootman_loader_test_update_native);
+        suite_add_tcase(s, tc);
+
+        tc = tcase_create("bootman_update_functions");
+        tcase_add_test(tc, bootman_image_test_simple);
+        tcase_add_test(tc, bootman_native_test_simple);
         suite_add_tcase(s, tc);
 
         return s;
