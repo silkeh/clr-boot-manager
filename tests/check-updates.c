@@ -74,6 +74,31 @@ START_TEST(bootman_native_test_simple)
 }
 END_TEST
 
+START_TEST(bootman_loader_test_update)
+{
+        autofree(BootManager) *m = NULL;
+        PlaygroundConfig start_conf = { 0 };
+
+        m = prepare_playground(&start_conf);
+        fail_if(!m, "Fatal: Cannot initialise playground");
+        boot_manager_set_image_mode(m, false);
+
+        fail_if(!boot_manager_modify_bootloader(m, BOOTLOADER_OPERATION_INSTALL),
+                "Failed to install bootloader");
+
+        confirm_bootloader();
+        fail_if(!confirm_bootloader_match(), "Installed bootloader is incorrect");
+
+        fail_if(!push_bootloader_update(1), "Failed to bump source bootloader");
+        fail_if(confirm_bootloader_match(), "Source shouldn't match target bootloader yet");
+
+        fail_if(!boot_manager_modify_bootloader(m, BOOTLOADER_OPERATION_UPDATE),
+                "Failed to update bootloader");
+        confirm_bootloader();
+        fail_if(!confirm_bootloader_match(), "Bootloader didn't actually update");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -83,6 +108,10 @@ static Suite *core_suite(void)
         tc = tcase_create("bootman_update_functions");
         tcase_add_test(tc, bootman_image_test_simple);
         tcase_add_test(tc, bootman_native_test_simple);
+        suite_add_tcase(s, tc);
+
+        tc = tcase_create("bootman_loader_functions");
+        tcase_add_test(tc, bootman_loader_test_update);
         suite_add_tcase(s, tc);
 
         return s;
