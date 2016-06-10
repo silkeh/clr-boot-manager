@@ -92,7 +92,9 @@ static void internal_loader_test(bool image_mode)
         fail_if(!push_bootloader_update(1), "Failed to bump source bootloader");
         fail_if(confirm_bootloader_match(), "Source shouldn't match target bootloader yet");
 
-        fail_if(!boot_manager_modify_bootloader(m, BOOTLOADER_OPERATION_UPDATE | BOOTLOADER_OPERATION_NO_CHECK),
+        fail_if(!boot_manager_modify_bootloader(m,
+                                                BOOTLOADER_OPERATION_UPDATE |
+                                                    BOOTLOADER_OPERATION_NO_CHECK),
                 "Failed to forcibly update bootloader");
         confirm_bootloader();
         fail_if(!confirm_bootloader_match(), "Bootloader didn't actually update");
@@ -105,8 +107,7 @@ static void internal_loader_test(bool image_mode)
         fail_if(!boot_manager_needs_update(m), "Bootloader doesn't know it needs update");
         fail_if(!boot_manager_modify_bootloader(m, BOOTLOADER_OPERATION_UPDATE),
                 "Failed to auto-update bootloader");
-        fail_if(!confirm_bootloader_match(),
-                "Auto-updated bootloader doesn't match source");
+        fail_if(!confirm_bootloader_match(), "Auto-updated bootloader doesn't match source");
 }
 
 START_TEST(bootman_loader_test_update_image)
