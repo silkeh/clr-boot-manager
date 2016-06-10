@@ -132,6 +132,51 @@ START_TEST(bootman_loader_test_update_native)
 }
 END_TEST
 
+START_TEST(bootman_test_retain_booted)
+{
+        autofree(BootManager) *m = NULL;
+
+        PlaygroundKernel init_kernels[] = {
+                { "4.6.0", "native", 180, true },  /* Latest */
+                { "4.6.0", "native", 170, false }, /* Newer update */
+                { "4.4.4", "native", 160, false }, /* Booted */
+                { "4.4.0", "native", 140, false }, /* Curveball, not booted. */
+                { "4.2.0", "native", 120, false }, /* Actually did boot */
+        };
+        PlaygroundConfig start_conf = { "4.4.4-160.native",
+                                        init_kernels,
+                                        ARRAY_SIZE(init_kernels) };
+
+        m = prepare_playground(&start_conf);
+        fail_if(!m, "Fatal: Cannot initialise playground");
+        boot_manager_set_image_mode(m, false);
+
+        fail_if(!set_kernel_booted(&init_kernels[4], true), "Failed to set kernel as booted");
+
+        fail_if(!boot_manager_update(m), "Failed to update in native mode");
+
+        /* Ensure new default-native is retained */
+        fail_if(!confirm_kernel_installed(m, &(init_kernels[0])),
+                "Failed to retain latest default kernel");
+
+        /* Middle update was useless for us  */
+        fail_if(confirm_kernel_installed(m, &(init_kernels[1])),
+                "Non-booted non-default kernel shouldn't be installed.");
+
+        /* Currently booted kernel - must stay! */
+        fail_if(!confirm_kernel_installed(m, &(init_kernels[2])),
+                "Failed to retain running kernel!");
+
+        /* Old unused kernel, didn't boot. */
+        fail_if(confirm_kernel_installed(m, &(init_kernels[3])),
+                "Non-booted old kernel shouldn't be installed.");
+
+        /* Last booted good guy */
+        fail_if(!confirm_kernel_installed(m, &(init_kernels[4])),
+                "Failed to retain the last running kernel");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -147,6 +192,7 @@ static Suite *core_suite(void)
         tc = tcase_create("bootman_update_functions");
         tcase_add_test(tc, bootman_image_test_simple);
         tcase_add_test(tc, bootman_native_test_simple);
+        tcase_add_test(tc, bootman_test_retain_booted);
         suite_add_tcase(s, tc);
 
         return s;
