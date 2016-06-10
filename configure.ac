@@ -60,7 +60,7 @@ if test x$bootloader = "xauto"; then
                 bootloader="gummiboot"
         else
                 AC_MSG_WARN([Cannot find a valid EFI bootloader, defaulting to systemd-boot])
-                bootloaader="systemd-boot"
+                bootloader="systemd-boot"
         fi
         AC_MSG_RESULT([$bootloader])
 fi
