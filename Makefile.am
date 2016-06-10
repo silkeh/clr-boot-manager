@@ -196,7 +196,8 @@ check_files_LDADD =	\
 
 check_updates_SOURCES =		\
 	tests/check-updates.c	\
-	tests/harness.h
+	tests/harness.h			\
+	tests/harness.c
 
 check_updates_CFLAGS =		\
 	$(CRYPTO_CFLAGS)	\

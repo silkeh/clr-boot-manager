@@ -11,8 +11,10 @@
 
 #pragma once
 
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdlib.h>
+
+#include "bootman.h"
 
 /**
  * Needed for intiialisation
@@ -33,6 +35,16 @@ typedef struct PlaygroundConfig {
         size_t n_kernels;
 } PlaygroundConfig;
 
+/**
+ * Return a new BootManager for the newly prepared playground.
+ * Will return null if initialisation failed
+ */
+BootManager *prepare_playground(PlaygroundConfig *config);
+
+/**
+ * Util - confirm the bootloader is installed in the current test
+ */
+void confirm_bootloader(void);
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
