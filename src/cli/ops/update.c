@@ -25,7 +25,9 @@ bool cbm_command_update(int argc, char **argv)
         autofree(BootManager) *manager = NULL;
         bool image_mode = false;
 
-        cli_default_args_init(&argc, &argv, &root);
+        if (!cli_default_args_init(&argc, &argv, &root)) {
+                return false;
+        }
 
         manager = boot_manager_new();
         if (!manager) {

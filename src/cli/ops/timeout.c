@@ -35,7 +35,9 @@ bool cbm_command_set_timeout(int argc, char **argv)
         autofree(char) *root = NULL;
         autofree(BootManager) *manager = NULL;
 
-        cli_default_args_init(&argc, &argv, &root);
+        if (!cli_default_args_init(&argc, &argv, &root)) {
+                return false;
+        }
 
         manager = boot_manager_new();
         if (!manager) {

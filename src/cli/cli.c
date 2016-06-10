@@ -20,7 +20,7 @@
 
 static struct option default_opts[] = { { "path", required_argument, 0, 'p' }, { 0, 0, 0, 0 } };
 
-void cli_default_args_init(int *argc, char ***argv, char **root)
+bool cli_default_args_init(int *argc, char ***argv, char **root)
 {
         int o_in = 0;
         char c;
@@ -31,7 +31,7 @@ void cli_default_args_init(int *argc, char ***argv, char **root)
         ++(*argc);
 
         if (!root) {
-                return;
+                return false;
         }
 
         /* Allow setting the root */
@@ -52,6 +52,7 @@ void cli_default_args_init(int *argc, char ***argv, char **root)
                         }
                         break;
                 case '?':
+                        goto bail;
                         break;
                 default:
                         abort();
@@ -62,6 +63,12 @@ void cli_default_args_init(int *argc, char ***argv, char **root)
         if (_root) {
                 *root = _root;
         }
+        return true;
+bail:
+        if (_root) {
+                free(_root);
+        }
+        return false;
 }
 
 /*
