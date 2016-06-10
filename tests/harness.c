@@ -396,6 +396,56 @@ fail:
         return NULL;
 }
 
+int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel)
+{
+        assert(manager);
+        assert(kernel);
+
+        autofree(char) *conf_file = NULL;
+        autofree(char) *kernel_blob = NULL;
+        const char *vendor = NULL;
+        int file_count = 0;
+
+        vendor = boot_manager_get_vendor_prefix(manager);
+
+        if (!asprintf(&kernel_blob,
+                      "%s/%s.%s.%s-%d",
+                      BOOT_FULL,
+                      KERNEL_NAMESPACE,
+                      kernel->ktype,
+                      kernel->version,
+                      kernel->release)) {
+                abort();
+        }
+        if (!asprintf(&conf_file,
+                      "%s/loader/entries/%s-%s-%s-%d.conf",
+                      BOOT_FULL,
+                      vendor,
+                      kernel->ktype,
+                      kernel->version,
+                      kernel->release)) {
+                abort();
+        }
+
+        if (nc_file_exists(kernel_blob)) {
+                ++file_count;
+        }
+        if (nc_file_exists(conf_file)) {
+                ++file_count;
+        }
+        return file_count;
+}
+
+bool confirm_kernel_installed(BootManager *manager, PlaygroundKernel *kernel)
+{
+        return kernel_installed_files_count(manager, kernel) == 2;
+}
+
+bool confirm_kernel_uninstalled(BootManager *manager, PlaygroundKernel *kernel)
+{
+        return kernel_installed_files_count(manager, kernel) == 0;
+}
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

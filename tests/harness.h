@@ -78,6 +78,16 @@ void confirm_bootloader(void);
  */
 bool confirm_bootloader_match(void);
 
+/**
+ * Assert that the kernel is fully installed
+ */
+bool confirm_kernel_installed(BootManager *manager, PlaygroundKernel *kernel);
+
+/**
+ * Assert that the kernel is fully uninstalled
+ */
+bool confirm_kernel_uninstalled(BootManager *manager, PlaygroundKernel *kernel);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

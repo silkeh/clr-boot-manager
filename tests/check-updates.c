@@ -70,6 +70,16 @@ START_TEST(bootman_native_test_simple)
 
         fail_if(!boot_manager_update(m), "Failed to update in native mode");
 
+        /* Latest kernel for us */
+        fail_if(!confirm_kernel_installed(m, &(init_kernels[0])), "Newest kernel not installed");
+
+        /* Running kernel */
+        fail_if(!confirm_kernel_installed(m, &(init_kernels[1])), "Newest kernel not installed");
+
+        /* This guy isn't supposed to be kept around now */
+        fail_if(!confirm_kernel_uninstalled(m, &(init_kernels[2])),
+                "Uninteresting kernel shouldn't be kept around.");
+
         confirm_bootloader();
 }
 END_TEST
