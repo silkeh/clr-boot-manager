@@ -115,6 +115,14 @@ void confirm_bootloader(void)
         fail_if(!noisy_file_exists(ESP_BOOT_STUB), "ESP target stub missing");
 }
 
+void confirm_bootloader_match(void)
+{
+        fail_if(!cbm_files_match(BOOT_COPY_TARGET, EFI_STUB_MAIN),
+                "EFI_STUB_MAIN doesn't match the source");
+        fail_if(!cbm_files_match(BOOT_COPY_TARGET, ESP_BOOT_STUB),
+                "ESP_BOOT_STUB(vendor) doesn't match the source");
+}
+
 bool set_kernel_default(PlaygroundKernel *kernel)
 {
         if (!kernel) {

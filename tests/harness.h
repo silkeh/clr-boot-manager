@@ -73,6 +73,11 @@ bool push_bootloader_update(int revision);
  */
 void confirm_bootloader(void);
 
+/**
+ * Util - confirm the bootloader installed matches the source file
+ */
+void confirm_bootloader_match(void);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
