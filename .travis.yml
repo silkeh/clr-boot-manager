@@ -17,6 +17,8 @@ addons:
             - ubuntu-toolchain-r-test
         packages:
             - check
+            - libblkid-dev
+            - libssl-dev
             - valgrind
             - lcov
 
