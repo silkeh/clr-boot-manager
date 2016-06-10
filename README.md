@@ -1,6 +1,9 @@
 clr-boot-manager
 ----------------
 
+[![Build Status](https://travis-ci.org/ikeydoherty/clr-boot-manager.svg?branch=master)](https://travis-ci.org/ikeydoherty/clr-boot-manager)
+
+
 clr-boot-manager  exists  to  enable the correct maintainence of vendor
 kernels and appropriate garbage collection tactics over the  course  of
 upgrades.   The  implementation  provides  the  means to enable correct
