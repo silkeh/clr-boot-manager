@@ -8,7 +8,6 @@ EXTRA_DIST = ${top_srcdir}/README.md \
 	     ${top_srcdir}/findstatic.pl \
 	     ${top_srcdir}/tests/data/hashfile \
 	     ${top_srcdir}/tests/data/blobfile \
-	     ${top_srcdir}/test-init.sh \
 	     ${top_srcdir}/sgcheck.suppressions \
 	     ${top_srcdir}/data/clr-boot-manager-booted.service \
 	     ${top_srcdir}/compat/kernel_updater.sh \
@@ -148,12 +147,8 @@ manpagesdir = $(mandir)/man1
 manpages_DATA = \
 	man/clr-boot-manager.1
 
-# Test suites
-AM_TESTS_ENVIRONMENT = \
-	eval $(srcdir)/test-init.sh "${top_srcdir}" "$(top_builddir)" "$(bootdir)";
-
 distclean-local:
-	rm -rf ${top_builddir}/tests/dummy_install
+	rm -rf ${top_builddir}/tests/update_playground
 
 TESTS = \
 	check_core \
@@ -162,8 +157,10 @@ TESTS = \
 
 check_PROGRAMS = $(TESTS)
 
-check_core_SOURCES = \
-	tests/check-core.c
+check_core_SOURCES =		\
+	tests/check-core.c	\
+	tests/harness.h		\
+	tests/harness.c
 
 check_core_CFLAGS =		\
 	$(CRYPTO_CFLAGS)	\
@@ -196,7 +193,7 @@ check_files_LDADD =	\
 
 check_updates_SOURCES =		\
 	tests/check-updates.c	\
-	tests/harness.h			\
+	tests/harness.h		\
 	tests/harness.c
 
 check_updates_CFLAGS =		\

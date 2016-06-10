@@ -23,6 +23,15 @@
 #include "util.h"
 #include "util.h"
 
+#include "harness.h"
+
+static PlaygroundKernel core_kernels[] = { { "4.2.1", "kvm", 121, false },
+                                           { "4.2.3", "kvm", 124, true },
+                                           { "4.2.1", "native", 137, false },
+                                           { "4.2.3", "native", 138, true } };
+
+static PlaygroundConfig core_config = { "4.2.1-121.kvm", core_kernels, ARRAY_SIZE(core_kernels) };
+
 /**
  * Ensure scope based management is functional
  */
@@ -150,8 +159,9 @@ START_TEST(bootman_list_kernels_test)
         m = boot_manager_new();
         fail_if(boot_manager_set_prefix(m, "/ro347u59jaowlq'#1'1'1'1aaaaa,*"),
                 "set_prefix should fail for non existent directory");
+        boot_manager_free(m);
 
-        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
+        m = prepare_playground(&core_config);
 
         list = boot_manager_get_kernels(m);
         fail_if(!list, "Failed to list kernels");
@@ -190,8 +200,7 @@ START_TEST(bootman_map_kernels_test)
         KernelArray *get = NULL;
         Kernel *default_kernel = NULL;
 
-        m = boot_manager_new();
-        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
+        m = prepare_playground(&core_config);
 
         list = boot_manager_get_kernels(m);
         fail_if(!list, "Failed to list kernels");
@@ -238,8 +247,7 @@ START_TEST(bootman_install_kernel_test)
         autofree(char) *path2 = NULL;
         const char *vendor = NULL;
 
-        m = boot_manager_new();
-        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
+        m = prepare_playground(&core_config);
         list = boot_manager_get_kernels(m);
         vendor = boot_manager_get_vendor_prefix(m);
 
@@ -250,7 +258,7 @@ START_TEST(bootman_install_kernel_test)
         fail_if(!boot_manager_install_kernel(m, kernel), "Failed to install kernel");
 
         if (!asprintf(&path1,
-                      "%s/tests/dummy_install/%s/loader/entries/%s-native-4.2.3-138.conf",
+                      "%s/tests/update_playground/%s/loader/entries/%s-native-4.2.3-138.conf",
                       TOP_BUILD_DIR,
                       BOOT_DIRECTORY,
                       vendor)) {
@@ -258,7 +266,7 @@ START_TEST(bootman_install_kernel_test)
         }
 
         if (!asprintf(&path2,
-                      "%s/tests/dummy_install/%s/%s.native.4.2.3-138",
+                      "%s/tests/update_playground/%s/%s.native.4.2.3-138",
                       TOP_BUILD_DIR,
                       BOOT_DIRECTORY,
                       KERNEL_NAMESPACE)) {
@@ -280,7 +288,7 @@ START_TEST(bootman_set_default_kernel_test)
         autofree(char) *expected = NULL;
         autofree(char) *got = NULL;
 
-        m = boot_manager_new();
+        m = prepare_playground(&core_config);
 
         if (!asprintf(&expected,
                       "default %s-native-4.2.3-138\n",
@@ -288,7 +296,8 @@ START_TEST(bootman_set_default_kernel_test)
                 abort();
         }
 
-        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
+        m = prepare_playground(&core_config);
+        ;
         list = boot_manager_get_kernels(m);
 
         nc_array_qsort(list, kernel_compare_reverse);
@@ -297,7 +306,7 @@ START_TEST(bootman_set_default_kernel_test)
 
         fail_if(!boot_manager_set_default_kernel(m, kernel), "Failed to set default kernel");
 
-        fail_if(!file_get_text(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+        fail_if(!file_get_text(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                              "/loader/loader.conf",
                                &got),
                 "Failed to read loader.conf");
@@ -316,9 +325,9 @@ START_TEST(bootman_remove_kernel_test)
         autofree(char) *path2 = NULL;
         const char *os_name = NULL;
 
-        m = boot_manager_new();
+        m = prepare_playground(&core_config);
+        ;
         os_name = boot_manager_get_vendor_prefix(m);
-        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
         list = boot_manager_get_kernels(m);
 
         nc_array_qsort(list, kernel_compare_reverse);
@@ -328,7 +337,7 @@ START_TEST(bootman_remove_kernel_test)
         fail_if(!boot_manager_remove_kernel(m, kernel), "Failed to remove kernel");
 
         if (!asprintf(&path1,
-                      "%s/tests/dummy_install/%s/loader/entries/%s-native-4.2.3-138.conf",
+                      "%s/tests/update_playground/%s/loader/entries/%s-native-4.2.3-138.conf",
                       TOP_BUILD_DIR,
                       BOOT_DIRECTORY,
                       os_name)) {
@@ -336,7 +345,7 @@ START_TEST(bootman_remove_kernel_test)
         }
 
         if (!asprintf(&path2,
-                      "%s/tests/dummy_install/%s/%s.native-4.2.3-138",
+                      "%s/tests/update_playground/%s/%s.native-4.2.3-138",
                       TOP_BUILD_DIR,
                       BOOT_DIRECTORY,
                       os_name)) {
@@ -355,8 +364,8 @@ START_TEST(bootman_purge_test)
         autofree(KernelArray) *list = NULL;
         __attribute__((unused)) const Kernel *kernel = NULL;
 
-        m = boot_manager_new();
-        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
+        m = prepare_playground(&core_config);
+        ;
         list = boot_manager_get_kernels(m);
 
         for (int i = 0; i < list->len; i++) {
@@ -365,7 +374,7 @@ START_TEST(bootman_purge_test)
         }
 
         /* Uncomment for validation
-        __attribute__((unused)) int r = system("tree " TOP_BUILD_DIR "/tests/dummy_install"); */
+        __attribute__((unused)) int r = system("tree " TOP_BUILD_DIR "/tests/update_playground"); */
 
         for (int i = 0; i < list->len; i++) {
                 kernel = nc_array_get(list, i);
@@ -373,7 +382,7 @@ START_TEST(bootman_purge_test)
         }
 
         /* Second part of validation
-        r = system("tree " TOP_BUILD_DIR "/tests/dummy_install");*/
+        r = system("tree " TOP_BUILD_DIR "/tests/update_playground");*/
 
         nc_array_free(&list, (array_free_func)free_kernel);
 
@@ -387,8 +396,7 @@ START_TEST(bootman_install_bootloader_test)
 {
         autofree(BootManager) *m = NULL;
 
-        m = boot_manager_new();
-        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
+        m = prepare_playground(&core_config);
 
         fail_if(!boot_manager_modify_bootloader(m,
                                                 BOOTLOADER_OPERATION_INSTALL |
@@ -396,43 +404,43 @@ START_TEST(bootman_install_bootloader_test)
                 "Failed to install the bootloader");
 
         if (boot_manager_get_architecture_size(m) == 64) {
-                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                       "/EFI/Boot/BOOTX64.EFI"),
                         "Main x64 bootloader missing");
 #if defined(HAVE_SYSTEMD_BOOT)
-                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                       "/EFI/systemd/systemd-bootx64.efi"),
                         "Systemd x64 bootloader missing");
 #elif defined(HAVE_GUMMIBOOT)
-                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                       "/EFI/gummiboot/gummibootx64.efi"),
                         "gummiboot x64 bootloader missing");
 #else
-                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                       "/EFI/goofiboot/goofibootx64.efi"),
                         "goofiboot x64 bootloader missing");
 #endif
         } else {
-                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                       "/EFI/Boot/BOOTIA32.EFI"),
                         "Main ia32 bootloader missing");
 #if defined(HAVE_SYSTEMD_BOOT)
-                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                       "/EFI/systemd/systemd-bootia32.efi"),
                         "systemd-boot ia32 bootloader missing");
 #elif defined(HAVE_GUMMIBOOT)
-                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                       "/EFI/gummiboot/gummibootia32.efi"),
                         "gummiboot ia32 bootloader missing");
 #else
-                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                       "/EFI/goofiboot/goofibootia32.efi"),
                         "goofiboot ia32 bootloader missing");
 #endif
         }
 
         /* DEBUG:
-        __attribute__ ((unused)) int r = system("tree " TOP_BUILD_DIR "/tests/dummy_install");*/
+        __attribute__ ((unused)) int r = system("tree " TOP_BUILD_DIR "/tests/update_playground");*/
 }
 END_TEST
 
@@ -440,58 +448,57 @@ START_TEST(bootman_remove_bootloader_test)
 {
         autofree(BootManager) *m = NULL;
 
-        fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY "/EFI/Boot"),
+        fail_if(!nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
+                                              "/EFI/Boot"),
                 "Main EFI directory missing, botched install");
 
-        m = boot_manager_new();
-
-        boot_manager_set_prefix(m, (char *)TOP_BUILD_DIR "/tests/dummy_install");
+        m = prepare_playground(&core_config);
 
         fail_if(!boot_manager_modify_bootloader(m, BOOTLOADER_OPERATION_REMOVE),
                 "Failed to remove the bootloader");
 
         /* Ensure that it is indeed removed. */
         if (boot_manager_get_architecture_size(m) == 64) {
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install" BOOT_DIRECTORY
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground" BOOT_DIRECTORY
                                                      "/EFI/Boot/BOOTX64.EFI"),
                         "Main x64 bootloader present");
 #if defined(HAVE_SYSTEMD_BOOT)
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                      "/EFI/systemd"),
                         "Systemd x64 bootloader present");
 #elif defined(HAVE_GUMMIBOOT)
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                      "/EFI/gummiboot"),
                         "gummiboot x64 bootloader present");
 #else
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                      "/EFI/goofiboot"),
                         "goofiboot x64 bootloader present");
 #endif
         } else {
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                      "/EFI/Boot/BOOTIA32.EFI"),
                         "Main ia32 bootloader present");
 #if defined(HAVE_SYSTEMD_BOOT)
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                      "/EFI/systemd"),
                         "systemd-boot ia32 bootloader present");
 #elif defined(HAVE_GUMMIBOOT)
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                      "/EFI/gummiboot"),
                         "gummiboot ia32 bootloader present");
 #else
-                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+                fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                                      "/EFI/goofiboot"),
                         "goofiboot ia32 bootloader present");
 #endif
         }
 
-        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/dummy_install/" BOOT_DIRECTORY
+        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" BOOT_DIRECTORY
                                              "/loader/loader.conf"),
                 "systemd-class loader.conf present");
         /* DEBUG:
-        __attribute__ ((unused)) int r = system("tree " TOP_BUILD_DIR "/tests/dummy_install");*/
+        __attribute__ ((unused)) int r = system("tree " TOP_BUILD_DIR "/tests/update_playground");*/
 }
 END_TEST
 
