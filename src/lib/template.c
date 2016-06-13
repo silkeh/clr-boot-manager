@@ -20,6 +20,7 @@
 #include "nica/hashmap.h"
 #include "nica/list.h"
 #include "template.h"
+#include "util.h"
 
 /**
  * Represents the current node type in the parse context, when a full
@@ -345,8 +346,7 @@ __attribute__((always_inline)) static inline MstTemplateNode *mst_template_node_
 /**
  * Factory function which will disappear in future.
  */
-__attribute__((always_inline)) static inline MstTemplateNode *mst_template_node_from_tag(
-    char *tag, size_t tag_len)
+__cbm_inline__ static inline MstTemplateNode *mst_template_node_from_tag(char *tag, size_t tag_len)
 {
         switch (tag[0]) {
         case '#':
