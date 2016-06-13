@@ -153,9 +153,10 @@ manpages_DATA = \
 distclean-local:
 	rm -rf ${top_builddir}/tests/update_playground
 
-TESTS = \
-	check_core \
-	check_files \
+TESTS = 		\
+	check_core 	\
+	check_files 	\
+	check_template	\
 	check_updates
 
 check_PROGRAMS = $(TESTS)
@@ -188,6 +189,22 @@ check_files_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_files_LDADD =	\
+	libcbm.la	\
+	libnica.la	\
+	$(CRYPTO_LIBS)	\
+	$(BLKID_LIBS)	\
+	$(CHECK_LIBS)
+
+check_template_SOURCES = \
+	tests/check-template.c
+
+check_template_CFLAGS =		\
+	$(CRYPTO_CFLAGS)	\
+	$(BLKID_CFLAGS)		\
+	$(CHECK_CFLAGS)		\
+	$(AM_CFLAGS)
+
+check_template_LDADD =	\
 	libcbm.la	\
 	libnica.la	\
 	$(CRYPTO_LIBS)	\
