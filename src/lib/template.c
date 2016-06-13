@@ -614,7 +614,7 @@ bool mst_template_render(MstTemplateNode *root, MstTemplateContext *context, FIL
         MstTemplateContext *child_context = context;
         NcList *list = NULL;
 
-        if (root->tag) {
+        if (root->tag && context) {
                 svalue = mst_template_context_search_value(context, root->tag);
         }
 
