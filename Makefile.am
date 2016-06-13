@@ -44,6 +44,7 @@ AM_CPPFLAGS = 					\
 	-I $(top_srcdir)/src/bootman		\
 	-I $(top_srcdir)/src/cli		\
 	-I $(top_srcdir)/src/bootloaders	\
+	-I $(top_srcdir)/src/lib		\
 	-DTOP_DIR=\"$(abs_top_srcdir)\"		\
 	-DTOP_BUILD_DIR=\"$(abs_top_builddir)\"
 
@@ -101,9 +102,9 @@ libcbm_la_SOURCES =			\
 	src/bootman/kernel.c		\
 	src/bootman/timeout.c		\
 	src/bootman/update.c		\
-	src/bootman/util.h		\
 	src/lib/template.h		\
-	src/lib/template.c
+	src/lib/template.c		\
+	src/lib/util.h
 
 libcbm_la_CFLAGS =		\
 	-D_BOOTMAN_INTERNAL_	\
