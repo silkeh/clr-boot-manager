@@ -53,6 +53,26 @@ START_TEST(bootman_template_test_simple_static)
 }
 END_TEST
 
+START_TEST(bootman_template_test_simple_string)
+{
+        autofree(MstTemplateParser) *parser = NULL;
+        const char *inp_buf = "I am a {{no-key}}string";
+        const char *exp = "I am a string";
+        autofree(char) *ret = NULL;
+
+        parser = mst_template_parser_new();
+        fail_if(!mst_template_parser_load(parser, inp_buf, strlen(inp_buf)),
+                "Failed to load static text");
+
+        ret = mst_template_parser_render_string(parser, NULL);
+        fail_if(!ret, "Failed to render string");
+        fail_if(!streq(ret, exp), "Returned text does not match expectation");
+
+        /* Temp debug */
+        fprintf(stderr, "Ret was: %s\n", ret);
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -62,6 +82,7 @@ static Suite *core_suite(void)
         tc = tcase_create("bootman_template_simple");
         tcase_add_test(tc, bootman_template_test_simple_new);
         tcase_add_test(tc, bootman_template_test_simple_static);
+        tcase_add_test(tc, bootman_template_test_simple_string);
         suite_add_tcase(s, tc);
 
         return s;

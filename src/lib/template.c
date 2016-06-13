@@ -12,6 +12,7 @@
 #define _GNU_SOURCE
 
 #include <assert.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -776,4 +777,28 @@ bool mst_template_parser_render(MstTemplateParser *parser, MstTemplateContext *c
                 return false;
         }
         return mst_template_render(parser->root_node, context, stream);
+}
+
+char *mst_template_parser_render_string(MstTemplateParser *parser, MstTemplateContext *context)
+{
+        FILE *fst = NULL;
+        char *buf = NULL;
+        size_t siz;
+        bool ret = false;
+
+        fst = open_memstream(&buf, &siz);
+        if (!fst) {
+                fprintf(stderr, "Failed to allocate memstream: %s\n", strerror(errno));
+                return NULL;
+        }
+
+        ret = mst_template_parser_render(parser, context, fst);
+        fflush(fst);
+        if (!ret) {
+                free(buf);
+                fclose(fst);
+                return NULL;
+        }
+        fclose(fst);
+        return buf;
 }

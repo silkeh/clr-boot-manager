@@ -54,6 +54,14 @@ bool mst_template_parser_render(MstTemplateParser *parser, MstTemplateContext *c
                                 FILE *stream);
 
 /**
+ * Render the current parser to a string
+ *
+ * If successful, a newly allocated string is returned, which must be
+ * freed by the consumer.
+ */
+char *mst_template_parser_render_string(MstTemplateParser *parser, MstTemplateContext *context);
+
+/**
  * Construct a new root template context
  */
 MstTemplateContext *mst_template_context_new(void);
