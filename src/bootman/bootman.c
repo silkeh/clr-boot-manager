@@ -87,26 +87,16 @@ void boot_manager_free(BootManager *self)
                 return;
         }
 
-        self->bootloader->destroy(self);
+        if (self->bootloader) {
+                self->bootloader->destroy(self);
+        }
 
-        if (self->prefix) {
-                free(self->prefix);
-        }
-        if (self->kernel_dir) {
-                free(self->kernel_dir);
-        }
-        if (self->vendor_prefix) {
-                free(self->vendor_prefix);
-        }
-        if (self->os_name) {
-                free(self->os_name);
-        }
-        if (self->root_uuid) {
-                free(self->root_uuid);
-        }
-        if (self->abs_bootdir) {
-                free(self->abs_bootdir);
-        }
+        free(self->prefix);
+        free(self->kernel_dir);
+        free(self->vendor_prefix);
+        free(self->os_name);
+        free(self->root_uuid);
+        free(self->abs_bootdir);
         free(self);
 }
 
