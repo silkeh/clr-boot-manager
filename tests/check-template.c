@@ -30,6 +30,29 @@ START_TEST(bootman_template_test_simple_new)
 }
 END_TEST
 
+START_TEST(bootman_template_test_simple_static)
+{
+        autofree(MstTemplateParser) *parser = NULL;
+        const char *buf = "I am a string\n";
+        const char *buf2 = "I am{{non-var}} a string\n";
+
+        parser = mst_template_parser_new();
+
+        fail_if(mst_template_parser_render(parser, NULL, stderr), "Rendered unloaded MstTemplate");
+
+        fail_if(!mst_template_parser_load(parser, buf, strlen(buf)), "Failed to load static text");
+
+        fail_if(!mst_template_parser_render(parser, NULL, stderr),
+                "Failed to render with a null context");
+
+        fail_if(!mst_template_parser_load(parser, buf2, strlen(buf2)),
+                "Failed to load static text2");
+
+        fail_if(!mst_template_parser_render(parser, NULL, stderr),
+                "Failed to render2 with a null context");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -38,6 +61,7 @@ static Suite *core_suite(void)
         s = suite_create("bootman_template");
         tc = tcase_create("bootman_template_simple");
         tcase_add_test(tc, bootman_template_test_simple_new);
+        tcase_add_test(tc, bootman_template_test_simple_static);
         suite_add_tcase(s, tc);
 
         return s;
