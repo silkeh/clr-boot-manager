@@ -52,7 +52,7 @@ bool cbm_command_update(int argc, char **argv)
 
                 /* CBM will check this again, we just needed to check for
                  * image mode.. */
-                if (boot_manager_set_prefix(manager, root)) {
+                if (!boot_manager_set_prefix(manager, root)) {
                         return false;
                 }
         }
