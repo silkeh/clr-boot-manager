@@ -170,7 +170,11 @@ bool mst_template_context_add_value(MstTemplateContext *self, const char *key,
                                     MstTemplateValueType vtype, void *value)
 {
         MstTemplateValue *val = NULL;
-        char *key_dup = strdup(key);
+        char *key_dup = NULL;
+
+        assert(self != NULL);
+
+        key_dup = strdup(key);
 
         if (!key_dup) {
                 return false;
@@ -222,6 +226,8 @@ bool mst_template_context_add_list(MstTemplateContext *self, const char *key,
         NcList *list = NULL;
         MstTemplateValue *value = NULL;
 
+        assert(self != NULL);
+
         value = nc_hashmap_get(self->store, key);
         if (value) {
                 if (value->vtype != MST_TMPL_VALUE_LIST) {
@@ -248,9 +254,8 @@ bool mst_template_context_add_list(MstTemplateContext *self, const char *key,
  */
 MstTemplateValue *mst_template_context_search_value(MstTemplateContext *self, const char *key)
 {
-        if (!self || !self->store) {
-                abort();
-        }
+        assert(self != NULL);
+
         MstTemplateContext *ctx = self;
         MstTemplateValue *val = NULL;
 
@@ -371,6 +376,8 @@ __cbm_inline__ static inline MstTemplateNode *mst_template_node_from_tag(char *t
  */
 bool mst_template_parser_load(MstTemplateParser *parser, const char *buffer, ssize_t length)
 {
+        assert(parser != NULL);
+
         size_t line_no = 1;
         size_t column = 0;
         size_t start_line_no = 0;
@@ -396,10 +403,6 @@ bool mst_template_parser_load(MstTemplateParser *parser, const char *buffer, ssi
         /* For tracking subcontexts */
         MstTemplateNode *parent = NULL;
         MstTemplateNode *last_sect = NULL;
-
-        if (!parser) {
-                return false;
-        }
 
         mst_template_parser_reset(parser);
 
@@ -781,6 +784,8 @@ bool mst_template_parser_render(MstTemplateParser *parser, MstTemplateContext *c
 
 char *mst_template_parser_render_string(MstTemplateParser *parser, MstTemplateContext *context)
 {
+        assert(parser != NULL);
+
         FILE *fst = NULL;
         char *buf = NULL;
         size_t siz;
