@@ -158,6 +158,46 @@ START_TEST(bootman_template_test_simple_bool)
 }
 END_TEST
 
+/**
+ * Simple list test
+ */
+START_TEST(bootman_template_test_simple_list)
+{
+        autofree(MstTemplateParser) *parser = NULL;
+        autofree(MstTemplateContext) *context = NULL;
+        MstTemplateContext *child = NULL;
+        const char *load = "{{#items}}value: {{value}}\n{{/items}}";
+        const char *exp = "value: diamond sword\nvalue: obsidian\n";
+        autofree(char) *ret = NULL;
+
+        parser = mst_template_parser_new();
+        fail_if(!mst_template_parser_load(parser, load, strlen(load)), "Failed to load list test");
+
+        context = mst_template_context_new();
+        fail_if(!context, "Failed to create root context");
+
+        /* Diamond sword */
+        child = mst_template_context_new();
+        fail_if(!child, "Failed to create child context");
+        fail_if(!mst_template_context_add_string(child, "value", "diamond sword"),
+                "Failed to add to child context");
+        fail_if(!mst_template_context_add_list(context, "items", child),
+                "Failed to add child context to parent");
+
+        /* Obsidian */
+        child = mst_template_context_new();
+        fail_if(!child, "Failed to create second child context");
+        fail_if(!mst_template_context_add_string(child, "value", "obsidian"),
+                "Failed to add to second child context");
+        fail_if(!mst_template_context_add_list(context, "items", child),
+                "Failed to add second child context to parent");
+
+        ret = mst_template_parser_render_string(parser, context);
+        fail_if(!ret, "Failed to render list string");
+        fail_if(!streq(ret, exp), "Return does not match expectation");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -170,6 +210,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_template_test_simple_string);
         tcase_add_test(tc, bootman_template_test_simple_key);
         tcase_add_test(tc, bootman_template_test_simple_bool);
+        tcase_add_test(tc, bootman_template_test_simple_list);
         suite_add_tcase(s, tc);
 
         return s;
