@@ -53,6 +53,11 @@
  */
 #define __cbm_inline__ __attribute__((always_inline))
 
+/**
+ * For quicker development
+ */
+#define __cbm_unused__ __attribute__((unused))
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

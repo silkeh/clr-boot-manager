@@ -94,6 +94,7 @@ libcbm_la_SOURCES =			\
 	src/bootloaders/systemd-boot.c	\
 	src/bootloaders/gummiboot.c	\
 	src/bootloaders/goofiboot.c	\
+	src/bootloaders/syslinux.c	\
 	src/bootman/bootman.h		\
 	src/bootman/bootman_private.h	\
 	src/bootman/bootman.c		\
