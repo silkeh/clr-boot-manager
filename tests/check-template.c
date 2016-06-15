@@ -115,10 +115,11 @@ START_TEST(bootman_template_test_simple_bool)
         autofree(MstTemplateParser) *parser = NULL;
         autofree(MstTemplateContext) *context = NULL;
         const char *load =
-            "{{#section1}}now you see me{{/section1}}{{#section2}}now you don't{{/section2}}";
-        const char *exp1 = "";
-        const char *exp2 = "now you see me";
-        const char *exp3 = "now you don't";
+            "{{#section1}}now you see me{{/section1}}{{#section2}}now you "
+            "don't{{/section2}}{{boolean}}";
+        const char *exp1 = "false";
+        const char *exp2 = "now you see mefalse";
+        const char *exp3 = "now you don'ttrue";
         parser = mst_template_parser_new();
         autofree(char) *ret1 = NULL;
         autofree(char) *ret2 = NULL;
@@ -127,6 +128,8 @@ START_TEST(bootman_template_test_simple_bool)
         fail_if(!mst_template_parser_load(parser, load, strlen(load)), "Failed to load bool test");
 
         context = mst_template_context_new();
+        fail_if(!mst_template_context_add_bool(context, "boolean", false),
+                "Failed to add stringified boolean");
 
         /* First run, no sections */
         ret1 = mst_template_parser_render_string(parser, context);
@@ -142,6 +145,9 @@ START_TEST(bootman_template_test_simple_bool)
         /* Unset section 1 */
         fail_if(!mst_template_context_add_bool(context, "section1", false),
                 "Failed to unset section1");
+
+        fail_if(!mst_template_context_add_bool(context, "boolean", true),
+                "Failed to add stringified boolean");
 
         /* Set section 2 */
         fail_if(!mst_template_context_add_bool(context, "section2", true),
