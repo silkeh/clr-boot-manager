@@ -69,7 +69,7 @@ static bool print_usage(int argc, char **argv)
         return true;
 }
 
-static bool print_version(__cbm_unused__ int argc, __cbm_inline__ char **argv)
+static bool print_version(__cbm_unused__ int argc, __cbm_unused__ char **argv)
 {
         fprintf(stdout,
                 PACKAGE_NAME " - version " PACKAGE_VERSION
