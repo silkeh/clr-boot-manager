@@ -20,7 +20,6 @@ GRTAGS
 # test suite junk
 check_core
 check_files
-check_template
 check_updates
 
 *.log

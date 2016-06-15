@@ -102,8 +102,6 @@ libcbm_la_SOURCES =			\
 	src/bootman/kernel.c		\
 	src/bootman/timeout.c		\
 	src/bootman/update.c		\
-	src/lib/template.h		\
-	src/lib/template.c		\
 	src/lib/util.h
 
 libcbm_la_CFLAGS =		\
@@ -156,7 +154,6 @@ distclean-local:
 TESTS = 		\
 	check_core 	\
 	check_files 	\
-	check_template	\
 	check_updates
 
 check_PROGRAMS = $(TESTS)
@@ -189,22 +186,6 @@ check_files_CFLAGS =		\
 	$(AM_CFLAGS)
 
 check_files_LDADD =	\
-	libcbm.la	\
-	libnica.la	\
-	$(CRYPTO_LIBS)	\
-	$(BLKID_LIBS)	\
-	$(CHECK_LIBS)
-
-check_template_SOURCES = \
-	tests/check-template.c
-
-check_template_CFLAGS =		\
-	$(CRYPTO_CFLAGS)	\
-	$(BLKID_CFLAGS)		\
-	$(CHECK_CFLAGS)		\
-	$(AM_CFLAGS)
-
-check_template_LDADD =	\
 	libcbm.la	\
 	libnica.la	\
 	$(CRYPTO_LIBS)	\
