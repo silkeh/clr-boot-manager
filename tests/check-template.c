@@ -73,6 +73,40 @@ START_TEST(bootman_template_test_simple_string)
 }
 END_TEST
 
+/**
+ * One key test
+ */
+START_TEST(bootman_template_test_simple_key)
+{
+        autofree(MstTemplateParser) *parser = NULL;
+        autofree(MstTemplateContext) *context = NULL;
+        const char *inp1 = "My name is {{name}}";
+        const char *exp1 = "My name is not important";
+        const char *exp2 = "My name is Ikey";
+        autofree(char) *ret1 = NULL;
+        autofree(char) *ret2 = NULL;
+
+        parser = mst_template_parser_new();
+        context = mst_template_context_new();
+        fail_if(!context, "Failed to create a context!");
+
+        fail_if(!mst_template_context_add_string(context, "name", "not important"),
+                "Failed to add named key to context!");
+
+        fail_if(!mst_template_parser_load(parser, inp1, strlen(inp1)), "Failed to prepare parser");
+
+        ret1 = mst_template_parser_render_string(parser, context);
+        fail_if(!ret1, "Failed to render template!");
+        fail_if(!streq(ret1, exp1), "Returned string does not match expectation");
+
+        /* Replace value in context */
+        fail_if(!mst_template_context_add_string(context, "name", "Ikey"));
+        ret2 = mst_template_parser_render_string(parser, context);
+        fail_if(!ret2, "Failed to render template twice");
+        fail_if(!streq(ret2, exp2), "Second returned string does not match expectation");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -83,6 +117,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_template_test_simple_new);
         tcase_add_test(tc, bootman_template_test_simple_static);
         tcase_add_test(tc, bootman_template_test_simple_string);
+        tcase_add_test(tc, bootman_template_test_simple_key);
         suite_add_tcase(s, tc);
 
         return s;
