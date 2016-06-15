@@ -80,8 +80,8 @@ START_TEST(bootman_template_test_simple_key)
 {
         autofree(MstTemplateParser) *parser = NULL;
         autofree(MstTemplateContext) *context = NULL;
-        const char *inp1 = "My name is {{name}}";
         const char *exp1 = "My name is not important";
+        const char *inp1 = "My name is {{name}}";
         const char *exp2 = "My name is Ikey";
         autofree(char) *ret1 = NULL;
         autofree(char) *ret2 = NULL;
@@ -107,6 +107,51 @@ START_TEST(bootman_template_test_simple_key)
 }
 END_TEST
 
+/**
+ * Bool section test
+ */
+START_TEST(bootman_template_test_simple_bool)
+{
+        autofree(MstTemplateParser) *parser = NULL;
+        autofree(MstTemplateContext) *context = NULL;
+        const char *load =
+            "{{#section1}}now you see me{{/section1}}{{#section2}}now you don't{{/section2}}";
+        const char *exp1 = "";
+        const char *exp2 = "now you see me";
+        const char *exp3 = "now you don't";
+        parser = mst_template_parser_new();
+        autofree(char) *ret1 = NULL;
+        autofree(char) *ret2 = NULL;
+        autofree(char) *ret3 = NULL;
+
+        fail_if(!mst_template_parser_load(parser, load, strlen(load)), "Failed to load bool test");
+
+        context = mst_template_context_new();
+
+        /* First run, no sections */
+        ret1 = mst_template_parser_render_string(parser, context);
+        fail_if(!ret1, "Failed to render first run");
+        fail_if(!streq(ret1, exp1), "Ret 1 does not match exp 1");
+
+        /* Second run, Show only section1 */
+        fail_if(!mst_template_context_add_bool(context, "section1", true), "Failed to set boolean");
+        ret2 = mst_template_parser_render_string(parser, context);
+        fail_if(!ret2, "Failed to render second run");
+        fail_if(!streq(ret2, exp2), "Ret 2 does not match exp 2");
+
+        /* Unset section 1 */
+        fail_if(!mst_template_context_add_bool(context, "section1", false),
+                "Failed to unset section1");
+
+        /* Set section 2 */
+        fail_if(!mst_template_context_add_bool(context, "section2", true),
+                "Failed to set boolean section2");
+        ret3 = mst_template_parser_render_string(parser, context);
+        fail_if(!ret3, "Failed to render third run");
+        fail_if(!streq(ret3, exp3), "Ret 3 does not match exp3");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -118,6 +163,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_template_test_simple_static);
         tcase_add_test(tc, bootman_template_test_simple_string);
         tcase_add_test(tc, bootman_template_test_simple_key);
+        tcase_add_test(tc, bootman_template_test_simple_bool);
         suite_add_tcase(s, tc);
 
         return s;
