@@ -166,8 +166,8 @@ START_TEST(bootman_template_test_simple_list)
         autofree(MstTemplateParser) *parser = NULL;
         autofree(MstTemplateContext) *context = NULL;
         MstTemplateContext *child = NULL;
-        const char *load = "{{#items}}value: {{value}}\n{{/items}}";
-        const char *exp = "value: diamond sword\nvalue: obsidian\n";
+        const char *load = "{{#items}}value: {{value}}\n{{/items}}{{items}}";
+        const char *exp = "value: diamond sword\nvalue: obsidian\ntrue";
         autofree(char) *ret = NULL;
 
         parser = mst_template_parser_new();
