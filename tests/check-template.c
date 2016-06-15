@@ -198,6 +198,49 @@ START_TEST(bootman_template_test_simple_list)
 }
 END_TEST
 
+/**
+ * Simplistic test of child object
+ */
+START_TEST(bootman_template_test_simple_child)
+{
+        autofree(MstTemplateParser) *parser = NULL;
+        autofree(MstTemplateContext) *context = NULL;
+        MstTemplateContext *child1 = NULL;
+        MstTemplateContext *child2 = NULL;
+        const char *load =
+            "{{#object1}}name: {{name}}{{/object1}}"
+            "{{#object2}}name: {{my-name}} ({{global-variable}}){{/object2}}";
+        const char *exp =
+            "name: bob"
+            "name: dave (red dwarf)";
+        autofree(char) *ret = NULL;
+
+        parser = mst_template_parser_new();
+        fail_if(!mst_template_parser_load(parser, load, strlen(load)), "Failed to load child test");
+        context = mst_template_context_new();
+
+        child1 = mst_template_context_new();
+        fail_if(!mst_template_context_add_string(child1, "name", "bob"),
+                "Failed to set child name");
+
+        child2 = mst_template_context_new();
+        fail_if(!mst_template_context_add_string(child2, "my-name", "dave"),
+                "Failed to set second child name");
+
+        fail_if(!mst_template_context_add_string(context, "global-variable", "red dwarf"),
+                "Failed to set global variable");
+
+        fail_if(!mst_template_context_add_child(context, "object1", child1),
+                "Failed to add child1 to context");
+        fail_if(!mst_template_context_add_child(context, "object2", child2),
+                "Failed to add child2 to context");
+
+        ret = mst_template_parser_render_string(parser, context);
+        fail_if(!ret, "Failed to render child");
+        fail_if(!streq(ret, exp), "Returned output does not match expectation");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -211,6 +254,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_template_test_simple_key);
         tcase_add_test(tc, bootman_template_test_simple_bool);
         tcase_add_test(tc, bootman_template_test_simple_list);
+        tcase_add_test(tc, bootman_template_test_simple_child);
         suite_add_tcase(s, tc);
 
         return s;
