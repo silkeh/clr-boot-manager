@@ -152,7 +152,7 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         return true;
 }
 
-void sd_class_destroy(__attribute__((unused)) const BootManager *manager)
+void sd_class_destroy(__cbm_unused__ const BootManager *manager)
 {
         FREE_IF_SET(sd_class_config.efi_dir);
         FREE_IF_SET(sd_class_config.vendor_dir);
@@ -195,7 +195,7 @@ static char *get_entry_path_for_kernel(BootManager *manager, const Kernel *kerne
                                           NULL);
 }
 
-static bool sd_class_ensure_dirs(__attribute__((unused)) const BootManager *manager)
+static bool sd_class_ensure_dirs(__cbm_unused__ const BootManager *manager)
 {
         if (!nc_mkdir_p(sd_class_config.efi_dir, 00755)) {
                 LOG("Failed to create %s: %s\n", sd_class_config.efi_dir, strerror(errno));

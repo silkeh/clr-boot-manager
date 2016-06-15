@@ -27,8 +27,7 @@
 #include "nica/util.h"
 #include "report_booted.h"
 
-bool cbm_command_report_booted(__attribute__((unused)) int argc,
-                               __attribute__((unused)) char **argv)
+bool cbm_command_report_booted(__cbm_unused__ int argc, __cbm_unused__ char **argv)
 {
         SystemKernel sys = { 0 };
         struct utsname uts = { 0 };

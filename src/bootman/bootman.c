@@ -353,7 +353,7 @@ static inline uint8_t _detect_platform_size(void)
 #endif
 }
 
-uint8_t boot_manager_get_architecture_size(__attribute__((unused)) BootManager *manager)
+uint8_t boot_manager_get_architecture_size(__cbm_unused__ BootManager *manager)
 {
         return _detect_platform_size();
 }
@@ -361,7 +361,7 @@ uint8_t boot_manager_get_architecture_size(__attribute__((unused)) BootManager *
 /**
  * We'll add a check here later to allow for differences in subdir usage
  */
-uint8_t boot_manager_get_platform_size(__attribute__((unused)) BootManager *manager)
+uint8_t boot_manager_get_platform_size(__cbm_unused__ BootManager *manager)
 {
         int fd;
         char buffer[3];

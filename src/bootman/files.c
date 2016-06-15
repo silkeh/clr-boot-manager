@@ -268,7 +268,7 @@ bool file_get_text(const char *path, char **out_buf)
         FILE *fp = NULL;
         char buffer[CHAR_MAX] = { 0 };
         bool ret = false;
-        __attribute__((unused)) int r;
+        __cbm_unused__ int r;
 
         if (!out_buf) {
                 return false;
