@@ -37,6 +37,11 @@
 DEF_AUTOFREE(DIR, closedir)
 
 /**
+ * Legacy boot bit
+ */
+#define ITS_STILL_1995 (1ULL << 2)
+
+/**
  * By default we call sync() - for testing however we disable this due to timeout
  * issues.
  */
@@ -223,6 +228,100 @@ next:
                 return strdup("/dev/disk/by-partlabel/ESP");
         }
         return NULL;
+}
+
+/**
+ * Use libblkid to determine the parent disk for the given path,
+ * in order to facilitate partition enumeration
+ */
+static bool get_parent_disk(char *path, dev_t *diskdevno)
+{
+        struct stat st = { 0 };
+        dev_t ret;
+
+        if (stat(path, &st) != 0) {
+                return false;
+        }
+
+        if (major(st.st_dev) == 0) {
+                fprintf(stderr, "Invalid block device: %s\n", path);
+                return false;
+        }
+
+        if (blkid_devno_to_wholedisk(st.st_dev, NULL, 0, &ret) < 0) {
+                return false;
+        }
+        *diskdevno = ret;
+        return true;
+}
+
+char *get_legacy_boot_device(char *path)
+{
+        autofree(char) *node = NULL;
+        blkid_probe probe = NULL;
+        blkid_partlist parts = NULL;
+        int part_count = 0;
+        dev_t whole_disk = 0;
+        char *ret = NULL;
+
+        if (!get_parent_disk(path, &whole_disk)) {
+                return NULL;
+        }
+
+        if (!asprintf(&node, "/dev/block/%u:%u", major(whole_disk), minor(whole_disk))) {
+                return NULL;
+        }
+
+        probe = blkid_new_probe_from_filename(node);
+        if (!probe) {
+                fprintf(stderr, "Unable to probe %u:%u\n", major(whole_disk), minor(whole_disk));
+                return NULL;
+        }
+
+        blkid_probe_enable_superblocks(probe, 1);
+        blkid_probe_set_superblocks_flags(probe, BLKID_SUBLKS_TYPE);
+        blkid_probe_enable_partitions(probe, 1);
+        blkid_probe_set_partitions_flags(probe, BLKID_PARTS_ENTRY_DETAILS);
+
+        if (blkid_do_safeprobe(probe) != 0) {
+                fprintf(stderr, "Error probing filesystem: %s\n", strerror(errno));
+                goto clean;
+        }
+
+        parts = blkid_probe_get_partitions(probe);
+
+        part_count = blkid_partlist_numof_partitions(parts);
+        if (part_count < 0) {
+                /* No partitions */
+                goto clean;
+        }
+
+        for (int i = 0; i < part_count; i++) {
+                blkid_partition part = blkid_partlist_get_partition(parts, i);
+                const char *part_id = NULL;
+                unsigned long long flags;
+                autofree(char) *pt_path = NULL;
+
+                flags = blkid_partition_get_flags(part);
+                if (flags & ITS_STILL_1995) {
+                        part_id = blkid_partition_get_uuid(part);
+                        if (!part_id) {
+                                fprintf(stderr, "Not a valid GPT disk\n");
+                                goto clean;
+                        }
+                        if (!asprintf(&pt_path, "/dev/disk/by-partuuid/%s", part_id)) {
+                                DECLARE_OOM();
+                                goto clean;
+                        }
+                        ret = realpath(pt_path, NULL);
+                        break;
+                }
+        }
+
+clean:
+        blkid_free_probe(probe);
+        errno = 0;
+        return ret;
 }
 
 char *cbm_get_file_parent(const char *p)

@@ -47,9 +47,17 @@ char *get_part_uuid(const char *path);
 char *get_boot_device(void);
 
 /**
- * Determine if the files match in content by comparing
- * their checksums
+ * Return the device for the legacy boot partition on the same
+ * disk as the specified path
+ *
+ * This must be on a GPT disk
  */
+char *get_legacy_boot_device(char *path);
+
+/**
+* Determine if the files match in content by comparing
+* their checksums
+*/
 bool cbm_files_match(const char *p1, const char *p2);
 
 /**
