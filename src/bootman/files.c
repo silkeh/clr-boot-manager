@@ -234,7 +234,7 @@ next:
  * Use libblkid to determine the parent disk for the given path,
  * in order to facilitate partition enumeration
  */
-static bool get_parent_disk(char *path, dev_t *diskdevno)
+static bool get_parent_disk_devno(char *path, dev_t *diskdevno)
 {
         struct stat st = { 0 };
         dev_t ret;
@@ -264,7 +264,7 @@ char *get_legacy_boot_device(char *path)
         dev_t whole_disk = 0;
         char *ret = NULL;
 
-        if (!get_parent_disk(path, &whole_disk)) {
+        if (!get_parent_disk_devno(path, &whole_disk)) {
                 return NULL;
         }
 
