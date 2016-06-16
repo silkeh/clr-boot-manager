@@ -303,7 +303,7 @@ char *get_legacy_boot_device(char *path)
         parts = blkid_probe_get_partitions(probe);
 
         part_count = blkid_partlist_numof_partitions(parts);
-        if (part_count < 0) {
+        if (part_count <= 0) {
                 /* No partitions */
                 goto clean;
         }
