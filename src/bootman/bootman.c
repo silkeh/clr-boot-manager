@@ -232,11 +232,11 @@ bool boot_manager_install_kernel(BootManager *self, const Kernel *kernel)
                 return false;
         }
 
-        /* Don't allow reinstall, bail back
-         * Ensure ESP is mounted/available
-         * Copy kernel binary across
-         * Write cmdline
-         */
+        /* Install the kernel blob first */
+        if (!boot_manager_install_kernel_internal(self, kernel)) {
+                return false;
+        }
+        /* Hand over to the bootloader to finish it up */
         return self->bootloader->install_kernel(self, kernel);
 }
 
@@ -248,10 +248,11 @@ bool boot_manager_remove_kernel(BootManager *self, const Kernel *kernel)
                 return false;
         }
 
-        /*
-         * Ensure it is actually installed
-         * Remove: kernel, module tree, ESP loader config, .config file, cmdline file, etc
-         */
+        /* Remove the kernel blob first */
+        if (!boot_manager_remove_kernel_internal(self, kernel)) {
+                return false;
+        }
+        /* Hand over to the bootloader to finish it up */
         return self->bootloader->remove_kernel(self, kernel);
 }
 
@@ -420,6 +421,11 @@ bool boot_manager_is_kernel_installed(BootManager *self, const Kernel *kernel)
 {
         assert(self != NULL);
 
+        /* Ensure the blob is in place */
+        if (!boot_manager_is_kernel_installed_internal(self, kernel)) {
+                return false;
+        }
+        /* Last bits, like config files */
         return self->bootloader->is_kernel_installed(self, kernel);
 }
 

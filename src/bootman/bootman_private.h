@@ -37,6 +37,21 @@ struct BootManager {
         bool image_mode;              /**<Are we in image mode? */
 };
 
+/**
+ * Internal check to see if the kernel blob is installed
+ */
+bool boot_manager_is_kernel_installed_internal(const BootManager *manager, const Kernel *kernel);
+
+/**
+ * Internal function to install the kernel blob itself
+ */
+bool boot_manager_install_kernel_internal(const BootManager *manager, const Kernel *kernel);
+
+/**
+ * Internal function to remove the kernel blob itself
+ */
+bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kernel *kernel);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

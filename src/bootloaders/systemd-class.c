@@ -230,7 +230,6 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         autofree(char) *kname_copy = NULL;
         const char *os_name = NULL;
         char *kname_base = NULL;
-        autofree(char) *kfile_target = NULL;
 
         conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
 
@@ -283,17 +282,6 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
 
         cbm_sync();
 
-        /* Now copy the kernel file to it's new location */
-        if (!asprintf(&kfile_target, "%s/%s", sd_class_config.base_path, kname_base)) {
-                DECLARE_OOM();
-                return false;
-        }
-
-        if (!copy_file_atomic(kernel->path, kfile_target, 00644)) {
-                LOG("Failed to install kernel %s: %s\n", kfile_target, strerror(errno));
-                return false;
-        }
-
         return true;
 }
 
@@ -306,7 +294,6 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
         autofree(char) *conf_path = NULL;
         autofree(char) *kname_copy = NULL;
         autofree(char) *kfile_target = NULL;
-        char *kname_base = NULL;
 
         conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
         OOM_CHECK_RET(conf_path, false);
@@ -320,64 +307,6 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
                 } else {
                         cbm_sync();
                 }
-        }
-
-        kname_copy = strdup(kernel->path);
-        kname_base = basename(kname_copy);
-
-        if (!asprintf(&kfile_target, "%s/%s", sd_class_config.base_path, kname_base)) {
-                DECLARE_OOM();
-                return false;
-        }
-
-        /* Remove the kernel from the ESP */
-        if (nc_file_exists(kfile_target) && unlink(kfile_target) < 0) {
-                LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
-                    kfile_target,
-                    strerror(errno));
-        } else {
-                cbm_sync();
-        }
-
-        /* Purge the kernel modules from disk */
-        if (kernel->module_dir && nc_file_exists(kernel->module_dir)) {
-                if (!nc_rm_rf(kernel->module_dir)) {
-                        LOG("sd_class_remove_kernel: Failed to remove (-rf) %s: %s\n",
-                            kernel->module_dir,
-                            strerror(errno));
-                } else {
-                        cbm_sync();
-                }
-        }
-
-        if (kernel->cmdline_file && nc_file_exists(kernel->cmdline_file)) {
-                if (unlink(kernel->cmdline_file) < 0) {
-                        LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
-                            kernel->cmdline_file,
-                            strerror(errno));
-                }
-        }
-        if (kernel->kconfig_file && nc_file_exists(kernel->kconfig_file)) {
-                if (unlink(kernel->kconfig_file) < 0) {
-                        LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
-                            kernel->kconfig_file,
-                            strerror(errno));
-                }
-        }
-        if (kernel->kboot_file && nc_file_exists(kernel->kboot_file)) {
-                if (unlink(kernel->kboot_file) < 0) {
-                        LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
-                            kernel->kboot_file,
-                            strerror(errno));
-                }
-        }
-
-        /* Lastly, remove the source */
-        if (unlink(kernel->path) < 0) {
-                LOG("sd_class_remove_kernel: Failed to remove %s: %s\n",
-                    kernel->path,
-                    strerror(errno));
-                return false;
         }
 
         return true;
@@ -751,28 +680,10 @@ bool sd_class_remove(const BootManager *manager)
 
 bool sd_class_is_kernel_installed(const BootManager *manager, const Kernel *kernel)
 {
-        autofree(char) *path = NULL;
-        autofree(char) *path2 = NULL;
-        autofree(char) *kname_copy = NULL;
-        char *kname_base = NULL;
+        autofree(char) *conf_path = NULL;
 
-        if (!manager || !kernel) {
-                return false;
-        }
-
-        path = strdup(kernel->path);
-        if (!path) {
-                DECLARE_OOM();
-                abort();
-        }
-        kname_base = basename(path);
-
-        if (!asprintf(&path2, "%s/%s", sd_class_config.base_path, kname_base)) {
-                DECLARE_OOM();
-                abort();
-        }
-
-        return nc_file_exists(path2);
+        conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
+        return nc_file_exists(conf_path);
 }
 
 /*
