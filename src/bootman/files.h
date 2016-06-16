@@ -47,6 +47,11 @@ char *get_part_uuid(const char *path);
 char *get_boot_device(void);
 
 /**
+ * Get the parent disk of a given device
+ */
+char *get_parent_disk(char *path);
+
+/**
  * Return the device for the legacy boot partition on the same
  * disk as the specified path
  *

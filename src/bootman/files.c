@@ -255,26 +255,38 @@ static bool get_parent_disk_devno(char *path, dev_t *diskdevno)
         return true;
 }
 
+char *get_parent_disk(char *path)
+{
+        dev_t devt;
+        autofree(char) *node = NULL;
+
+        if (!get_parent_disk_devno(path, &devt)) {
+                return NULL;
+        }
+
+        if (!asprintf(&node, "/dev/block/%u:%u", major(devt), minor(devt))) {
+                DECLARE_OOM();
+                return NULL;
+        }
+        return realpath(node, NULL);
+}
+
 char *get_legacy_boot_device(char *path)
 {
-        autofree(char) *node = NULL;
         blkid_probe probe = NULL;
         blkid_partlist parts = NULL;
         int part_count = 0;
-        dev_t whole_disk = 0;
         char *ret = NULL;
+        autofree(char) *parent_disk = NULL;
 
-        if (!get_parent_disk_devno(path, &whole_disk)) {
+        parent_disk = get_parent_disk(path);
+        if (!parent_disk) {
                 return NULL;
         }
 
-        if (!asprintf(&node, "/dev/block/%u:%u", major(whole_disk), minor(whole_disk))) {
-                return NULL;
-        }
-
-        probe = blkid_new_probe_from_filename(node);
+        probe = blkid_new_probe_from_filename(parent_disk);
         if (!probe) {
-                fprintf(stderr, "Unable to probe %u:%u\n", major(whole_disk), minor(whole_disk));
+                fprintf(stderr, "Unable to probe %s\n", parent_disk);
                 return NULL;
         }
 
