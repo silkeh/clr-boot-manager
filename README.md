@@ -15,6 +15,13 @@ the instance that it is not already mounted, then clr-boot-manager will
 automatically  discover and mount it, and automatically unmount the ESP
 again when it is complete.
 
+Requirements
+------------
+
+clr-boot-manager is designed to operate solely with `GPT` disks, and
+exclusively uses `PARTUUID`. Generated boot entries also contain the `PARTUUID`
+in their `root=` command line, as part of a merge of the vendor provided
+`cmdline` files for default options.
 
 License
 -------
