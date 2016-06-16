@@ -37,9 +37,9 @@
 DEF_AUTOFREE(DIR, closedir)
 
 /**
- * Legacy boot bit
+ * Legacy boot bit, i.e. partition flag on a GPT disk
  */
-#define ITS_STILL_1995 (1ULL << 2)
+#define CBM_MBR_BOOT_FLAG (1ULL << 2)
 
 /**
  * By default we call sync() - for testing however we disable this due to timeout
@@ -315,7 +315,7 @@ char *get_legacy_boot_device(char *path)
                 autofree(char) *pt_path = NULL;
 
                 flags = blkid_partition_get_flags(part);
-                if (flags & ITS_STILL_1995) {
+                if (flags & CBM_MBR_BOOT_FLAG) {
                         part_id = blkid_partition_get_uuid(part);
                         if (!part_id) {
                                 fprintf(stderr, "Not a valid GPT disk\n");
