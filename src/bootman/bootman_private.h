@@ -35,6 +35,7 @@ struct BootManager {
         bool have_sys_kernel;         /**<Whether sys_kernel is set */
         bool can_mount;               /**<Are we allowed to mount? */
         bool image_mode;              /**<Are we in image mode? */
+        char *legacy;                 /**<Path to legacy boot device */
 };
 
 /**

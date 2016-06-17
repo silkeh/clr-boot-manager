@@ -32,6 +32,7 @@
 extern const BootLoader systemd_bootloader;
 extern const BootLoader gummiboot_bootloader;
 extern const BootLoader goofiboot_bootloader;
+extern const BootLoader syslinux_bootloader;
 
 BootManager *boot_manager_new()
 {
@@ -63,21 +64,6 @@ BootManager *boot_manager_new()
         boot_manager_set_can_mount(r, false);
         boot_manager_set_image_mode(r, false);
 
-/* Use the bootloader selected at compile time */
-#if defined(HAVE_SYSTEMD_BOOT)
-        r->bootloader = &systemd_bootloader;
-#elif defined(HAVE_GUMMIBOOT)
-        r->bootloader = &gummiboot_bootloader;
-#else
-        r->bootloader = &goofiboot_bootloader;
-#endif
-        if (!r->bootloader->init(r)) {
-                r->bootloader->destroy(r);
-                LOG("%s: Cannot initialise bootloader\n", __func__);
-                boot_manager_free(r);
-                return NULL;
-        }
-
         return r;
 }
 
@@ -97,6 +83,7 @@ void boot_manager_free(BootManager *self)
         free(self->os_name);
         free(self->root_uuid);
         free(self->abs_bootdir);
+        free(self->legacy);
         free(self);
 }
 
@@ -106,6 +93,7 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
 
         char *kernel_dir = NULL;
         char *realp = NULL;
+        char *legacy = NULL;
 
         if (!prefix) {
                 return false;
@@ -148,16 +136,37 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
                 self->root_uuid = get_part_uuid(self->prefix);
         }
 
-        if (!self->bootloader) {
-                return true;
-        }
-        self->bootloader->destroy(self);
-        if (!self->bootloader->init(self)) {
-                /* Ensure cleanup. */
+        if (self->bootloader) {
                 self->bootloader->destroy(self);
-                FATAL("Re-initialisation of bootloader failed");
+                self->bootloader = NULL;
+        }
+
+        if (self->legacy) {
+                free(self->legacy);
+                self->legacy = NULL;
+        }
+
+        /* Find legacy */
+        legacy = get_legacy_boot_device(self->prefix);
+        if (legacy) {
+                self->bootloader = &syslinux_bootloader;
+                self->legacy = legacy;
+        } else {
+/* Use the bootloader selected at compile time */
+#if defined(HAVE_SYSTEMD_BOOT)
+                self->bootloader = &systemd_bootloader;
+#elif defined(HAVE_GUMMIBOOT)
+                self->bootloader = &gummiboot_bootloader;
+#else
+                self->bootloader = &goofiboot_bootloader;
+#endif
+        }
+        if (!self->bootloader->init(self)) {
+                self->bootloader->destroy(self);
+                LOG("%s: Cannot initialise bootloader\n", __func__);
                 return false;
         }
+
         return true;
 }
 
