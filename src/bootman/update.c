@@ -65,21 +65,13 @@ bool boot_manager_update(BootManager *self)
                 if (cbm_is_mounted(boot_dir, NULL)) {
                         goto perform;
                 }
-                autofree(char) *root_device = NULL;
-                autofree(char) *root_base = NULL;
+                char *root_base = NULL;
                 autofree(char) *abs_bootdir = NULL;
 
                 /* Determine root device */
-                root_device = get_boot_device();
-                if (!root_device) {
-                        fprintf(stderr, "FATAL: Cannot determine boot device\n");
-                        return false;
-                }
-
-                /* Resolve the actual device */
-                root_base = realpath(root_device, NULL);
+                root_base = self->sysconfig->boot_device;
                 if (!root_base) {
-                        DECLARE_OOM();
+                        fprintf(stderr, "FATAL: Cannot determine boot device\n");
                         return false;
                 }
 

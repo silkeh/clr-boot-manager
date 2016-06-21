@@ -11,7 +11,9 @@
 
 #define _GNU_SOURCE
 
+#include <errno.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -55,6 +57,8 @@ SystemConfig *cbm_inspect_root(const char *path)
 
         /* TODO: Disable logging */
         if (geteuid() == 0) {
+                char *rel = NULL;
+
                 /* Find legacy relative to root */
                 boot = get_legacy_boot_device(realp);
                 if (boot) {
@@ -62,6 +66,18 @@ SystemConfig *cbm_inspect_root(const char *path)
                         c->legacy = true;
                 } else {
                         c->boot_device = get_boot_device();
+                }
+
+                if (c->boot_device) {
+                        rel = realpath(c->boot_device, NULL);
+                        if (!rel) {
+                                LOG("FATAL: Cannot determine boot device: %s %s\n",
+                                    c->boot_device,
+                                    strerror(errno));
+                        } else {
+                                free(c->boot_device);
+                                c->boot_device = rel;
+                        }
                 }
                 c->root_uuid = get_part_uuid(realp);
         }
