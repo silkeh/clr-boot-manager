@@ -77,13 +77,11 @@ void boot_manager_free(BootManager *self)
                 self->bootloader->destroy(self);
         }
 
-        free(self->prefix);
+        cbm_free_sysconfig(self->sysconfig);
         free(self->kernel_dir);
         free(self->vendor_prefix);
         free(self->os_name);
-        free(self->root_uuid);
         free(self->abs_bootdir);
-        free(self->legacy);
         free(self);
 }
 
@@ -92,35 +90,27 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
         assert(self != NULL);
 
         char *kernel_dir = NULL;
-        char *realp = NULL;
-        char *legacy = NULL;
+        SystemConfig *config = NULL;
 
         if (!prefix) {
                 return false;
         }
 
-        realp = realpath(prefix, NULL);
-        if (!realp) {
-                LOG("Path specified does not exist: %s\n", prefix);
+        cbm_free_sysconfig(self->sysconfig);
+        self->sysconfig = NULL;
+
+        config = cbm_inspect_root(prefix);
+        if (!config) {
                 return false;
         }
+        self->sysconfig = config;
 
-        if (self->prefix) {
-                free(self->prefix);
-                self->prefix = NULL;
-        }
-        if (self->root_uuid) {
-                free(self->root_uuid);
-                self->root_uuid = NULL;
-        }
         if (self->kernel_dir) {
                 free(self->kernel_dir);
                 self->kernel_dir = NULL;
         }
 
-        self->prefix = realp;
-
-        if (!asprintf(&kernel_dir, "%s/%s", self->prefix, KERNEL_DIRECTORY)) {
+        if (!asprintf(&kernel_dir, "%s/%s", config->prefix, KERNEL_DIRECTORY)) {
                 DECLARE_OOM();
                 abort();
         }
@@ -130,27 +120,14 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
         }
         self->kernel_dir = kernel_dir;
 
-        if (geteuid() == 0) {
-                /* Only try this if we have root perms, don't break the
-                 * test suite. */
-                self->root_uuid = get_part_uuid(self->prefix);
-        }
-
         if (self->bootloader) {
                 self->bootloader->destroy(self);
                 self->bootloader = NULL;
         }
 
-        if (self->legacy) {
-                free(self->legacy);
-                self->legacy = NULL;
-        }
-
         /* Find legacy */
-        legacy = get_legacy_boot_device(self->prefix);
-        if (legacy) {
+        if (config->legacy) {
                 self->bootloader = &syslinux_bootloader;
-                self->legacy = legacy;
         } else {
 /* Use the bootloader selected at compile time */
 #if defined(HAVE_SYSTEMD_BOOT)
@@ -174,7 +151,7 @@ const char *boot_manager_get_prefix(BootManager *self)
 {
         assert(self != NULL);
 
-        return (const char *)self->prefix;
+        return (const char *)self->sysconfig->prefix;
 }
 
 const char *boot_manager_get_kernel_dir(BootManager *self)
@@ -229,8 +206,9 @@ const char *boot_manager_get_os_name(BootManager *self)
 const char *boot_manager_get_root_uuid(BootManager *self)
 {
         assert(self != NULL);
+        assert(self->sysconfig != NULL);
 
-        return (const char *)self->root_uuid;
+        return (const char *)self->sysconfig->root_uuid;
 }
 
 bool boot_manager_install_kernel(BootManager *self, const Kernel *kernel)
@@ -238,6 +216,9 @@ bool boot_manager_install_kernel(BootManager *self, const Kernel *kernel)
         assert(self != NULL);
 
         if (!kernel || !self->bootloader) {
+                return false;
+        }
+        if (!cbm_is_sysconfig_sane(self->sysconfig)) {
                 return false;
         }
 
@@ -256,7 +237,9 @@ bool boot_manager_remove_kernel(BootManager *self, const Kernel *kernel)
         if (!kernel || !self->bootloader) {
                 return false;
         }
-
+        if (!cbm_is_sysconfig_sane(self->sysconfig)) {
+                return false;
+        }
         /* Remove the kernel blob first */
         if (!boot_manager_remove_kernel_internal(self, kernel)) {
                 return false;
@@ -272,13 +255,16 @@ bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
         if (!self->bootloader) {
                 return false;
         }
-
+        if (!cbm_is_sysconfig_sane(self->sysconfig)) {
+                return false;
+        }
         return self->bootloader->set_default_kernel(self, kernel);
 }
 
 char *boot_manager_get_boot_dir(BootManager *self)
 {
         assert(self != NULL);
+        assert(self->sysconfig != NULL);
 
         char *ret = NULL;
 
@@ -286,7 +272,7 @@ char *boot_manager_get_boot_dir(BootManager *self)
                 return strdup(self->abs_bootdir);
         }
 
-        if (!asprintf(&ret, "%s%s", self->prefix, BOOT_DIRECTORY)) {
+        if (!asprintf(&ret, "%s%s", self->sysconfig->prefix, BOOT_DIRECTORY)) {
                 DECLARE_OOM();
                 abort();
         }
@@ -326,6 +312,10 @@ bool boot_manager_modify_bootloader(BootManager *self, BootLoaderOperation op)
         assert(self != NULL);
 
         if (!self->bootloader) {
+                return false;
+        }
+
+        if (!cbm_is_sysconfig_sane(self->sysconfig)) {
                 return false;
         }
 

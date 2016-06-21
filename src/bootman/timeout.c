@@ -29,11 +29,11 @@ bool boot_manager_set_timeout_value(BootManager *self, int timeout)
         autofree(FILE) *fp = NULL;
         char *path = NULL;
 
-        if (!self || !self->prefix) {
+        if (!self || !self->sysconfig) {
                 return false;
         }
 
-        if (!asprintf(&path, "%s%s", self->prefix, BOOT_TIMEOUT_CONFIG)) {
+        if (!asprintf(&path, "%s%s", self->sysconfig->prefix, BOOT_TIMEOUT_CONFIG)) {
                 DECLARE_OOM();
                 return -1;
         }
@@ -69,11 +69,11 @@ int boot_manager_get_timeout_value(BootManager *self)
         autofree(char) *path = NULL;
         int t_val;
 
-        if (!self || !self->prefix) {
+        if (!self || !self->sysconfig) {
                 return false;
         }
 
-        if (!asprintf(&path, "%s%s", self->prefix, BOOT_TIMEOUT_CONFIG)) {
+        if (!asprintf(&path, "%s%s", self->sysconfig->prefix, BOOT_TIMEOUT_CONFIG)) {
                 DECLARE_OOM();
                 return -1;
         }

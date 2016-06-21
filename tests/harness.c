@@ -20,6 +20,9 @@
 #include <unistd.h>
 
 #include "bootman.h"
+#define _BOOTMAN_INTERNAL_
+#include "bootman_private.h"
+#undef _BOOTMAN_INTERNAL_
 #include "files.h"
 #include "nica/files.h"
 
@@ -349,6 +352,8 @@ BootManager *prepare_playground(PlaygroundConfig *config)
         if (!boot_manager_set_prefix(m, PLAYGROUND_ROOT)) {
                 goto fail;
         }
+
+        m->sysconfig->root_uuid = strdup("DUMMY_UUID");
 
         /* Construct the root kernels directory */
         if (!nc_mkdir_p(PLAYGROUND_ROOT "/" KERNEL_DIRECTORY, 00755)) {

@@ -24,18 +24,16 @@
 #include "bootman.h"
 
 struct BootManager {
-        char *prefix;                 /**<Prefix of operations */
         char *kernel_dir;             /**<Kernel directory */
         const BootLoader *bootloader; /**<Selected bootloader */
         char *vendor_prefix;          /**Vendor prefix, i.e. com.blah */
         char *os_name;                /**<Operating system name */
-        char *root_uuid;              /**<UUID of / */
         char *abs_bootdir;            /**<Real boot dir */
         SystemKernel sys_kernel;      /**<Native kernel info, if any */
         bool have_sys_kernel;         /**<Whether sys_kernel is set */
         bool can_mount;               /**<Are we allowed to mount? */
         bool image_mode;              /**<Are we in image mode? */
-        char *legacy;                 /**<Path to legacy boot device */
+        SystemConfig *sysconfig;      /**<System configuration */
 };
 
 /**

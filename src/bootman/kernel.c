@@ -33,7 +33,7 @@ __cbm_inline__ static inline char *boot_manager_get_kboot_file(BootManager *self
         /* /var/lib/kernel/k_booted_4.4.0-120.lts - new */
         if (asprintf(&p,
                      "%s/var/lib/kernel/k_booted_%s-%d.%s",
-                     self->prefix,
+                     self->sysconfig->prefix,
                      k->version,
                      k->release,
                      k->ktype) < 0) {
@@ -99,7 +99,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         /* Check local modules */
         if (!asprintf(&module_dir,
                       "%s/%s/%s-%d.%s",
-                      self->prefix,
+                      self->sysconfig->prefix,
                       KERNEL_MODULES_DIRECTORY,
                       version,
                       release,
@@ -113,7 +113,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                 free(module_dir);
                 if (!asprintf(&module_dir,
                               "%s/%s/%s-%d",
-                              self->prefix,
+                              self->sysconfig->prefix,
                               KERNEL_MODULES_DIRECTORY,
                               version,
                               release)) {

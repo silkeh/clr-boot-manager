@@ -60,6 +60,17 @@ typedef struct Kernel {
 typedef NcArray KernelArray;
 
 /**
+ * Represenative of the system configuration of a given target prefix.
+ * This is populated upon examination by @boot_manager_set_prefix.
+ */
+typedef struct SystemConfig {
+        char *prefix;      /**<Prefix for all operations */
+        char *root_uuid;   /**<The physical root device PARTUUID */
+        char *boot_device; /**<The physical boot device */
+        bool legacy;       /**<Legacy or UEFI */
+} SystemConfig;
+
+/**
  * Construct a new BootManager
  *
  * @note In no way is this API supposed to be used in a parallel fashion.
@@ -314,6 +325,21 @@ void boot_manager_set_can_mount(BootManager *manager, bool can_mount);
  * Return a boolean indicating whether we can mount or not
  */
 bool boot_manager_get_can_mount(BootManager *manager);
+
+/**
+ * Free a previously allocated sysconfig
+ */
+void cbm_free_sysconfig(SystemConfig *config);
+
+/**
+ * Inspect a given root path and return a new SystemConfig for it
+ */
+SystemConfig *cbm_inspect_root(const char *path);
+
+/**
+ * Determine if the given SystemConfig is sane for use
+ */
+bool cbm_is_sysconfig_sane(SystemConfig *config);
 
 /**
  * Free a kernel type

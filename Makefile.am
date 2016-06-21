@@ -101,6 +101,7 @@ libcbm_la_SOURCES =			\
 	src/bootman/files.h		\
 	src/bootman/files.c		\
 	src/bootman/kernel.c		\
+	src/bootman/sysconfig.c		\
 	src/bootman/timeout.c		\
 	src/bootman/update.c		\
 	src/lib/util.h
