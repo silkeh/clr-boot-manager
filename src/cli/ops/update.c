@@ -24,8 +24,9 @@ bool cbm_command_update(int argc, char **argv)
         autofree(char) *root = NULL;
         autofree(BootManager) *manager = NULL;
         bool image_mode = false;
+        bool forced_image = false;
 
-        if (!cli_default_args_init(&argc, &argv, &root)) {
+        if (!cli_default_args_init(&argc, &argv, &root, &forced_image)) {
                 return false;
         }
 
@@ -57,8 +58,12 @@ bool cbm_command_update(int argc, char **argv)
                 }
         }
 
-        /* Set the image mode */
-        boot_manager_set_image_mode(manager, image_mode);
+        if (forced_image) {
+                boot_manager_set_image_mode(manager, true);
+        } else {
+                /* Set the image mode */
+                boot_manager_set_image_mode(manager, image_mode);
+        }
 
         /* Let CBM take care of the rest */
         return boot_manager_update(manager);

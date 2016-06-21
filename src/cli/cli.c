@@ -18,9 +18,11 @@
 
 #include "cli.h"
 
-static struct option default_opts[] = { { "path", required_argument, 0, 'p' }, { 0, 0, 0, 0 } };
+static struct option default_opts[] = { { "path", required_argument, 0, 'p' },
+                                        { "image", no_argument, 0, 'i' },
+                                        { 0, 0, 0, 0 } };
 
-bool cli_default_args_init(int *argc, char ***argv, char **root)
+bool cli_default_args_init(int *argc, char ***argv, char **root, bool *forced_image)
 {
         int o_in = 0;
         char c;
@@ -36,7 +38,7 @@ bool cli_default_args_init(int *argc, char ***argv, char **root)
 
         /* Allow setting the root */
         while (true) {
-                c = getopt_long(*argc, *argv, "p:", default_opts, &o_in);
+                c = getopt_long(*argc, *argv, "ip:", default_opts, &o_in);
                 if (c == -1) {
                         break;
                 }
@@ -49,6 +51,11 @@ bool cli_default_args_init(int *argc, char ***argv, char **root)
                                         _root = NULL;
                                 }
                                 _root = strdup(optarg);
+                        }
+                        break;
+                case 'i':
+                        if (forced_image) {
+                                *forced_image = true;
                         }
                         break;
                 case '?':
