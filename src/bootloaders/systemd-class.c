@@ -243,8 +243,7 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         root_uuid = boot_manager_get_root_uuid((BootManager *)manager);
         if (!root_uuid) {
                 /* But test suites. */
-                LOG("PartUUID unknown, this should never happen (unless in make check): %s\n",
-                    kernel->path);
+                LOG("PartUUID unknown, this should never happen! %s\n", kernel->path);
 
                 if (!asprintf(&boot_options, "options %s", kernel->cmdline)) {
                         DECLARE_OOM();
