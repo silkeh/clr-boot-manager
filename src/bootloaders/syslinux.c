@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -85,7 +86,7 @@ static bool read_file_bytes(const char *path, uint8_t *buffer)
         }
 
         count = read(fd, buffer, CBM_MBR_SYSLINUX_SIZE);
-        if (count < CBM_MBR_SYSLINUX_SIZE) {
+        if (count != CBM_MBR_SYSLINUX_SIZE) {
                 close(fd);
                 return false;
         }
@@ -108,8 +109,7 @@ static bool syslinux_needs_update(const BootManager *manager)
         }
 
         prefix = boot_manager_get_prefix((BootManager *)manager);
-        if (asprintf(&syslinux_path, "%s/usr/share/syslinux/gptmbr.bin",
-                     prefix) < 0) {
+        if (asprintf(&syslinux_path, "%s/usr/share/syslinux/gptmbr.bin", prefix) < 0) {
                 DECLARE_OOM();
                 abort();
         }
@@ -125,33 +125,69 @@ static bool syslinux_needs_update(const BootManager *manager)
         return false;
 }
 
-static bool syslinux_needs_install(__cbm_unused__ const BootManager *manager)
+static bool syslinux_needs_install(const BootManager *manager)
 {
+        return syslinux_needs_update(manager);
+}
+
+static bool syslinux_install(const BootManager *manager)
+{
+        autofree(char) *syslinux_path = NULL;
+        const char *boot_device = NULL;
+        const char *prefix = NULL;
+        int mbr = -1;
+        int syslinux_mbr = -1;
+        ssize_t count = 0;
+
+        boot_device = boot_manager_get_boot_device((BootManager *)manager);
+        mbr = open(boot_device, O_RDONLY);
+        if (mbr < 0) {
+                return false;
+        }
+
+        prefix = boot_manager_get_prefix((BootManager *)manager);
+        if (asprintf(&syslinux_path, "%s/usr/share/syslinux/gptmbr.bin", prefix) < 0) {
+                DECLARE_OOM();
+                abort();
+        }
+        syslinux_mbr = open(syslinux_path, O_WRONLY);
+        if (syslinux_mbr < 0) {
+                close(mbr);
+                return false;
+        }
+
+        count = sendfile(mbr, syslinux_mbr, NULL, CBM_MBR_SYSLINUX_SIZE);
+        if (count != CBM_MBR_SYSLINUX_SIZE) {
+                close(mbr);
+                close(syslinux_mbr);
+                return false;
+        }
+
+        close(mbr);
+        close(syslinux_mbr);
         return true;
 }
 
-static bool syslinux_install(__cbm_unused__ const BootManager *manager)
+static bool syslinux_update(const BootManager *manager)
 {
-        return false;
-}
-
-static bool syslinux_update(__cbm_unused__ const BootManager *manager)
-{
-        return false;
+        return syslinux_install(manager);
 }
 
 static bool syslinux_remove(__cbm_unused__ const BootManager *manager)
 {
-        return false;
+        /* Maybe should return false? Unsure */
+        return true;
 }
 
 static void syslinux_destroy(__cbm_unused__ const BootManager *manager)
 {
         if (extlinux_cmd) {
                 free(extlinux_cmd);
+                extlinux_cmd = NULL;
         }
         if (base_path) {
                 free(base_path);
+                base_path = NULL;
         }
 }
 
