@@ -22,6 +22,8 @@
 #include <unistd.h>
 
 #include "bootloader.h"
+#include "files.h"
+#include "nica/files.h"
 #include "util.h"
 
 #define CBM_MBR_SYSLINUX_SIZE 440
@@ -31,6 +33,9 @@ static char *base_path = NULL;
 
 static bool syslinux_init(const BootManager *manager)
 {
+        autofree(char) *ldlinux = NULL;
+        int ret = 0;
+
         if (base_path) {
                 free(base_path);
                 base_path = NULL;
@@ -42,7 +47,16 @@ static bool syslinux_init(const BootManager *manager)
                 free(extlinux_cmd);
                 extlinux_cmd = NULL;
         }
-        if (asprintf(&extlinux_cmd, "extlinux -i %s", base_path) < 0) {
+        if (asprintf(&ldlinux, "%s/ldlinux.sys", base_path) < 0) {
+                DECLARE_OOM();
+                abort();
+        }
+        if (nc_file_exists(ldlinux)) {
+                ret = asprintf(&extlinux_cmd, "extlinux -U %s &> /dev/null", base_path);
+        } else {
+                ret = asprintf(&extlinux_cmd, "extlinux -i %s &> /dev/null", base_path);
+        }
+        if (ret < 0) {
                 DECLARE_OOM();
                 abort();
         }
@@ -74,83 +88,37 @@ static bool syslinux_set_default_kernel(__cbm_unused__ const BootManager *manage
         return false;
 }
 
-/* buffer is a statically allocated array exactly CBM_MBR_SYSLINUX_SIZE long */
-static bool read_file_bytes(const char *path, uint8_t *buffer)
+static bool syslinux_needs_update(__cbm_unused__ const BootManager *manager)
 {
-        int fd = 0;
-        ssize_t count = 0;
-
-        fd = open(path, O_RDONLY);
-        if (fd < 0) {
-                return false;
-        }
-
-        count = read(fd, buffer, CBM_MBR_SYSLINUX_SIZE);
-        if (count != CBM_MBR_SYSLINUX_SIZE) {
-                close(fd);
-                return false;
-        }
-
-        close(fd);
         return true;
 }
 
-static bool syslinux_needs_update(const BootManager *manager)
+static bool syslinux_needs_install(__cbm_unused__ const BootManager *manager)
 {
-        autofree(char) *syslinux_path = NULL;
-        const char *boot_device = NULL;
-        const char *prefix = NULL;
-        uint8_t mbr[CBM_MBR_SYSLINUX_SIZE] = { 0 };
-        uint8_t syslinux_mbr[CBM_MBR_SYSLINUX_SIZE] = { 0 };
-
-        boot_device = boot_manager_get_boot_device((BootManager *)manager);
-        if (!read_file_bytes(boot_device, mbr)) {
-                return true;
-        }
-
-        prefix = boot_manager_get_prefix((BootManager *)manager);
-        if (asprintf(&syslinux_path, "%s/usr/share/syslinux/gptmbr.bin", prefix) < 0) {
-                DECLARE_OOM();
-                abort();
-        }
-        if (!read_file_bytes(syslinux_path, syslinux_mbr)) {
-                return true;
-        }
-
-        for (int i = 0; i < CBM_MBR_SYSLINUX_SIZE; i++) {
-                if (mbr[i] != syslinux_mbr[i]) {
-                        return true;
-                }
-        }
-        return false;
-}
-
-static bool syslinux_needs_install(const BootManager *manager)
-{
-        return syslinux_needs_update(manager);
+        return true;
 }
 
 static bool syslinux_install(const BootManager *manager)
 {
+        autofree(char) *boot_device = NULL;
         autofree(char) *syslinux_path = NULL;
-        const char *boot_device = NULL;
         const char *prefix = NULL;
         int mbr = -1;
         int syslinux_mbr = -1;
         ssize_t count = 0;
 
-        boot_device = boot_manager_get_boot_device((BootManager *)manager);
-        mbr = open(boot_device, O_RDONLY);
+        prefix = boot_manager_get_prefix((BootManager *)manager);
+        boot_device = get_parent_disk((char *)prefix);
+        mbr = open(boot_device, O_WRONLY);
         if (mbr < 0) {
                 return false;
         }
 
-        prefix = boot_manager_get_prefix((BootManager *)manager);
         if (asprintf(&syslinux_path, "%s/usr/share/syslinux/gptmbr.bin", prefix) < 0) {
                 DECLARE_OOM();
                 abort();
         }
-        syslinux_mbr = open(syslinux_path, O_WRONLY);
+        syslinux_mbr = open(syslinux_path, O_RDONLY);
         if (syslinux_mbr < 0) {
                 close(mbr);
                 return false;
@@ -162,9 +130,14 @@ static bool syslinux_install(const BootManager *manager)
                 close(syslinux_mbr);
                 return false;
         }
-
         close(mbr);
         close(syslinux_mbr);
+
+        if (system(extlinux_cmd) != 0) {
+                return false;
+        }
+
+        cbm_sync();
         return true;
 }
 
