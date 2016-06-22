@@ -154,6 +154,13 @@ const char *boot_manager_get_prefix(BootManager *self)
         return (const char *)self->sysconfig->prefix;
 }
 
+const char *boot_manager_get_boot_device(BootManager *self)
+{
+        assert(self != NULL);
+
+        return (const char *)self->sysconfig->boot_device;
+}
+
 const char *boot_manager_get_kernel_dir(BootManager *self)
 {
         assert(self != NULL);

@@ -135,6 +135,15 @@ bool boot_manager_set_boot_dir(BootManager *manager, const char *bootdir);
 const char *boot_manager_get_prefix(BootManager *manager);
 
 /**
+ * Get the currently detected/provided boot device
+ *
+ * @note This string is owned by BootManager, do not modify or free
+ *
+ * @return current boot device
+ */
+const char *boot_manager_get_boot_device(BootManager *manager);
+
+/**
  * Return the location used for kernel probing, incorporating the
  * prefix
  *
