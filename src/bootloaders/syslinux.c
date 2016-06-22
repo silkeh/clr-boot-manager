@@ -12,10 +12,12 @@
 #define _GNU_SOURCE
 
 #include <assert.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/sendfile.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -28,6 +30,7 @@
 
 #define CBM_MBR_SYSLINUX_SIZE 440
 
+static KernelArray *kernel_queue = NULL;
 static char *extlinux_cmd = NULL;
 static char *base_path = NULL;
 
@@ -36,6 +39,14 @@ static bool syslinux_init(const BootManager *manager)
         autofree(char) *ldlinux = NULL;
         int ret = 0;
 
+        if (kernel_queue) {
+                kernel_array_free(kernel_queue);
+        }
+        kernel_queue = nc_array_new();
+        if (!kernel_queue) {
+                DECLARE_OOM();
+                abort();
+        }
         if (base_path) {
                 free(base_path);
                 base_path = NULL;
@@ -64,28 +75,139 @@ static bool syslinux_init(const BootManager *manager)
         return true;
 }
 
+/* Queue kernel to be added to conf */
 static bool syslinux_install_kernel(__cbm_unused__ const BootManager *manager,
-                                    __cbm_unused__ const Kernel *kernel)
+                                    const Kernel *kernel)
 {
-        return false;
+        if (!nc_array_add(kernel_queue, (void *)kernel)) {
+                DECLARE_OOM();
+                abort();
+        }
+
+        return true;
 }
 
+/* hack to get all kernels that should be installed in the conf */
 static bool syslinux_is_kernel_installed(__cbm_unused__ const BootManager *manager,
                                          __cbm_unused__ const Kernel *kernel)
 {
         return false;
 }
 
+/* No op due since conf file will only have queued kernels anyway */
 static bool syslinux_remove_kernel(__cbm_unused__ const BootManager *manager,
                                    __cbm_unused__ const Kernel *kernel)
 {
-        return false;
+        return true;
 }
 
-static bool syslinux_set_default_kernel(__cbm_unused__ const BootManager *manager,
-                                        __cbm_unused__ const Kernel *kernel)
+/* Actually creates the whole conf by iterating through the queued kernels */
+static bool syslinux_set_default_kernel(const BootManager *manager,
+                                        const Kernel *kernel)
 {
-        return false;
+        autofree(char) *config_path = NULL;
+        const char *root_uuid = NULL;
+        char *config_text = NULL;
+        char *_config_text = NULL;
+
+        root_uuid = boot_manager_get_root_uuid((BootManager *)manager);
+        if (!root_uuid) {
+                /* But test suites. */
+                LOG("PartUUID unknown, this should never happen! %s\n", kernel->path);
+        }
+
+        if (asprintf(&config_path, "%s/syslinux.cfg", base_path) < 0) {
+                DECLARE_OOM();
+                abort();
+        }
+
+        /* no default set timeout or initialize config_text for looping */
+        if (!kernel) {
+                if (asprintf(&config_text, "TIMEOUT 100\n") < 0) {
+                        DECLARE_OOM();
+                        abort();
+                }
+        } else {
+                if (asprintf(&config_text, "\n") < 0) {
+                        DECLARE_OOM();
+                        abort();
+                }
+        }
+
+        for (int i = 0; i < kernel_queue->len; i++) {
+                const Kernel *k = nc_array_get(kernel_queue, i);
+                char *boot_options = NULL;
+                char *kname_base = NULL;
+                char *kname_copy = NULL;
+                char *default_text = NULL;
+
+                _config_text = config_text;
+                config_text = NULL;
+                kname_copy = strdup(k->path);
+                if (!kname_copy) {
+                        DECLARE_OOM();
+                        abort();
+                }
+                kname_base = basename(kname_copy);
+
+                /* Build the options for the entry */
+                if (!root_uuid) {
+                        if (asprintf(&boot_options, "%s", k->cmdline) < 0) {
+                                DECLARE_OOM();
+                                abort();
+                        }
+                } else {
+                        if (asprintf(&boot_options,
+                                      "root=PARTUUID=%s %s",
+                                      root_uuid,
+                                      k->cmdline) < 0) {
+                                DECLARE_OOM();
+                                abort();
+                        }
+                }
+                if (streq(k->path, kernel->path)) {
+                        if (asprintf(&default_text, "DEFAULT %s\n", kname_base) < 0) {
+                                DECLARE_OOM();
+                                abort();
+                        }
+                } else {
+                        default_text = "";
+                }
+
+                if (asprintf(&config_text, "%s%sLABEL %s\n  KERNEL %s\n  APPEND %s\n",
+                              _config_text,
+                              default_text,
+                              kname_base,
+                              kname_base,
+                              boot_options) < 0) {
+                        DECLARE_OOM();
+                        abort();
+                }
+
+                free(kname_copy);
+                kname_copy = NULL;
+                free(boot_options);
+                boot_options = NULL;
+                if (streq(k->path, kernel->path)) {
+                        free(default_text);
+                }
+                default_text = NULL;
+                free(_config_text);
+                _config_text = NULL;
+        }
+
+        if (!file_set_text(config_path, config_text)) {
+                LOG("syslinux_set_default_kernel: Failed to write %s: %s\n",
+                    config_path,
+                    strerror(errno));
+                return false;
+        }
+
+        free(config_text);
+        config_text = NULL;
+        cbm_sync();
+
+        return true;
 }
 
 static bool syslinux_needs_update(__cbm_unused__ const BootManager *manager)
@@ -154,6 +276,10 @@ static bool syslinux_remove(__cbm_unused__ const BootManager *manager)
 
 static void syslinux_destroy(__cbm_unused__ const BootManager *manager)
 {
+        if (kernel_queue) {
+                /* kernels pointers inside are not owned by the array */
+                nc_array_free(&kernel_queue, NULL);
+        }
         if (extlinux_cmd) {
                 free(extlinux_cmd);
                 extlinux_cmd = NULL;
