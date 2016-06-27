@@ -76,8 +76,7 @@ static bool syslinux_init(const BootManager *manager)
 }
 
 /* Queue kernel to be added to conf */
-static bool syslinux_install_kernel(__cbm_unused__ const BootManager *manager,
-                                    const Kernel *kernel)
+static bool syslinux_install_kernel(__cbm_unused__ const BootManager *manager, const Kernel *kernel)
 {
         if (!nc_array_add(kernel_queue, (void *)kernel)) {
                 DECLARE_OOM();
@@ -102,8 +101,7 @@ static bool syslinux_remove_kernel(__cbm_unused__ const BootManager *manager,
 }
 
 /* Actually creates the whole conf by iterating through the queued kernels */
-static bool syslinux_set_default_kernel(const BootManager *manager,
-                                        const Kernel *kernel)
+static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel *kernel)
 {
         autofree(char) *config_path = NULL;
         const char *root_uuid = NULL;
@@ -157,10 +155,8 @@ static bool syslinux_set_default_kernel(const BootManager *manager,
                                 abort();
                         }
                 } else {
-                        if (asprintf(&boot_options,
-                                      "root=PARTUUID=%s %s",
-                                      root_uuid,
-                                      k->cmdline) < 0) {
+                        if (asprintf(&boot_options, "root=PARTUUID=%s %s", root_uuid, k->cmdline) <
+                            0) {
                                 DECLARE_OOM();
                                 abort();
                         }
@@ -174,12 +170,13 @@ static bool syslinux_set_default_kernel(const BootManager *manager,
                         default_text = "";
                 }
 
-                if (asprintf(&config_text, "%s%sLABEL %s\n  KERNEL %s\n  APPEND %s\n",
-                              _config_text,
-                              default_text,
-                              kname_base,
-                              kname_base,
-                              boot_options) < 0) {
+                if (asprintf(&config_text,
+                             "%s%sLABEL %s\n  KERNEL %s\n  APPEND %s\n",
+                             _config_text,
+                             default_text,
+                             kname_base,
+                             kname_base,
+                             boot_options) < 0) {
                         DECLARE_OOM();
                         abort();
                 }
