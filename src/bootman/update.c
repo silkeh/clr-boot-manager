@@ -55,7 +55,7 @@ bool boot_manager_update(BootManager *self)
         /* TODO: decide how legacy device detection works */
         /* For now legacy means /boot is on the / partition */
         if (self->sysconfig->legacy) {
-                return boot_manager_update_image(self);
+                goto perform;
         }
 
         /* Get our boot directory */
