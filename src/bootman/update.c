@@ -247,7 +247,6 @@ static bool boot_manager_update_native(BootManager *self)
 
         nc_hashmap_iter_init(mapped_kernels, &map_iter);
         while (nc_hashmap_iter_next(&map_iter, (void **)&kernel_type, (void **)&typed_kernels)) {
-                /* TODO: Something useful */
                 Kernel *tip = NULL;
                 Kernel *last_good = NULL;
 

@@ -356,7 +356,6 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
                         return false;
                 }
         } else {
-                /* TODO: Add timeout support via /etc/boot.conf or similar */
                 if (!asprintf(&item_name,
                               "default %s-%s-%s-%d\n",
                               prefix,
