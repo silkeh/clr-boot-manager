@@ -61,7 +61,8 @@ char *get_sha1sum(const char *p)
         struct stat st = { 0 };
         char *buffer = NULL;
         char *ret = NULL;
-        int max_len = SHA_DIGEST_LENGTH * 2;
+        size_t max_len = SHA_DIGEST_LENGTH * 2;
+        size_t st_size;
 
         if ((fd = open(p, O_RDONLY)) < 0) {
                 goto finish;
@@ -70,12 +71,14 @@ char *get_sha1sum(const char *p)
                 goto finish;
         }
 
-        buffer = mmap(0, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+        st_size = (size_t)st.st_size;
+
+        buffer = mmap(0, st_size, PROT_READ, MAP_PRIVATE, fd, 0);
         if (!buffer) {
                 goto finish;
         }
 
-        if (!SHA1((unsigned char *)buffer, st.st_size, hash)) {
+        if (!SHA1((unsigned char *)buffer, st_size, hash)) {
                 goto finish;
         }
 
@@ -94,7 +97,7 @@ finish:
                 close(fd);
         }
         if (buffer) {
-                munmap(buffer, st.st_size);
+                munmap(buffer, st_size);
         }
         return ret;
 }
@@ -198,7 +201,7 @@ char *get_boot_device()
                 goto next;
         }
 
-        uuid = calloc(size + 1, sizeof(char));
+        uuid = calloc((size_t)(size + 1), sizeof(char));
         int j = 0;
         for (ssize_t i = 0; i < size; i++) {
                 char c = read_buf[i];
@@ -208,7 +211,7 @@ char *get_boot_device()
                 if (c == '_' || c == '-') {
                         uuid[j] = '-';
                 } else {
-                        uuid[j] = tolower(read_buf[i]);
+                        uuid[j] = (char)tolower(read_buf[i]);
                 }
                 ++j;
         }
@@ -379,7 +382,7 @@ bool file_get_text(const char *path, char **out_buf)
         FILE *fp = NULL;
         char buffer[CHAR_MAX] = { 0 };
         bool ret = false;
-        __cbm_unused__ int r;
+        __cbm_unused__ size_t r;
 
         if (!out_buf) {
                 return false;
@@ -402,7 +405,7 @@ bool file_get_text(const char *path, char **out_buf)
 bool copy_file(const char *src, const char *target, mode_t mode)
 {
         struct stat sst = { 0 };
-        size_t sz;
+        ssize_t sz;
         int sfd = -1;
         int dfd = -1;
         bool ret = false;
@@ -422,8 +425,8 @@ bool copy_file(const char *src, const char *target, mode_t mode)
 
         sz = sst.st_size;
         for (;;) {
-                written = sendfile(dfd, sfd, NULL, sz);
-                if ((size_t)written == sz) {
+                written = sendfile(dfd, sfd, NULL, (size_t)sz);
+                if (written == sz) {
                         break;
                 } else if (written < 0) {
                         goto end;

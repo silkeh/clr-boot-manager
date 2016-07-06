@@ -57,7 +57,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         /* Consider making this a namespace option */
         autofree(FILE) *f = NULL;
         size_t sn;
-        int r = 0;
+        ssize_t r = 0;
         char *buf = NULL;
         char *bcp = NULL;
 
@@ -142,7 +142,7 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                 kern->kconfig_file = strdup(kconfig_file);
         }
 
-        kern->release = release;
+        kern->release = (int16_t)release;
 
         if (!(f = fopen(cmdline, "r"))) {
                 LOG("Unable to open %s: %s\n", cmdline, strerror(errno));
@@ -276,7 +276,7 @@ Kernel *boot_manager_get_default_for_type(BootManager *self, KernelArray *kernel
                 return NULL;
         }
 
-        for (int i = 0; i < kernels->len; i++) {
+        for (uint16_t i = 0; i < kernels->len; i++) {
                 Kernel *k = nc_array_get(kernels, i);
                 if (streq(k->bpath, linkbuf)) {
                         return k;
@@ -302,7 +302,7 @@ NcHashmap *boot_manager_map_kernels(BootManager *self, KernelArray *kernels)
 
         map = nc_hashmap_new_full(nc_string_hash, nc_string_compare, free, kern_dup_free);
 
-        for (int i = 0; i < kernels->len; i++) {
+        for (uint16_t i = 0; i < kernels->len; i++) {
                 KernelArray *r = NULL;
                 Kernel *cur = nc_array_get(kernels, i);
 
@@ -339,8 +339,8 @@ bool cbm_parse_system_kernel(const char *inp, SystemKernel *kernel)
         memset(kernel, 0, sizeof(struct SystemKernel));
 
         char krelease[CBM_KELEM_LEN + 1] = { 0 };
-        int release = 0;
-        size_t len;
+        long release = 0;
+        ssize_t len;
         char *c, *c2, *junk = NULL;
 
         c = strchr(inp, '-');
@@ -367,7 +367,7 @@ bool cbm_parse_system_kernel(const char *inp, SystemKernel *kernel)
         if (len < 1) {
                 return false;
         }
-        strncpy(kernel->version, inp, len);
+        strncpy(kernel->version, inp, (size_t)len);
         kernel->version[len + 1] = '\0';
 
         /* Copy release */
@@ -375,7 +375,7 @@ bool cbm_parse_system_kernel(const char *inp, SystemKernel *kernel)
         if (len < 1) {
                 return false;
         }
-        strncpy(krelease, c + 1, len);
+        strncpy(krelease, c + 1, (size_t)len);
         krelease[len + 1] = '\0';
 
         /* Sane release? */
@@ -383,7 +383,7 @@ bool cbm_parse_system_kernel(const char *inp, SystemKernel *kernel)
         if (junk && *junk != '\0') {
                 return false;
         }
-        kernel->release = release;
+        kernel->release = (int16_t)release;
 
         /* Wind the type size **/
         len = 0;
@@ -396,7 +396,7 @@ bool cbm_parse_system_kernel(const char *inp, SystemKernel *kernel)
         }
 
         /* Kernel type */
-        strncpy(kernel->ktype, c2 + 1, len);
+        strncpy(kernel->ktype, c2 + 1, (size_t)len);
         kernel->ktype[len + 1] = '\0';
 
         return true;
@@ -423,7 +423,7 @@ Kernel *boot_manager_get_running_kernel(BootManager *self, KernelArray *kernels)
                 return NULL;
         }
 
-        for (int i = 0; i < kernels->len; i++) {
+        for (uint16_t i = 0; i < kernels->len; i++) {
                 Kernel *cur = nc_array_get(kernels, i);
                 if (streq(cur->ktype, k->ktype) && streq(cur->version, k->version) &&
                     cur->release == k->release) {
@@ -441,7 +441,7 @@ Kernel *boot_manager_get_last_booted(BootManager *self, KernelArray *kernels)
         int high_rel = -1;
         Kernel *candidate = NULL;
 
-        for (int i = 0; i < kernels->len; i++) {
+        for (uint16_t i = 0; i < kernels->len; i++) {
                 Kernel *k = nc_array_get(kernels, i);
                 if (k->release < high_rel) {
                         continue;

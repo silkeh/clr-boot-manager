@@ -169,7 +169,7 @@ static bool boot_manager_update_image(BootManager *self)
         }
 
         /* Go ahead and install the kernels */
-        for (int i = 0; i < kernels->len; i++) {
+        for (uint16_t i = 0; i < kernels->len; i++) {
                 const Kernel *k = nc_array_get(kernels, i);
                 /* Already installed, skip it */
                 if (boot_manager_is_kernel_installed(self, k)) {
@@ -279,7 +279,7 @@ static bool boot_manager_update_native(BootManager *self)
                         }
                 }
 
-                for (int i = 0; i < typed_kernels->len; i++) {
+                for (uint16_t i = 0; i < typed_kernels->len; i++) {
                         Kernel *tk = nc_array_get(typed_kernels, i);
                         /* Preserve running kernel */
                         if (tk == running) {
@@ -321,7 +321,7 @@ static bool boot_manager_update_native(BootManager *self)
         }
 
         /* Now remove the older kernels */
-        for (int i = 0; i < removals->len; i++) {
+        for (uint16_t i = 0; i < removals->len; i++) {
                 Kernel *k = nc_array_get(removals, i);
                 if (!boot_manager_remove_kernel(self, k)) {
                         fprintf(stderr, "Failed to remove kernel: %s\n", k->path);

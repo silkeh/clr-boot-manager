@@ -365,7 +365,7 @@ START_TEST(bootman_purge_test)
         ;
         list = boot_manager_get_kernels(m);
 
-        for (int i = 0; i < list->len; i++) {
+        for (uint16_t i = 0; i < list->len; i++) {
                 kernel = nc_array_get(list, i);
                 fail_if(!boot_manager_install_kernel(m, kernel), "Failed to install known kernel");
         }
@@ -373,7 +373,7 @@ START_TEST(bootman_purge_test)
         /* Uncomment for validation
         __attribute__((unused)) int r = system("tree " TOP_BUILD_DIR "/tests/update_playground"); */
 
-        for (int i = 0; i < list->len; i++) {
+        for (uint16_t i = 0; i < list->len; i++) {
                 kernel = nc_array_get(list, i);
                 fail_if(!boot_manager_remove_kernel(m, kernel), "Failed to remove known kernel");
         }

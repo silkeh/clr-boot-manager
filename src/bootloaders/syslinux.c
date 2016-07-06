@@ -132,7 +132,7 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 }
         }
 
-        for (int i = 0; i < kernel_queue->len; i++) {
+        for (uint16_t i = 0; i < kernel_queue->len; i++) {
                 const Kernel *k = nc_array_get(kernel_queue, i);
                 char *boot_options = NULL;
                 char *kname_base = NULL;

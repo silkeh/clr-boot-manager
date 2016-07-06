@@ -25,7 +25,7 @@ static struct option default_opts[] = { { "path", required_argument, 0, 'p' },
 bool cli_default_args_init(int *argc, char ***argv, char **root, bool *forced_image)
 {
         int o_in = 0;
-        char c;
+        int c;
         char *_root = NULL;
 
         /* We actually want to use getopt, so rewind one for getopt */;
