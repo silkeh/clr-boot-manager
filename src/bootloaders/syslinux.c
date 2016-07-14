@@ -37,6 +37,7 @@ static char *base_path = NULL;
 static bool syslinux_init(const BootManager *manager)
 {
         autofree(char) *ldlinux = NULL;
+        const char *prefix = NULL;
         int ret = 0;
 
         if (kernel_queue) {
@@ -62,10 +63,19 @@ static bool syslinux_init(const BootManager *manager)
                 DECLARE_OOM();
                 abort();
         }
+
+        prefix = boot_manager_get_prefix((BootManager *)manager);
+
         if (nc_file_exists(ldlinux)) {
-                ret = asprintf(&extlinux_cmd, "extlinux -U %s &> /dev/null", base_path);
+                ret = asprintf(&extlinux_cmd,
+                               "%s/usr/bin/extlinux -U %s &> /dev/null",
+                               prefix,
+                               base_path);
         } else {
-                ret = asprintf(&extlinux_cmd, "extlinux -i %s &> /dev/null", base_path);
+                ret = asprintf(&extlinux_cmd,
+                               "%s/usr/bin/extlinux -i %s &> /dev/null",
+                               prefix,
+                               base_path);
         }
         if (ret < 0) {
                 DECLARE_OOM();
