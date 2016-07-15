@@ -93,7 +93,28 @@ Returns the currently configured timeout as set by \fBclr\-boot\-manager set\-ti
 .PP
 On success, 0 is returned, a non\-zero failure code otherwise\&
 
+.SH "ENVIRONMENT"
+\fI$CBM_DEBUG\fR
+.RS 4
+Debug level to use within \fBclr\-boot\-manager\fR. This has various levels,
+1 through 6, that will affect the level of debugging information printed during
+execution. The default log level is \fB4\fR, errors and above.
 
+\fB1\fR - Set output level to debug and above.
+
+\fB2\fR - Set output level to info and above.
+
+\fB3\fR - Set output level to success and above.
+
+\fB4\fR - Set output level to error and above.
+
+\fB5\fR - Set output level to warning and above.
+
+\fB6\fR - Set output level to fatal only.\&
+
+.RE
+
+.PP
 .SH "COPYRIGHT"
 .PP
 Copyright © 2016 Intel Corporation\&. License: Creative Commons
