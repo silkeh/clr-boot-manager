@@ -228,6 +228,7 @@ static bool boot_manager_update_native(BootManager *self)
         KernelArray *typed_kernels = NULL;
         NcArray *removals = NULL;
         Kernel *new_default = NULL;
+        const SystemKernel *system_kernel = NULL;
         bool ret = false;
 
         LOG_DEBUG("Now beginning update_native");
@@ -245,6 +246,7 @@ static bool boot_manager_update_native(BootManager *self)
         nc_array_qsort(kernels, kernel_compare_reverse);
 
         running = boot_manager_get_running_kernel(self, kernels);
+        system_kernel = boot_manager_get_system_kernel(self);
 
         if (!running) {
                 /* We don't know the currently running kernel, don't try to
@@ -392,7 +394,11 @@ static bool boot_manager_update_native(BootManager *self)
 
         /* Might return NULL */
         if (!running) {
-                new_default = NULL;
+                /* Attempt to get it based on the current uname anyway */
+                if (system_kernel && system_kernel->ktype) {
+                        new_default =
+                            boot_manager_get_default_for_type(self, kernels, system_kernel->ktype);
+                }
         } else {
                 new_default = boot_manager_get_default_for_type(self, kernels, running->ktype);
         }
