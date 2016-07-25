@@ -247,11 +247,14 @@ static bool boot_manager_update_native(BootManager *self)
         running = boot_manager_get_running_kernel(self, kernels);
 
         if (!running) {
-                LOG_FATAL("Cannot dermine the currently running kernel");
-                return false;
+                /* We don't know the currently running kernel, don't try to
+                 * remove anything */
+                LOG_ERROR("Cannot dermine the currently running kernel");
+        } else {
+                LOG_DEBUG("update_native: Running kernel is (%s) %s",
+                          running->ktype,
+                          running->path);
         }
-
-        LOG_DEBUG("update_native: Running kernel is (%s) %s", running->ktype, running->path);
 
         /** Map kernels to type */
         mapped_kernels = boot_manager_map_kernels(self, kernels);
@@ -268,14 +271,16 @@ static bool boot_manager_update_native(BootManager *self)
         LOG_SUCCESS("update_native: Bootloader updated");
 
         /* This is mostly to allow a repair-situation */
-        if (!boot_manager_is_kernel_installed(self, running)) {
-                /* Not necessarily fatal. */
-                if (!boot_manager_install_kernel(self, running)) {
-                        LOG_ERROR("Failed to repair running kernel");
+        if (running) {
+                if (!boot_manager_is_kernel_installed(self, running)) {
+                        /* Not necessarily fatal. */
+                        if (!boot_manager_install_kernel(self, running)) {
+                                LOG_ERROR("Failed to repair running kernel");
+                        }
+                        LOG_SUCCESS("update_native: Repaired running kernel %s", running->path);
+                } else {
+                        LOG_INFO("update_native: Running kernel is installed %s", running->path);
                 }
-                LOG_SUCCESS("update_native: Repaired running kernel %s", running->path);
-        } else {
-                LOG_INFO("update_native: Running kernel is installed %s", running->path);
         }
 
         nc_hashmap_iter_init(mapped_kernels, &map_iter);
@@ -341,47 +346,56 @@ static bool boot_manager_update_native(BootManager *self)
                         LOG_DEBUG("update_native: No last_good kernel for type %s", kernel_type);
                 }
 
-                for (uint16_t i = 0; i < typed_kernels->len; i++) {
-                        Kernel *tk = nc_array_get(typed_kernels, i);
-                        LOG_DEBUG("update_native: Analyzing for type %s: %s",
-                                  kernel_type,
-                                  tk->path);
-                        /* Preserve running kernel */
-                        if (tk == running) {
-                                LOG_DEBUG("update_native: Skipping running kernel");
-                                continue;
-                        }
-                        LOG_INFO("update_native: not-running: %s", tk->path);
-                        /* Preserve tip */
-                        if (tip && tk == tip) {
-                                LOG_DEBUG("update_native: Skipping default-%s: %s",
+                /* Only allow garbage collection when we know the running kernel */
+                if (running) {
+                        for (uint16_t i = 0; i < typed_kernels->len; i++) {
+                                Kernel *tk = nc_array_get(typed_kernels, i);
+                                LOG_DEBUG("update_native: Analyzing for type %s: %s",
                                           kernel_type,
                                           tk->path);
-                                continue;
+                                /* Preserve running kernel */
+                                if (tk == running) {
+                                        LOG_DEBUG("update_native: Skipping running kernel");
+                                        continue;
+                                }
+                                LOG_INFO("update_native: not-running: %s", tk->path);
+                                /* Preserve tip */
+                                if (tip && tk == tip) {
+                                        LOG_DEBUG("update_native: Skipping default-%s: %s",
+                                                  kernel_type,
+                                                  tk->path);
+                                        continue;
+                                }
+                                LOG_INFO("update_native: not-default-%s: %s",
+                                         kernel_type,
+                                         tk->path);
+                                /* Preserve last running */
+                                if (last_good && tk == last_good) {
+                                        LOG_DEBUG("update_native: Skipping last_good kernel");
+                                        continue;
+                                }
+                                LOG_INFO("update_native: not-last-booted: %s", tk->path);
+                                if (!removals) {
+                                        removals = nc_array_new();
+                                }
+                                /* Schedule removal of kernel - regardless of install status */
+                                if (!nc_array_add(removals, tk)) {
+                                        DECLARE_OOM();
+                                        goto cleanup;
+                                }
+                                LOG_INFO("update_native: Proposed for deletion from %s: %s",
+                                         kernel_type,
+                                         tk->path);
                         }
-                        LOG_INFO("update_native: not-default-%s: %s", kernel_type, tk->path);
-                        /* Preserve last running */
-                        if (last_good && tk == last_good) {
-                                LOG_DEBUG("update_native: Skipping last_good kernel");
-                                continue;
-                        }
-                        LOG_INFO("update_native: not-last-booted: %s", tk->path);
-                        if (!removals) {
-                                removals = nc_array_new();
-                        }
-                        /* Schedule removal of kernel - regardless of install status */
-                        if (!nc_array_add(removals, tk)) {
-                                DECLARE_OOM();
-                                goto cleanup;
-                        }
-                        LOG_INFO("update_native: Proposed for deletion from %s: %s",
-                                 kernel_type,
-                                 tk->path);
                 }
         }
 
         /* Might return NULL */
-        new_default = boot_manager_get_default_for_type(self, kernels, running->ktype);
+        if (!running) {
+                new_default = NULL;
+        } else {
+                new_default = boot_manager_get_default_for_type(self, kernels, running->ktype);
+        }
         if (!boot_manager_set_default_kernel(self, new_default)) {
                 LOG_ERROR("Failed to set the default kernel to: %s",
                           new_default ? new_default->path : "<timeout mode>");
@@ -392,9 +406,10 @@ static bool boot_manager_update_native(BootManager *self)
                 LOG_SUCCESS("update_native: Default kernel for %s is %s",
                             new_default->ktype,
                             new_default->path);
-        } else {
+        } else if (running) {
                 LOG_INFO("update_native: No possible default kernel for %s", running->ktype);
         }
+
         ret = true;
 
         if (!removals) {
