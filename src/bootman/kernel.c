@@ -381,7 +381,7 @@ bool cbm_parse_system_kernel(const char *inp, SystemKernel *kernel)
 
         /* Sane release? */
         release = strtol(krelease, &junk, 10);
-        if (junk && *junk != '\0') {
+        if (junk == krelease) {
                 return false;
         }
         kernel->release = (int16_t)release;
