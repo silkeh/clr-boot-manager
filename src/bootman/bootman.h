@@ -315,6 +315,15 @@ const SystemKernel *boot_manager_get_system_kernel(BootManager *manager);
 Kernel *boot_manager_get_running_kernel(BootManager *manager, KernelArray *kernels);
 
 /**
+ * Attempt to find the currently matching kernel from the given kernel array
+ * This particular approach will not attempt to match the version, only the type
+ * and release, as a fallback safety blanket.
+ *
+ * @note This just returns a pointer, this should not be freed.
+ */
+Kernel *boot_manager_get_running_kernel_fallback(BootManager *manager, KernelArray *kernels);
+
+/**
  * Attempt to find the newest (highest release number) last known booting
  * kernel.
  */

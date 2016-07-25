@@ -434,6 +434,25 @@ Kernel *boot_manager_get_running_kernel(BootManager *self, KernelArray *kernels)
         return NULL;
 }
 
+Kernel *boot_manager_get_running_kernel_fallback(BootManager *self, KernelArray *kernels)
+{
+        if (!self || !kernels) {
+                return NULL;
+        }
+        const SystemKernel *k = boot_manager_get_system_kernel(self);
+        if (!k) {
+                return NULL;
+        }
+
+        for (uint16_t i = 0; i < kernels->len; i++) {
+                Kernel *cur = nc_array_get(kernels, i);
+                if (streq(cur->ktype, k->ktype) && cur->release == k->release) {
+                        return cur;
+                }
+        }
+        return NULL;
+}
+
 Kernel *boot_manager_get_last_booted(BootManager *self, KernelArray *kernels)
 {
         if (!self || !kernels) {

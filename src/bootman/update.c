@@ -246,6 +246,11 @@ static bool boot_manager_update_native(BootManager *self)
         nc_array_qsort(kernels, kernel_compare_reverse);
 
         running = boot_manager_get_running_kernel(self, kernels);
+        /* Try fallback comparison */
+        if (!running) {
+                running = boot_manager_get_running_kernel_fallback(self, kernels);
+        }
+
         system_kernel = boot_manager_get_system_kernel(self);
 
         if (!running) {
