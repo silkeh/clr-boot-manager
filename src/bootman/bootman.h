@@ -47,7 +47,7 @@ typedef struct Kernel {
         char *path;         /**<Path to this kernel */
         char *bpath;        /**<Basename of this kernel path */
         char *version;      /**<Version of this kernel */
-        int16_t release;    /**<Release number of this kernel */
+        int release;        /**<Release number of this kernel */
         char *ktype;        /**<Type of this kernel */
         char *cmdline;      /**<Contents of the cmdline file */
         char *cmdline_file; /**<Path to the cmdline file */
