@@ -28,7 +28,7 @@
 bool boot_manager_set_timeout_value(BootManager *self, int timeout)
 {
         autofree(FILE) *fp = NULL;
-        char *path = NULL;
+        autofree(char) *path = NULL;
 
         if (!self || !self->sysconfig) {
                 return false;

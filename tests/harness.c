@@ -353,6 +353,9 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 goto fail;
         }
 
+        if (m->sysconfig->root_uuid) {
+                free(m->sysconfig->root_uuid);
+        }
         m->sysconfig->root_uuid = strdup("DUMMY_UUID");
 
         /* Construct the root kernels directory */

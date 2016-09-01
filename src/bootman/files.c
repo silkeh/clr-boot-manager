@@ -188,15 +188,18 @@ char *get_boot_device()
         glob("/sys/firmware/efi/efivars/LoaderDevicePartUUID*", GLOB_DOOFFS, NULL, &glo);
 
         if (glo.gl_pathc < 1) {
+                globfree(&glo);
                 goto next;
         }
 
         /* Read the uuid */
-        if ((fd = open(glo.gl_pathv[1], O_RDONLY | O_NOCTTY | O_CLOEXEC)) < 0) {
+        fd = open(glo.gl_pathv[1], O_RDONLY | O_NOCTTY | O_CLOEXEC);
+        globfree(&glo);
+
+        if (fd < 0) {
                 LOG_ERROR("Unable to read LoaderDevicePartUUID");
                 return NULL;
         }
-        globfree(&glo);
 
         size = read(fd, read_buf, sizeof(read_buf));
         close(fd);
