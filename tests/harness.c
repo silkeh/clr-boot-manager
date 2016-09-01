@@ -368,6 +368,11 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 goto fail;
         }
 
+        /* Construct /etc directory for boot_timeout.conf */
+        if (!nc_mkdir_p(PLAYGROUND_ROOT "/" SYSCONFDIR, 00755)) {
+                goto fail;
+        }
+
         /* Copy the bootloader bits into the tree */
         if (!push_bootloader_update(0)) {
                 goto fail;
@@ -449,6 +454,23 @@ bool confirm_kernel_installed(BootManager *manager, PlaygroundKernel *kernel)
 bool confirm_kernel_uninstalled(BootManager *manager, PlaygroundKernel *kernel)
 {
         return kernel_installed_files_count(manager, kernel) == 0;
+}
+
+bool create_timeout_conf(void)
+{
+        autofree(char) *timeout_conf = NULL;
+        if (!asprintf(&timeout_conf,
+                      "%s/%s/%s",
+                      PLAYGROUND_ROOT,
+                      SYSCONFDIR,
+                      "boot_timeout.conf")) {
+                return false;
+        }
+        if (!file_set_text((const char *)timeout_conf, (char *)"5")) {
+                fprintf(stderr, "Failed to touch: %s %s\n", timeout_conf, strerror(errno));
+                return false;
+        }
+        return true;
 }
 
 /*

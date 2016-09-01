@@ -501,6 +501,27 @@ START_TEST(bootman_remove_bootloader_test)
 }
 END_TEST
 
+START_TEST(bootman_timeout_test)
+{
+        autofree(BootManager) *m = NULL;
+        m = prepare_playground(&core_config);
+
+        if (create_timeout_conf()) {
+                fail_if(boot_manager_get_timeout_value(m) != 5, "Failed to get timeout value.");
+        } else {
+                fprintf(stderr, "Couldn't create timout conf\n");
+        }
+
+        fail_if(!boot_manager_set_timeout_value(m, 7), "Failed to set timeout value.");
+        fail_if(boot_manager_get_timeout_value(m) != 7, "Failed to get correct timeout value.");
+        fail_if(!boot_manager_set_timeout_value(m, 0), "Failed to disable timeout value.");
+        fail_if(nc_file_exists(TOP_BUILD_DIR "/tests/update_playground/" SYSCONFDIR 
+                                             "/boot_timeout.conf"),
+                "boot_timeout.conf present.");
+        fail_if(boot_manager_get_timeout_value(m) != -1, "Failed to get default timeout value.");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -523,6 +544,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_purge_test);
         tcase_add_test(tc, bootman_install_bootloader_test);
         tcase_add_test(tc, bootman_remove_bootloader_test);
+        tcase_add_test(tc, bootman_timeout_test);
         suite_add_tcase(s, tc);
 
         return s;

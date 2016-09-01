@@ -88,6 +88,11 @@ bool confirm_kernel_installed(BootManager *manager, PlaygroundKernel *kernel);
  */
 bool confirm_kernel_uninstalled(BootManager *manager, PlaygroundKernel *kernel);
 
+/**
+ * Create boot_timeout.conf in /etc
+ */
+bool create_timeout_conf(void);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *
