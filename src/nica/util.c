@@ -69,7 +69,7 @@ void nc_dump_file_descriptor_leaks(void)
 
                 memset(&buffer, 0, sizeof(buffer));
                 size = readlink(filename, buffer, PATH_MAX);
-                if (size) {
+                if (size && !strstr(buffer, "socket")) {
                         fprintf(stderr,
                                 "Possible filedescriptor leak : %s (%s)\n",
                                 entry->d_name,
