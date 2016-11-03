@@ -2,6 +2,7 @@ clr-boot-manager
 ----------------
 
 [![Build Status](https://travis-ci.org/ikeydoherty/clr-boot-manager.svg?branch=master)](https://travis-ci.org/ikeydoherty/clr-boot-manager)
+[![Coverage Status](https://coveralls.io/repos/github/ikeydoherty/clr-boot-manager/badge.png?branch=master)](https://coveralls.io/github/ikeydoherty/clr-boot-manager?branch=master)
 
 
 clr-boot-manager  exists  to  enable the correct maintainence of vendor
