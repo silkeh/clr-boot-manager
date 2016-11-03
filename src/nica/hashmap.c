@@ -119,8 +119,8 @@ static inline unsigned nc_hashmap_get_hash(NcHashmap *self, const void *key)
         return hash;
 }
 
-static bool nc_hashmap_insert_bucket(NcHashmap *self, NcHashmapEntry *buckets, int n_buckets,
-                                     unsigned hash, const void *key, void *value)
+static int nc_hashmap_insert_bucket(NcHashmap *self, NcHashmapEntry *buckets, int n_buckets,
+                                    unsigned hash, const void *key, void *value)
 {
         NcHashmapEntry *row = &(buckets[hash % (unsigned)n_buckets]);
         NcHashmapEntry *head = NULL;
@@ -368,7 +368,7 @@ static bool nc_hashmap_resize(NcHashmap *self)
                 }
         }
         /* Successfully resized - do this separately because we need to
-         * gaurantee old data is preserved */
+         * guarantee old data is preserved */
         for (int i = 0; i < old_size; i++) {
                 nc_hashmap_free_bucket(self, &(old_buckets[i]), false);
         }
@@ -434,10 +434,12 @@ bool nc_hashmap_iter_next(NcHashmapIter *citer, void **key, void **value)
                         }
                         item = &(map->buckets[iter->bucket]);
                 }
-                if (item && item->occ) {
-                        goto success;
+                if (item) {
+                        if (item->occ) {
+                                goto success;
+                        }
+                        item = item->next;
                 }
-                item = item->next;
         }
         return false;
 

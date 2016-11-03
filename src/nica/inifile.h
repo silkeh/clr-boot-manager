@@ -69,6 +69,7 @@ typedef enum {
         NC_INI_ERROR_NOT_CLOSED,   /**< Encountered section start that wasn't closed with a ']' */
         NC_INI_ERROR_NO_SECTION,   /**< Key assignment with no defined sections */
         NC_INI_ERROR_INVALID_LINE, /**< Encountered an invalid line (syntax) */
+        NC_INI_ERROR_INTERNAL,     /**< Fatal internal error encountered. Caller should exit */
         NC_INI_ERROR_MAX
 } NcIniError;
 
@@ -86,7 +87,7 @@ _nica_public_ NcHashmap *nc_ini_file_parse(const char *path);
  * @param error_line_number If not null, then the erronous line number is
  * stored.
  *
- * @return 0 if the call was succesful, or a negative integer. See nc_ini_error
+ * @return 0 if the call was successful, or a negative integer. See nc_ini_error
  */
 _nica_public_ int nc_ini_file_parse_full(const char *path, NcHashmap **out_map,
                                          int *error_line_number);
