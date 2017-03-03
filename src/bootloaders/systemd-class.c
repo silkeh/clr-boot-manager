@@ -139,9 +139,9 @@ static char *get_entry_path_for_kernel(BootManager *manager, const Kernel *kerne
 
         item_name = string_printf("%s-%s-%s-%d.conf",
                                   prefix,
-                                  kernel->ktype,
-                                  kernel->version,
-                                  kernel->release);
+                                  kernel->meta.ktype,
+                                  kernel->meta.version,
+                                  kernel->meta.release);
 
         return nc_build_case_correct_path(sd_class_config.base_path,
                                           "loader",
@@ -204,11 +204,11 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         /* Build the options for the entry */
         root_dev = boot_manager_get_root_device((BootManager *)manager);
         if (!root_dev) {
-                LOG_FATAL("Root device unknown, this should never happen! %s", kernel->path);
+                LOG_FATAL("Root device unknown, this should never happen! %s", kernel->source.path);
                 return false;
         }
 
-        kname_copy = strdup(kernel->path);
+        kname_copy = strdup(kernel->source.path);
         if (!kname_copy) {
                 DECLARE_OOM();
                 abort();
@@ -216,8 +216,8 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         kname_base = basename(kname_copy);
 
         /* Get the basename of the initrd blob, if it exists */
-        if (kernel->initrd_file) {
-                initrd_copy = strdup(kernel->initrd_file);
+        if (kernel->source.initrd_file) {
+                initrd_copy = strdup(kernel->source.initrd_file);
                 if (!initrd_copy) {
                         DECLARE_OOM();
                         abort();
@@ -246,7 +246,7 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         }
 
         /* Finish it off with the command line options */
-        cbm_writer_append_printf(writer, "%s\n", kernel->cmdline);
+        cbm_writer_append_printf(writer, "%s\n", kernel->meta.cmdline);
         cbm_writer_close(writer);
 
         if (cbm_writer_error(writer) != 0) {
@@ -263,7 +263,7 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
 
         if (!file_set_text(conf_path, writer->buffer)) {
                 LOG_FATAL("Failed to create loader entry for: %s [%s]",
-                          kernel->path,
+                          kernel->source.path,
                           strerror(errno));
                 return false;
         }
@@ -334,15 +334,15 @@ bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kerne
                 item_name = string_printf("timeout %d\ndefault %s-%s-%s-%d\n",
                                           timeout,
                                           prefix,
-                                          kernel->ktype,
-                                          kernel->version,
-                                          kernel->release);
+                                          kernel->meta.ktype,
+                                          kernel->meta.version,
+                                          kernel->meta.release);
         } else {
                 item_name = string_printf("default %s-%s-%s-%d\n",
                                           prefix,
-                                          kernel->ktype,
-                                          kernel->version,
-                                          kernel->release);
+                                          kernel->meta.ktype,
+                                          kernel->meta.version,
+                                          kernel->meta.release);
         }
 
 write_config:

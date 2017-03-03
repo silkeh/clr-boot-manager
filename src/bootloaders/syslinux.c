@@ -105,7 +105,7 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
 
         root_dev = boot_manager_get_root_device((BootManager *)manager);
         if (!root_dev) {
-                LOG_FATAL("Root device unknown, this should never happen! %s", kernel->path);
+                LOG_FATAL("Root device unknown, this should never happen! %s", kernel->source.path);
                 return false;
         }
 
@@ -128,7 +128,7 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 autofree(char) *initrd_copy = NULL;
                 char *initrd_base = NULL;
 
-                kname_copy = strdup(k->path);
+                kname_copy = strdup(k->source.path);
                 if (!kname_copy) {
                         DECLARE_OOM();
                         abort();
@@ -136,8 +136,8 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 kname_base = basename(kname_copy);
 
                 /* Get the basename of the initrd blob, if it exists */
-                if (kernel && kernel->initrd_file) {
-                        initrd_copy = strdup(kernel->initrd_file);
+                if (kernel && kernel->source.initrd_file) {
+                        initrd_copy = strdup(kernel->source.initrd_file);
                         if (!initrd_copy) {
                                 DECLARE_OOM();
                                 abort();
@@ -146,7 +146,7 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 }
 
                 /* Mark it default */
-                if (kernel && streq(k->path, kernel->path)) {
+                if (kernel && streq(k->source.path, kernel->source.path)) {
                         cbm_writer_append_printf(writer, "DEFAULT %s\n", kname_base);
                 }
 
@@ -172,7 +172,7 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 }
 
                 /* Write out the cmdline */
-                cbm_writer_append_printf(writer, "%s\n", k->cmdline);
+                cbm_writer_append_printf(writer, "%s\n", k->meta.cmdline);
         }
 
         cbm_writer_close(writer);

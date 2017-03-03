@@ -35,9 +35,9 @@ __cbm_inline__ static inline char *boot_manager_get_kboot_file(BootManager *self
         /* /var/lib/kernel/k_booted_4.4.0-120.lts - new */
         p = string_printf("%s/var/lib/kernel/k_booted_%s-%d.%s",
                           self->sysconfig->prefix,
-                          k->version,
-                          k->release,
-                          k->ktype);
+                          k->meta.version,
+                          k->meta.release,
+                          k->meta.ktype);
         return p;
 }
 
@@ -130,41 +130,41 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                 abort();
         }
 
-        kern->path = strdup(path);
-        kern->bpath = strdup(bcp);
-        kern->version = strdup(version);
-        kern->module_dir = strdup(module_dir);
-        kern->ktype = strdup(type);
+        kern->source.path = strdup(path);
+        kern->meta.bpath = strdup(bcp);
+        kern->meta.version = strdup(version);
+        kern->source.module_dir = strdup(module_dir);
+        kern->meta.ktype = strdup(type);
 
         if (nc_file_exists(kconfig_file)) {
-                kern->kconfig_file = strdup(kconfig_file);
-                if (!kern->kconfig_file) {
+                kern->source.kconfig_file = strdup(kconfig_file);
+                if (!kern->source.kconfig_file) {
                         DECLARE_OOM();
                         abort();
                 }
         }
 
         if (nc_file_exists(initrd_file)) {
-                kern->initrd_file = strdup(initrd_file);
-                if (!kern->initrd_file) {
+                kern->source.initrd_file = strdup(initrd_file);
+                if (!kern->source.initrd_file) {
                         DECLARE_OOM();
                         abort();
                 }
         }
 
         if (nc_file_exists(user_initrd_file)) {
-                kern->user_initrd_file = strdup(user_initrd_file);
-                if (!kern->user_initrd_file) {
+                kern->source.user_initrd_file = strdup(user_initrd_file);
+                if (!kern->source.user_initrd_file) {
                         DECLARE_OOM();
                         abort();
                 }
         }
 
-        kern->release = (int16_t)release;
+        kern->meta.release = (int16_t)release;
 
         /* cmdline */
-        kern->cmdline = cbm_parse_cmdline_file(cmdline);
-        if (!kern->cmdline) {
+        kern->meta.cmdline = cbm_parse_cmdline_file(cmdline);
+        if (!kern->meta.cmdline) {
                 LOG_ERROR("Unable to load cmdline %s: %s", cmdline, strerror(errno));
                 free_kernel(kern);
                 return NULL;
@@ -172,17 +172,17 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
 
         /* Merge global cmdline if we have one */
         if (self->cmdline) {
-                char *cm = string_printf("%s %s", kern->cmdline, self->cmdline);
-                free(kern->cmdline);
-                kern->cmdline = cm;
+                char *cm = string_printf("%s %s", kern->meta.cmdline, self->cmdline);
+                free(kern->meta.cmdline);
+                kern->meta.cmdline = cm;
         }
 
-        kern->cmdline_file = strdup(cmdline);
+        kern->source.cmdline_file = strdup(cmdline);
 
         /** Determine if the kernel boots */
-        kern->kboot_file = boot_manager_get_kboot_file(self, kern);
-        if (kern->kboot_file && nc_file_exists(kern->kboot_file)) {
-                kern->boots = true;
+        kern->source.kboot_file = boot_manager_get_kboot_file(self, kern);
+        if (kern->source.kboot_file && nc_file_exists(kern->source.kboot_file)) {
+                kern->meta.boots = true;
         }
         return kern;
 }
@@ -247,17 +247,17 @@ void free_kernel(Kernel *t)
         if (!t) {
                 return;
         }
-        free(t->path);
-        free(t->bpath);
-        free(t->version);
-        free(t->cmdline);
-        free(t->module_dir);
-        free(t->cmdline_file);
-        free(t->kconfig_file);
-        free(t->kboot_file);
-        free(t->ktype);
-        free(t->initrd_file);
-        free(t->user_initrd_file);
+        free(t->meta.bpath);
+        free(t->meta.version);
+        free(t->meta.cmdline);
+        free(t->meta.ktype);
+        free(t->source.path);
+        free(t->source.module_dir);
+        free(t->source.cmdline_file);
+        free(t->source.kconfig_file);
+        free(t->source.kboot_file);
+        free(t->source.initrd_file);
+        free(t->source.user_initrd_file);
         free(t);
 }
 
@@ -278,7 +278,7 @@ Kernel *boot_manager_get_default_for_type(BootManager *self, KernelArray *kernel
 
         for (uint16_t i = 0; i < kernels->len; i++) {
                 Kernel *k = nc_array_get(kernels, i);
-                if (streq(k->bpath, linkbuf)) {
+                if (streq(k->meta.bpath, linkbuf)) {
                         return k;
                 }
         }
@@ -306,13 +306,13 @@ NcHashmap *boot_manager_map_kernels(BootManager *self, KernelArray *kernels)
                 KernelArray *r = NULL;
                 Kernel *cur = nc_array_get(kernels, i);
 
-                r = nc_hashmap_get(map, cur->ktype);
+                r = nc_hashmap_get(map, cur->meta.ktype);
                 if (!r) {
                         r = nc_array_new();
                         if (!r) {
                                 goto oom;
                         }
-                        if (!nc_hashmap_put(map, strdup(cur->ktype), r)) {
+                        if (!nc_hashmap_put(map, strdup(cur->meta.ktype), r)) {
                                 kern_dup_free(r);
                                 goto oom;
                         }
@@ -425,8 +425,8 @@ Kernel *boot_manager_get_running_kernel(BootManager *self, KernelArray *kernels)
 
         for (uint16_t i = 0; i < kernels->len; i++) {
                 Kernel *cur = nc_array_get(kernels, i);
-                if (streq(cur->ktype, k->ktype) && streq(cur->version, k->version) &&
-                    cur->release == k->release) {
+                if (streq(cur->meta.ktype, k->ktype) && streq(cur->meta.version, k->version) &&
+                    cur->meta.release == k->release) {
                         return cur;
                 }
         }
@@ -445,7 +445,7 @@ Kernel *boot_manager_get_running_kernel_fallback(BootManager *self, KernelArray 
 
         for (uint16_t i = 0; i < kernels->len; i++) {
                 Kernel *cur = nc_array_get(kernels, i);
-                if (streq(cur->ktype, k->ktype) && cur->release == k->release) {
+                if (streq(cur->meta.ktype, k->ktype) && cur->meta.release == k->release) {
                         return cur;
                 }
         }
@@ -462,14 +462,14 @@ Kernel *boot_manager_get_last_booted(BootManager *self, KernelArray *kernels)
 
         for (uint16_t i = 0; i < kernels->len; i++) {
                 Kernel *k = nc_array_get(kernels, i);
-                if (k->release < high_rel) {
+                if (k->meta.release < high_rel) {
                         continue;
                 }
-                if (!k->boots) {
+                if (!k->meta.boots) {
                         continue;
                 }
                 candidate = k;
-                high_rel = k->release;
+                high_rel = k->meta.release;
         }
         return candidate;
 }
@@ -495,34 +495,34 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         base_path = boot_manager_get_boot_dir((BootManager *)manager);
         OOM_CHECK_RET(base_path, false);
 
-        kname_copy = strdup(kernel->path);
+        kname_copy = strdup(kernel->source.path);
         kname_base = basename(kname_copy);
 
         /* Now copy the kernel file to it's new location */
         kfile_target = string_printf("%s/%s", base_path, kname_base);
 
-        if (!cbm_files_match(kernel->path, kfile_target)) {
-                if (!copy_file_atomic(kernel->path, kfile_target, 00644)) {
+        if (!cbm_files_match(kernel->source.path, kfile_target)) {
+                if (!copy_file_atomic(kernel->source.path, kfile_target, 00644)) {
                         LOG_FATAL("Failed to install kernel %s: %s", kfile_target, strerror(errno));
                         return false;
                 }
         }
 
         /* Install user initrd if it exists, otherwise system initrd */
-        if (kernel->user_initrd_file) {
-                initrd_copy = strdup(kernel->user_initrd_file);
+        if (kernel->source.user_initrd_file) {
+                initrd_copy = strdup(kernel->source.user_initrd_file);
                 if (!initrd_copy) {
                         DECLARE_OOM();
                         return false;
                 }
-                initrd_source = kernel->user_initrd_file;
-        } else if (kernel->initrd_file) {
-                initrd_copy = strdup(kernel->initrd_file);
+                initrd_source = kernel->source.user_initrd_file;
+        } else if (kernel->source.initrd_file) {
+                initrd_copy = strdup(kernel->source.initrd_file);
                 if (!initrd_copy) {
                         DECLARE_OOM();
                         return false;
                 }
-                initrd_source = kernel->initrd_file;
+                initrd_source = kernel->source.initrd_file;
         } else {
                 /* No initrd file for this kernel */
                 return true;
@@ -563,13 +563,13 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         base_path = boot_manager_get_boot_dir((BootManager *)manager);
         OOM_CHECK_RET(base_path, false);
 
-        kname_copy = strdup(kernel->path);
+        kname_copy = strdup(kernel->source.path);
         kname_base = basename(kname_copy);
 
         kfile_target = string_printf("%s/%s", base_path, kname_base);
 
-        if (kernel->initrd_file) {
-                initrd_copy = strdup(kernel->initrd_file);
+        if (kernel->source.initrd_file) {
+                initrd_copy = strdup(kernel->source.initrd_file);
                 if (!initrd_copy) {
                         DECLARE_OOM();
                         return false;
@@ -586,42 +586,43 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         }
 
         /* Purge the kernel modules from disk */
-        if (kernel->module_dir && nc_file_exists(kernel->module_dir)) {
-                if (!nc_rm_rf(kernel->module_dir)) {
+        if (kernel->source.module_dir && nc_file_exists(kernel->source.module_dir)) {
+                if (!nc_rm_rf(kernel->source.module_dir)) {
                         LOG_ERROR("Failed to remove module dir (-rf) %s: %s",
-                                  kernel->module_dir,
+                                  kernel->source.module_dir,
                                   strerror(errno));
                 } else {
                         cbm_sync();
                 }
         }
 
-        if (kernel->cmdline_file && nc_file_exists(kernel->cmdline_file)) {
-                if (unlink(kernel->cmdline_file) < 0) {
+        if (kernel->source.cmdline_file && nc_file_exists(kernel->source.cmdline_file)) {
+                if (unlink(kernel->source.cmdline_file) < 0) {
                         LOG_ERROR("Failed to remove cmdline file %s: %s",
-                                  kernel->cmdline_file,
+                                  kernel->source.cmdline_file,
                                   strerror(errno));
                 }
         }
-        if (kernel->kconfig_file && nc_file_exists(kernel->kconfig_file)) {
-                if (unlink(kernel->kconfig_file) < 0) {
+        if (kernel->source.kconfig_file && nc_file_exists(kernel->source.kconfig_file)) {
+                if (unlink(kernel->source.kconfig_file) < 0) {
                         LOG_ERROR("Failed to remove kconfig file %s: %s",
-                                  kernel->kconfig_file,
+                                  kernel->source.kconfig_file,
                                   strerror(errno));
                 }
         }
-        if (kernel->kboot_file && nc_file_exists(kernel->kboot_file)) {
-                if (unlink(kernel->kboot_file) < 0) {
+        if (kernel->source.kboot_file && nc_file_exists(kernel->source.kboot_file)) {
+                if (unlink(kernel->source.kboot_file) < 0) {
                         LOG_ERROR("Failed to remove kboot file %s: %s",
-                                  kernel->kboot_file,
+                                  kernel->source.kboot_file,
                                   strerror(errno));
                 }
         }
 
-        if (kernel->initrd_file) {
-                if (nc_file_exists(kernel->initrd_file) && unlink(kernel->initrd_file) < 0) {
+        if (kernel->source.initrd_file) {
+                if (nc_file_exists(kernel->source.initrd_file) &&
+                    unlink(kernel->source.initrd_file) < 0) {
                         LOG_ERROR("Failed to remove initrd file %s: %s",
-                                  kernel->initrd_file,
+                                  kernel->source.initrd_file,
                                   strerror(errno));
                 }
                 if (nc_file_exists(initrd_target) && unlink(initrd_target) < 0) {
@@ -632,8 +633,10 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         }
 
         /* Lastly, remove the source */
-        if (unlink(kernel->path) < 0) {
-                LOG_ERROR("Failed to remove kernel blob %s: %s", kernel->path, strerror(errno));
+        if (unlink(kernel->source.path) < 0) {
+                LOG_ERROR("Failed to remove kernel blob %s: %s",
+                          kernel->source.path,
+                          strerror(errno));
                 return false;
         }
 

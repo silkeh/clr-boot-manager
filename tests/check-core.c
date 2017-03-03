@@ -142,7 +142,7 @@ int kernel_compare(const void *a, const void *b)
         const Kernel *ka = *(const Kernel **)a;
         const Kernel *kb = *(const Kernel **)b;
 
-        if (ka->release < kb->release) {
+        if (ka->meta.release < kb->meta.release) {
                 return -1;
         }
         return 1;
@@ -153,7 +153,7 @@ int kernel_compare_reverse(const void *a, const void *b)
         const Kernel *ka = *(const Kernel **)a;
         const Kernel *kb = *(const Kernel **)b;
 
-        if (ka->release > kb->release) {
+        if (ka->meta.release > kb->meta.release) {
                 return -1;
         }
         return 1;
@@ -180,24 +180,24 @@ START_TEST(bootman_list_kernels_test)
         /* Normal sort test */
         nc_array_qsort(list, kernel_compare);
         kernel = nc_array_get(list, 0);
-        fail_if(kernel->release != 121, "Invalid first element");
+        fail_if(kernel->meta.release != 121, "Invalid first element");
         kernel = nc_array_get(list, 1);
-        fail_if(kernel->release != 124, "Invalid second element");
+        fail_if(kernel->meta.release != 124, "Invalid second element");
         kernel = nc_array_get(list, 2);
-        fail_if(kernel->release != 137, "Invalid third element");
+        fail_if(kernel->meta.release != 137, "Invalid third element");
         kernel = nc_array_get(list, 3);
-        fail_if(kernel->release != 138, "Invalid fourth element");
+        fail_if(kernel->meta.release != 138, "Invalid fourth element");
 
         /* Reverse sort test */
         nc_array_qsort(list, kernel_compare_reverse);
         kernel = nc_array_get(list, 0);
-        fail_if(kernel->release != 138, "Invalid first reversed element");
+        fail_if(kernel->meta.release != 138, "Invalid first reversed element");
         kernel = nc_array_get(list, 1);
-        fail_if(kernel->release != 137, "Invalid second reversed element");
+        fail_if(kernel->meta.release != 137, "Invalid second reversed element");
         kernel = nc_array_get(list, 2);
-        fail_if(kernel->release != 124, "Invalid third reversed element");
+        fail_if(kernel->meta.release != 124, "Invalid third reversed element");
         kernel = nc_array_get(list, 3);
-        fail_if(kernel->release != 121, "Invalid fourth reversed element");
+        fail_if(kernel->meta.release != 121, "Invalid fourth reversed element");
 }
 END_TEST
 
@@ -233,17 +233,17 @@ START_TEST(bootman_map_kernels_test)
         /* default-kvm = "org.clearlinux.kvm.4.2.3-124" */
         default_kernel = boot_manager_get_default_for_type(m, list, "kvm");
         fail_if(!default_kernel, "Failed to find default kvm kernel");
-        fail_if(default_kernel->release != 124, "Mismatched kvm default release");
-        fail_if(!streq(default_kernel->version, "4.2.3"), "Mismatched kvm default version");
-        fail_if(!streq(default_kernel->ktype, "kvm"), "Mismatched kvm default type");
+        fail_if(default_kernel->meta.release != 124, "Mismatched kvm default release");
+        fail_if(!streq(default_kernel->meta.version, "4.2.3"), "Mismatched kvm default version");
+        fail_if(!streq(default_kernel->meta.ktype, "kvm"), "Mismatched kvm default type");
         default_kernel = NULL;
 
         /* default-native = "org.clearlinux.native.4.2.3-138" */
         default_kernel = boot_manager_get_default_for_type(m, list, "native");
         fail_if(!default_kernel, "Failed to find default native kernel");
-        fail_if(default_kernel->release != 138, "Mismatched native default release");
-        fail_if(!streq(default_kernel->version, "4.2.3"), "Mismatched native default version");
-        fail_if(!streq(default_kernel->ktype, "native"), "Mismatched native default type");
+        fail_if(default_kernel->meta.release != 138, "Mismatched native default release");
+        fail_if(!streq(default_kernel->meta.version, "4.2.3"), "Mismatched native default version");
+        fail_if(!streq(default_kernel->meta.ktype, "native"), "Mismatched native default type");
 }
 END_TEST
 

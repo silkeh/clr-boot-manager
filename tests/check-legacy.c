@@ -179,7 +179,7 @@ START_TEST(bootman_legacy_update_from_unknown)
         /* Check running kernel */
         running_kernel = boot_manager_get_running_kernel(m, post_kernels);
         fail_if(!running_kernel, "Failed to find kernel post reboot");
-        fail_if(!streq(running_kernel->version, "4.2.1"), "Running kernel is invalid");
+        fail_if(!streq(running_kernel->meta.version, "4.2.1"), "Running kernel is invalid");
 }
 END_TEST
 
