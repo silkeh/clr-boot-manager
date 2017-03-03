@@ -48,11 +48,11 @@
  */
 #define BOOT_FULL PLAYGROUND_ROOT "/" BOOT_DIRECTORY
 
-#define EFI_START BOOT_FULL "/EFI"
+#define EFI_START BOOT_FULL "/efi"
 /**
  * i.e. $dir/EFI/Boot/BOOTX64.EFI
  */
-#define EFI_STUB_MAIN BOOT_FULL "/EFI/Boot/BOOT" EFI_STUB_SUFFIX
+#define EFI_STUB_MAIN BOOT_FULL "/efi/BOOT/BOOT" EFI_STUB_SUFFIX
 
 /**
  * Places that need to exist..
@@ -388,11 +388,18 @@ BootManager *prepare_playground(PlaygroundConfig *config)
                 goto fail;
         }
 
+        if (!boot_manager_set_boot_dir(m, PLAYGROUND_ROOT "/" BOOT_DIRECTORY)) {
+                goto fail;
+        }
+
         /* Copy the bootloader bits into the tree */
         if (config->uefi) {
                 if (!push_bootloader_update(0)) {
                         goto fail;
                 }
+                /* Create dir *after* init to simulate ESP mount behaviour with
+                 * a different-case boot tree on the ESP */
+                fail_if(!nc_mkdir_p(EFI_START "/BOOT", 00755), "Failed to create boot structure");
         } else {
                 push_syslinux();
         }
