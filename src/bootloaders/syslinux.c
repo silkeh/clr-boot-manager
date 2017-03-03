@@ -96,7 +96,7 @@ static bool syslinux_remove_kernel(__cbm_unused__ const BootManager *manager,
 }
 
 /* Actually creates the whole conf by iterating through the queued kernels */
-static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel *kernel)
+static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel *default_kernel)
 {
         autofree(char) *config_path = NULL;
         const CbmDeviceProbe *root_dev = NULL;
@@ -105,7 +105,7 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
 
         root_dev = boot_manager_get_root_device((BootManager *)manager);
         if (!root_dev) {
-                LOG_FATAL("Root device unknown, this should never happen! %s", kernel->source.path);
+                LOG_FATAL("Root device unknown, this should never happen!");
                 return false;
         }
 
@@ -117,44 +117,23 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
         }
 
         /* No default kernel for set timeout */
-        if (!kernel) {
+        if (!default_kernel) {
                 cbm_writer_append(writer, "TIMEOUT 100\n");
         }
 
         for (uint16_t i = 0; i < kernel_queue->len; i++) {
                 const Kernel *k = nc_array_get(kernel_queue, i);
-                char *kname_base = NULL;
-                autofree(char) *kname_copy = NULL;
-                autofree(char) *initrd_copy = NULL;
-                char *initrd_base = NULL;
-
-                kname_copy = strdup(k->source.path);
-                if (!kname_copy) {
-                        DECLARE_OOM();
-                        abort();
-                }
-                kname_base = basename(kname_copy);
-
-                /* Get the basename of the initrd blob, if it exists */
-                if (kernel && kernel->source.initrd_file) {
-                        initrd_copy = strdup(kernel->source.initrd_file);
-                        if (!initrd_copy) {
-                                DECLARE_OOM();
-                                abort();
-                        }
-                        initrd_base = basename(initrd_copy);
-                }
 
                 /* Mark it default */
-                if (kernel && streq(k->source.path, kernel->source.path)) {
-                        cbm_writer_append_printf(writer, "DEFAULT %s\n", kname_base);
+                if (default_kernel && streq(k->source.path, default_kernel->source.path)) {
+                        cbm_writer_append_printf(writer, "DEFAULT %s\n", k->target.path);
                 }
 
-                cbm_writer_append_printf(writer, "LABEL %s\n", kname_base);
-                cbm_writer_append_printf(writer, "  KERNEL %s\n", kname_base);
+                cbm_writer_append_printf(writer, "LABEL %s\n", k->target.path);
+                cbm_writer_append_printf(writer, "  KERNEL %s\n", k->target.path);
                 /* Add the initrd if we found one */
-                if (initrd_base) {
-                        cbm_writer_append_printf(writer, "  INITRD %s\n", initrd_base);
+                if (k->target.initrd_path) {
+                        cbm_writer_append_printf(writer, "  INITRD %s\n", k->target.initrd_path);
                 }
 
                 /* Begin options */

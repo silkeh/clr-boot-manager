@@ -135,6 +135,9 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         kern->meta.version = strdup(version);
         kern->source.module_dir = strdup(module_dir);
         kern->meta.ktype = strdup(type);
+        /* Currently we have a 1:1 mapping of kernel source name to the kernel
+         * path name. Thus there is no need to duplicate the member just yet. */
+        kern->target.path = kern->meta.bpath;
 
         if (nc_file_exists(kconfig_file)) {
                 kern->source.kconfig_file = strdup(kconfig_file);
@@ -158,6 +161,13 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                         DECLARE_OOM();
                         abort();
                 }
+        }
+
+        /* Target initrd is just basename'd initrd file, simpler to just
+         * reprintf it than copy & basename it */
+        if (kern->source.initrd_file || kern->source.initrd_file) {
+                kern->target.initrd_path =
+                    string_printf("initrd-%s.%s.%s-%d", KERNEL_NAMESPACE, type, version, release);
         }
 
         kern->meta.release = (int16_t)release;
@@ -258,6 +268,7 @@ void free_kernel(Kernel *t)
         free(t->source.kboot_file);
         free(t->source.initrd_file);
         free(t->source.user_initrd_file);
+        free(t->target.initrd_path);
         free(t);
 }
 
@@ -479,12 +490,8 @@ Kernel *boot_manager_get_last_booted(BootManager *self, KernelArray *kernels)
  */
 bool boot_manager_install_kernel_internal(const BootManager *manager, const Kernel *kernel)
 {
-        autofree(char) *kname_copy = NULL;
-        char *kname_base = NULL;
         autofree(char) *kfile_target = NULL;
         autofree(char) *base_path = NULL;
-        autofree(char) *initrd_copy = NULL;
-        char *initrd_base = NULL;
         autofree(char) *initrd_target = NULL;
         const char *initrd_source = NULL;
 
@@ -495,11 +502,8 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         base_path = boot_manager_get_boot_dir((BootManager *)manager);
         OOM_CHECK_RET(base_path, false);
 
-        kname_copy = strdup(kernel->source.path);
-        kname_base = basename(kname_copy);
-
         /* Now copy the kernel file to it's new location */
-        kfile_target = string_printf("%s/%s", base_path, kname_base);
+        kfile_target = string_printf("%s/%s", base_path, kernel->target.path);
 
         if (!cbm_files_match(kernel->source.path, kfile_target)) {
                 if (!copy_file_atomic(kernel->source.path, kfile_target, 00644)) {
@@ -510,26 +514,15 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
 
         /* Install user initrd if it exists, otherwise system initrd */
         if (kernel->source.user_initrd_file) {
-                initrd_copy = strdup(kernel->source.user_initrd_file);
-                if (!initrd_copy) {
-                        DECLARE_OOM();
-                        return false;
-                }
                 initrd_source = kernel->source.user_initrd_file;
         } else if (kernel->source.initrd_file) {
-                initrd_copy = strdup(kernel->source.initrd_file);
-                if (!initrd_copy) {
-                        DECLARE_OOM();
-                        return false;
-                }
                 initrd_source = kernel->source.initrd_file;
         } else {
                 /* No initrd file for this kernel */
                 return true;
         }
 
-        initrd_base = basename(initrd_copy);
-        initrd_target = string_printf("%s/%s", base_path, initrd_base);
+        initrd_target = string_printf("%s/%s", base_path, kernel->target.initrd_path);
 
         if (!cbm_files_match(initrd_source, initrd_target)) {
                 if (!copy_file_atomic(initrd_source, initrd_target, 00644)) {
@@ -548,13 +541,9 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
  */
 bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kernel *kernel)
 {
-        autofree(char) *kname_copy = NULL;
         autofree(char) *kfile_target = NULL;
-        char *kname_base = NULL;
         autofree(char) *base_path = NULL;
-        autofree(char) *initrd_copy = NULL;
         autofree(char) *initrd_target = NULL;
-        char *initrd_base = NULL;
 
         assert(manager != NULL);
         assert(kernel != NULL);
@@ -563,19 +552,10 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         base_path = boot_manager_get_boot_dir((BootManager *)manager);
         OOM_CHECK_RET(base_path, false);
 
-        kname_copy = strdup(kernel->source.path);
-        kname_base = basename(kname_copy);
-
-        kfile_target = string_printf("%s/%s", base_path, kname_base);
+        kfile_target = string_printf("%s/%s", base_path, kernel->target.path);
 
         if (kernel->source.initrd_file) {
-                initrd_copy = strdup(kernel->source.initrd_file);
-                if (!initrd_copy) {
-                        DECLARE_OOM();
-                        return false;
-                }
-                initrd_base = basename(initrd_copy);
-                initrd_target = string_printf("%s/%s", base_path, initrd_base);
+                initrd_target = string_printf("%s/%s", base_path, kernel->target.initrd_path);
         }
 
         /* Remove the kernel from the ESP */

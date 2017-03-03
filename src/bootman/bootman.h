@@ -65,6 +65,12 @@ typedef struct Kernel {
                 char *kboot_file;       /**<Path to the k_booted_$(uname -r) file */
                 char *module_dir;       /**<Path to the modules directory */
         } source;
+
+        /* Target (basename) paths */
+        struct {
+                char *path;        /**<Basename path of the kernel for the target */
+                char *initrd_path; /**<Basename path of initrd for the target */
+        } target;
 } Kernel;
 
 typedef NcArray KernelArray;

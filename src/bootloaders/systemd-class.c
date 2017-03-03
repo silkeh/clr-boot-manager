@@ -180,10 +180,6 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         }
         autofree(char) *conf_path = NULL;
         const CbmDeviceProbe *root_dev = NULL;
-        autofree(char) *kname_copy = NULL;
-        char *kname_base = NULL;
-        autofree(char) *initrd_copy = NULL;
-        char *initrd_base = NULL;
         const char *os_name = NULL;
         autofree(char) *old_conf = NULL;
         autofree(CbmWriter) *writer = CBM_WRITER_INIT;
@@ -208,31 +204,14 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
                 return false;
         }
 
-        kname_copy = strdup(kernel->source.path);
-        if (!kname_copy) {
-                DECLARE_OOM();
-                abort();
-        }
-        kname_base = basename(kname_copy);
-
-        /* Get the basename of the initrd blob, if it exists */
-        if (kernel->source.initrd_file) {
-                initrd_copy = strdup(kernel->source.initrd_file);
-                if (!initrd_copy) {
-                        DECLARE_OOM();
-                        abort();
-                }
-                initrd_base = basename(initrd_copy);
-        }
-
         os_name = boot_manager_get_os_name((BootManager *)manager);
 
         /* Standard title + linux lines */
         cbm_writer_append_printf(writer, "title %s\n", os_name);
-        cbm_writer_append_printf(writer, "linux /%s\n", kname_base);
+        cbm_writer_append_printf(writer, "linux /%s\n", kernel->target.path);
         /* Optional initrd */
-        if (initrd_base) {
-                cbm_writer_append_printf(writer, "initrd /%s\n", initrd_base);
+        if (kernel->target.initrd_path) {
+                cbm_writer_append_printf(writer, "initrd /%s\n", kernel->target.initrd_path);
         }
         /* Add the root= section */
         if (root_dev->part_uuid) {
