@@ -69,6 +69,7 @@ typedef struct Kernel {
         /* Target (basename) paths */
         struct {
                 char *path;        /**<Basename path of the kernel for the target */
+                char *legacy_path; /**<Old path prior to namespacing (basename) */
                 char *initrd_path; /**<Basename path of initrd for the target */
         } target;
 } Kernel;

@@ -31,11 +31,12 @@
 #include "system-harness.h"
 
 #define PLAYGROUND_ROOT TOP_BUILD_DIR "/tests/update_playground"
+#define BOOT_FULL PLAYGROUND_ROOT "/" BOOT_DIRECTORY
 
-static PlaygroundKernel uefi_kernels[] = { { "4.2.1", "kvm", 121, false },
-                                           { "4.2.3", "kvm", 124, true },
-                                           { "4.2.1", "native", 137, false },
-                                           { "4.2.3", "native", 138, true } };
+static PlaygroundKernel uefi_kernels[] = { { "4.2.1", "kvm", 121, false, false },
+                                           { "4.2.3", "kvm", 124, true, false },
+                                           { "4.2.1", "native", 137, false, false },
+                                           { "4.2.3", "native", 138, true, false } };
 
 static PlaygroundConfig uefi_config = { "4.2.1-121.kvm",
                                         uefi_kernels,
@@ -118,7 +119,7 @@ END_TEST
 START_TEST(bootman_uefi_update_from_unknown)
 {
         autofree(BootManager) *m = NULL;
-        PlaygroundKernel kernels[] = { { "4.2.1", "kvm", 121, true } };
+        PlaygroundKernel kernels[] = { { "4.2.1", "kvm", 121, true, false } };
         PlaygroundConfig config = { "4.2.1-121.kvm", kernels, 1, true };
         autofree(KernelArray) *pre_kernels = NULL;
         autofree(KernelArray) *post_kernels = NULL;
@@ -276,6 +277,80 @@ START_TEST(bootman_uefi_remove_bootloader)
 }
 END_TEST
 
+START_TEST(bootman_uefi_namespace_migration)
+{
+        autofree(BootManager) *m = NULL;
+        PlaygroundKernel uefi_old_kernels[] = { { "4.2.1", "kvm", 121, false, true },
+                                                { "4.2.3", "kvm", 124, true, true },
+                                                { "4.2.1", "native", 137, false, true },
+                                                { "4.2.3", "native", 138, true, true } };
+        PlaygroundConfig uefi_old = { "4.2.1-121.kvm",
+                                      uefi_old_kernels,
+                                      ARRAY_SIZE(uefi_old_kernels),
+                                      .uefi = true };
+        const char *vendor = NULL;
+
+        m = prepare_playground(&uefi_old);
+        vendor = boot_manager_get_vendor_prefix(m);
+
+        fail_if(!nc_mkdir_p(BOOT_FULL "/loader/entries", 00755), "Failed to create loader dirs");
+
+        /* Manually install a bunch of kernels using their legacy paths */
+        for (size_t i = 0; i < uefi_old.n_kernels; i++) {
+                PlaygroundKernel *k = &(uefi_old_kernels[i]);
+                autofree(char) *tgt_path_kernel = NULL;
+                autofree(char) *tgt_path_initrd = NULL;
+                autofree(char) *tgt_path_config = NULL;
+
+                tgt_path_kernel = string_printf("%s/%s.%s.%s-%d",
+                                                BOOT_FULL,
+                                                KERNEL_NAMESPACE,
+                                                k->ktype,
+                                                k->version,
+                                                k->release);
+
+                tgt_path_initrd = string_printf("%s/initrd-%s.%s.%s-%d",
+                                                BOOT_FULL,
+                                                KERNEL_NAMESPACE,
+                                                k->ktype,
+                                                k->version,
+                                                k->release);
+
+                tgt_path_config = string_printf("%s/loader/entries/%s-%s-%s-%d.conf",
+                                                BOOT_FULL,
+                                                vendor,
+                                                k->ktype,
+                                                k->version,
+                                                k->release);
+
+                file_set_text(tgt_path_kernel, "Placeholder kernel");
+                file_set_text(tgt_path_initrd, "Placeholder initrd");
+                file_set_text(tgt_path_config, "Placeholder config");
+
+                fail_if(!confirm_kernel_installed(m, &uefi_old, k),
+                        "Failed to manually install old kernel");
+        }
+        /* Upgrade will put new kernels in place, and wipe old ones */
+        fail_if(!boot_manager_update(m), "Failed to migrate namespace on update");
+
+        /* Iterate again, make sure new ones are valid, and old ones are gone
+         * Not all kernels are retained during upgrade */
+        for (size_t i = 0; i < uefi_old.n_kernels; i++) {
+                PlaygroundKernel *k = &(uefi_old_kernels[i]);
+                /* Only one file should be installed for the old kernel, the loader config */
+                fail_if(kernel_installed_files_count(m, k) > 1, "Old kernel not removed correctly");
+                /* Flip to non legacy for next check */
+                k->legacy_name = false;
+        }
+        fail_if(!confirm_kernel_installed(m, &uefi_old, &(uefi_old_kernels[0])),
+                "Kernel 1 not fully installed");
+        fail_if(!confirm_kernel_installed(m, &uefi_old, &(uefi_old_kernels[1])),
+                "Kernel 2 not fully installed");
+        fail_if(!confirm_kernel_installed(m, &uefi_old, &(uefi_old_kernels[3])),
+                "Kernel 4 not fully installed");
+}
+END_TEST
+
 static Suite *core_suite(void)
 {
         Suite *s = NULL;
@@ -290,6 +365,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_uefi_update_image);
         tcase_add_test(tc, bootman_uefi_update_native);
         tcase_add_test(tc, bootman_uefi_remove_bootloader);
+        tcase_add_test(tc, bootman_uefi_namespace_migration);
         suite_add_tcase(s, tc);
 
         return s;

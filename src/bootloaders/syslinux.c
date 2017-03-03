@@ -126,11 +126,11 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
 
                 /* Mark it default */
                 if (default_kernel && streq(k->source.path, default_kernel->source.path)) {
-                        cbm_writer_append_printf(writer, "DEFAULT %s\n", k->target.path);
+                        cbm_writer_append_printf(writer, "DEFAULT %s\n", k->target.legacy_path);
                 }
 
-                cbm_writer_append_printf(writer, "LABEL %s\n", k->target.path);
-                cbm_writer_append_printf(writer, "  KERNEL %s\n", k->target.path);
+                cbm_writer_append_printf(writer, "LABEL %s\n", k->target.legacy_path);
+                cbm_writer_append_printf(writer, "  KERNEL %s\n", k->target.legacy_path);
                 /* Add the initrd if we found one */
                 if (k->target.initrd_path) {
                         cbm_writer_append_printf(writer, "  INITRD %s\n", k->target.initrd_path);

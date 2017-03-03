@@ -438,25 +438,45 @@ int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel)
 
         autofree(char) *conf_file = NULL;
         autofree(char) *kernel_blob = NULL;
+        autofree(char) *kernel_blob_legacy = NULL;
         autofree(char) *initrd_file = NULL;
+        autofree(char) *initrd_file_legacy = NULL;
         const char *vendor = NULL;
         int file_count = 0;
 
         vendor = boot_manager_get_vendor_prefix(manager);
 
-        kernel_blob = string_printf("%s/%s.%s.%s-%d",
+        kernel_blob = string_printf("%s/efi/%s/kernel-%s.%s.%s-%d",
                                     BOOT_FULL,
+                                    KERNEL_NAMESPACE,
                                     KERNEL_NAMESPACE,
                                     kernel->ktype,
                                     kernel->version,
                                     kernel->release);
 
-        initrd_file = string_printf("%s/initrd-%s.%s.%s-%d",
+        /* Old name, pre namespace change */
+        kernel_blob_legacy = string_printf("%s/%s.%s.%s-%d",
+                                           BOOT_FULL,
+                                           KERNEL_NAMESPACE,
+                                           kernel->ktype,
+                                           kernel->version,
+                                           kernel->release);
+
+        initrd_file = string_printf("%s/efi/%s/initrd-%s.%s.%s-%d",
                                     BOOT_FULL,
+                                    KERNEL_NAMESPACE,
                                     KERNEL_NAMESPACE,
                                     kernel->ktype,
                                     kernel->version,
                                     kernel->release);
+
+        /* Old name, pre namespace change */
+        initrd_file_legacy = string_printf("%s/initrd-%s.%s.%s-%d",
+                                           BOOT_FULL,
+                                           KERNEL_NAMESPACE,
+                                           kernel->ktype,
+                                           kernel->version,
+                                           kernel->release);
 
         conf_file = string_printf("%s/loader/entries/%s-%s-%s-%d.conf",
                                   BOOT_FULL,
@@ -465,14 +485,24 @@ int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel)
                                   kernel->version,
                                   kernel->release);
 
-        if (nc_file_exists(kernel_blob)) {
-                ++file_count;
-        }
         if (nc_file_exists(conf_file)) {
                 ++file_count;
         }
-        if (nc_file_exists(initrd_file)) {
-                ++file_count;
+
+        if (kernel->legacy_name) {
+                if (nc_file_exists(kernel_blob_legacy)) {
+                        ++file_count;
+                }
+                if (nc_file_exists(initrd_file_legacy)) {
+                        ++file_count;
+                }
+        } else {
+                if (nc_file_exists(kernel_blob)) {
+                        ++file_count;
+                }
+                if (nc_file_exists(initrd_file)) {
+                        ++file_count;
+                }
         }
         return file_count;
 }

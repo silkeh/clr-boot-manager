@@ -135,9 +135,12 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
         kern->meta.version = strdup(version);
         kern->source.module_dir = strdup(module_dir);
         kern->meta.ktype = strdup(type);
-        /* Currently we have a 1:1 mapping of kernel source name to the kernel
-         * path name. Thus there is no need to duplicate the member just yet. */
-        kern->target.path = kern->meta.bpath;
+        /* Legacy path should be used by non-UEFI bootloaders */
+        kern->target.legacy_path = kern->meta.bpath;
+
+        /* New path is virtually identical to the old one with the exception of
+         * a kernel- prefix */
+        kern->target.path = string_printf("kernel-%s", kern->target.legacy_path);
 
         if (nc_file_exists(kconfig_file)) {
                 kern->source.kconfig_file = strdup(kconfig_file);
@@ -269,6 +272,7 @@ void free_kernel(Kernel *t)
         free(t->source.initrd_file);
         free(t->source.user_initrd_file);
         free(t->target.initrd_path);
+        free(t->target.path);
         free(t);
 }
 
@@ -486,6 +490,69 @@ Kernel *boot_manager_get_last_booted(BootManager *self, KernelArray *kernels)
 }
 
 /**
+ * Older versions of clr-boot-manager would install kernels directly into the
+ * root of the ESP, i.e. /$NAMESPACE*.
+ * In order to provide full compliance and to enable secure boot, we since moved
+ * the paths (kernel->target.path) to /EFI/$NAMESPACE/.*.
+ *
+ * However, during updates the old paths (kernel->target.legacy_path) may still
+ * exist on disk. Thus, when we remove a kernel, or successfully install a new
+ * kernel, we also check for the legacy paths that *may* exist. If so, we'll
+ * remove them to complete the migration.
+ *
+ * It is *not fatal* for this to fail, just highly undesirable.
+ */
+static bool boot_manager_remove_legacy_uefi_kernel(const BootManager *manager, const Kernel *kernel)
+{
+        autofree(char) *base_path = NULL;
+        autofree(char) *initrd_target = NULL;
+        autofree(char) *kfile_target = NULL;
+        bool ret = true;
+        bool migrated = false;
+
+        assert(manager != NULL);
+        assert(kernel != NULL);
+
+        /* Boot path */
+        base_path = boot_manager_get_boot_dir((BootManager *)manager);
+
+        kfile_target = string_printf("%s/%s", base_path, kernel->target.legacy_path);
+        initrd_target = string_printf("%s/%s", base_path, kernel->target.initrd_path);
+
+        /* Remove old kernel */
+        if (nc_file_exists(kfile_target)) {
+                if (unlink(kfile_target) < 0) {
+                        LOG_ERROR("Failed to remove legacy-path UEFI kernel %s: %s",
+                                  kfile_target,
+                                  strerror(errno));
+                        ret = false;
+                } else {
+                        migrated = true;
+                }
+        }
+
+        /* Remove old initrd */
+        if (nc_file_exists(initrd_target)) {
+                if (unlink(initrd_target) < 0) {
+                        LOG_ERROR("Failed to remove legacy-path UEFI initrd %s: %s",
+                                  initrd_target,
+                                  strerror(errno));
+                        ret = false;
+                } else {
+                        migrated = true;
+                }
+        }
+
+        if (migrated) {
+                LOG_SUCCESS("Migrated '%s' to new namespace '%s'",
+                            kernel->target.legacy_path,
+                            kernel->target.path);
+        }
+
+        return ret;
+}
+
+/**
  * Internal function to install the kernel blob itself
  */
 bool boot_manager_install_kernel_internal(const BootManager *manager, const Kernel *kernel)
@@ -494,6 +561,8 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         autofree(char) *base_path = NULL;
         autofree(char) *initrd_target = NULL;
         const char *initrd_source = NULL;
+        bool is_uefi = false;
+        autofree(char) *efi_boot_dir = NULL;
 
         assert(manager != NULL);
         assert(kernel != NULL);
@@ -502,9 +571,28 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
         base_path = boot_manager_get_boot_dir((BootManager *)manager);
         OOM_CHECK_RET(base_path, false);
 
-        /* Now copy the kernel file to it's new location */
-        kfile_target = string_printf("%s/%s", base_path, kernel->target.path);
+        /* Determine if UEFI is in use */
+        if ((manager->bootloader->get_capabilities(manager) & BOOTLOADER_CAP_UEFI) ==
+            BOOTLOADER_CAP_UEFI) {
+                is_uefi = true;
+                efi_boot_dir = nc_build_case_correct_path(base_path, "EFI", KERNEL_NAMESPACE, NULL);
+        }
 
+        /* For UEFI kernels we namespace into /EFI/$NEEDLE, i.e. /EFI/org.clearlinux */
+        if (is_uefi) {
+                /* Ensure namespace directory exists */
+                if (!nc_mkdir_p(efi_boot_dir, 00755)) {
+                        LOG_FATAL("Failed to create namespace directory: %s %s",
+                                  efi_boot_dir,
+                                  strerror(errno));
+                        return false;
+                }
+                kfile_target = string_printf("%s/%s", efi_boot_dir, kernel->target.path);
+        } else {
+                kfile_target = string_printf("%s/%s", base_path, kernel->target.legacy_path);
+        }
+
+        /* Now copy the kernel file to it's new location */
         if (!cbm_files_match(kernel->source.path, kfile_target)) {
                 if (!copy_file_atomic(kernel->source.path, kfile_target, 00644)) {
                         LOG_FATAL("Failed to install kernel %s: %s", kfile_target, strerror(errno));
@@ -522,7 +610,11 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
                 return true;
         }
 
-        initrd_target = string_printf("%s/%s", base_path, kernel->target.initrd_path);
+        if (is_uefi) {
+                initrd_target = string_printf("%s/%s", efi_boot_dir, kernel->target.initrd_path);
+        } else {
+                initrd_target = string_printf("%s/%s", base_path, kernel->target.initrd_path);
+        }
 
         if (!cbm_files_match(initrd_source, initrd_target)) {
                 if (!copy_file_atomic(initrd_source, initrd_target, 00644)) {
@@ -531,6 +623,15 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
                                   strerror(errno));
                         return false;
                 }
+        }
+
+        /* Our portion is complete, remove any legacy uefi bits we might have
+         * from previous runs, and then continue and let the bootloader configure
+         * as appropriate.
+         */
+        if (is_uefi && !boot_manager_remove_legacy_uefi_kernel(manager, kernel)) {
+                LOG_WARNING("Failed to remove legacy kernel on ESP: %s",
+                            kernel->target.legacy_path);
         }
 
         return true;
@@ -544,6 +645,7 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         autofree(char) *kfile_target = NULL;
         autofree(char) *base_path = NULL;
         autofree(char) *initrd_target = NULL;
+        bool is_uefi = false;
 
         assert(manager != NULL);
         assert(kernel != NULL);
@@ -551,6 +653,12 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
         /* Boot path */
         base_path = boot_manager_get_boot_dir((BootManager *)manager);
         OOM_CHECK_RET(base_path, false);
+
+        /* Determine if UEFI is in use */
+        if ((manager->bootloader->get_capabilities(manager) & BOOTLOADER_CAP_UEFI) ==
+            BOOTLOADER_CAP_UEFI) {
+                is_uefi = true;
+        }
 
         kfile_target = string_printf("%s/%s", base_path, kernel->target.path);
 
@@ -618,6 +726,14 @@ bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kerne
                           kernel->source.path,
                           strerror(errno));
                 return false;
+        }
+
+        /* Our portion is complete, remove any legacy uefi bits we might have
+         * from previous runs.
+         */
+        if (is_uefi && !boot_manager_remove_legacy_uefi_kernel(manager, kernel)) {
+                LOG_WARNING("Failed to remove legacy kernel on ESP: %s",
+                            kernel->target.legacy_path);
         }
 
         return true;

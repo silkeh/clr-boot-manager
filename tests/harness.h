@@ -24,6 +24,7 @@ typedef struct PlaygroundKernel {
         const char *ktype;
         int release;
         bool default_for_type;
+        bool legacy_name; /**<UEFI specific */
 } PlaygroundKernel;
 
 /**
@@ -73,6 +74,11 @@ bool push_bootloader_update(int revision);
  * Util - confirm the bootloader is installed in the current test
  */
 void confirm_bootloader(void);
+
+/**
+ * Accumulate potential installed files for a given kernel
+ */
+int kernel_installed_files_count(BootManager *manager, PlaygroundKernel *kernel);
 
 /**
  * Util - confirm the bootloader installed matches the source file

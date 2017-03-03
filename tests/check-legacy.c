@@ -58,10 +58,10 @@ static inline const char *legacy_partition_get_uuid(__cbm_unused__ blkid_partiti
         return DEFAULT_PART_UUID;
 }
 
-static PlaygroundKernel legacy_kernels[] = { { "4.2.1", "kvm", 121, false },
-                                             { "4.2.3", "kvm", 124, true },
-                                             { "4.2.1", "native", 137, false },
-                                             { "4.2.3", "native", 138, true } };
+static PlaygroundKernel legacy_kernels[] = { { "4.2.1", "kvm", 121, false, true },
+                                             { "4.2.3", "kvm", 124, true, true },
+                                             { "4.2.1", "native", 137, false, true },
+                                             { "4.2.3", "native", 138, true, true } };
 
 static PlaygroundConfig legacy_config = { "4.2.1-121.kvm",
                                           legacy_kernels,
@@ -143,7 +143,7 @@ END_TEST
 START_TEST(bootman_legacy_update_from_unknown)
 {
         autofree(BootManager) *m = NULL;
-        PlaygroundKernel kernels[] = { { "4.2.1", "kvm", 121, true } };
+        PlaygroundKernel kernels[] = { { "4.2.1", "kvm", 121, true, true } };
         PlaygroundConfig config = { "4.2.1-121.kvm", kernels, 1, false };
         autofree(KernelArray) *pre_kernels = NULL;
         autofree(KernelArray) *post_kernels = NULL;

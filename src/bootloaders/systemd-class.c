@@ -18,6 +18,7 @@
 
 #include "bootloader.h"
 #include "bootman.h"
+#include "config.h"
 #include "files.h"
 #include "log.h"
 #include "nica/files.h"
@@ -208,10 +209,16 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
 
         /* Standard title + linux lines */
         cbm_writer_append_printf(writer, "title %s\n", os_name);
-        cbm_writer_append_printf(writer, "linux /%s\n", kernel->target.path);
+        cbm_writer_append_printf(writer,
+                                 "linux /EFI/%s/%s\n",
+                                 KERNEL_NAMESPACE,
+                                 kernel->target.path);
         /* Optional initrd */
         if (kernel->target.initrd_path) {
-                cbm_writer_append_printf(writer, "initrd /%s\n", kernel->target.initrd_path);
+                cbm_writer_append_printf(writer,
+                                         "initrd /EFI/%s/%s\n",
+                                         KERNEL_NAMESPACE,
+                                         kernel->target.initrd_path);
         }
         /* Add the root= section */
         if (root_dev->part_uuid) {
