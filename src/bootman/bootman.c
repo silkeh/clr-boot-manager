@@ -311,13 +311,17 @@ bool boot_manager_set_boot_dir(BootManager *self, const char *bootdir)
         if (!bootdir) {
                 return false;
         }
+        /* Take early copy as we may actually be resetting to our own currently
+         * set (allocated) bootdir */
+        char *nboot = strdup(bootdir);
+        if (!nboot) {
+                return false;
+        }
+
         if (self->abs_bootdir) {
                 free(self->abs_bootdir);
         }
-        self->abs_bootdir = strdup(bootdir);
-        if (!self->abs_bootdir) {
-                return false;
-        }
+        self->abs_bootdir = nboot;
 
         if (!self->bootloader) {
                 return true;
@@ -343,6 +347,12 @@ bool boot_manager_modify_bootloader(BootManager *self, int flags)
         if (!cbm_is_sysconfig_sane(self->sysconfig)) {
                 return false;
         }
+
+        /* Ensure we're up to date here on the bootloader */
+        if (!boot_manager_set_boot_dir(self, self->abs_bootdir)) {
+                return false;
+        }
+
         bool nocheck = (flags & BOOTLOADER_OPERATION_NO_CHECK) == BOOTLOADER_OPERATION_NO_CHECK;
 
         if ((flags & BOOTLOADER_OPERATION_INSTALL) == BOOTLOADER_OPERATION_INSTALL) {

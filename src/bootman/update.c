@@ -116,6 +116,15 @@ bool boot_manager_update(BootManager *self)
         LOG_SUCCESS("%s successfully mounted at %s", root_base, boot_dir);
         did_mount = true;
 
+        /* Reinit bootloader for non-image mode with newly mounted boot partition
+         * as it may have paths that already exist, and we must adjust for case
+         * sensitivity (ignorant) issues
+         */
+        if (!boot_manager_set_boot_dir(self, boot_dir)) {
+                LOG_FATAL("Cannot initialise with newly mounted ESP");
+                return false;
+        }
+
 perform:
         /* Do a native update */
         ret = boot_manager_update_native(self);
