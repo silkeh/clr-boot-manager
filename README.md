@@ -14,7 +14,7 @@ Most importantly, clr-boot-manager provides a simple mechanism to provide kernel
 Requirements
 ------------
 
-clr-boot-manager is primarily designed for GPT disks using UEFI, however it does contain fallback support for legacy bootloaders such as GRUB2 to allow all users to benefit from automated kernel management.
+clr-boot-manager is primarily designed to install the bootloader, kernel, initrd and accompanying metadata files for GPT disks using UEFI, however it does contain fallback support for legacy bootloaders such as GRUB2 to allow all users to benefit from automated kernel management when MBR partition tables are used.
 
 clr-boot-manager should be the only tool responsible within the OS for generating boot entries, and will automatically incorporate the correct `root=` portions.
 
