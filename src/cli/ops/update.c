@@ -24,7 +24,6 @@ bool cbm_command_update(int argc, char **argv)
 {
         autofree(char) *root = NULL;
         autofree(BootManager) *manager = NULL;
-        bool image_mode = false;
         bool forced_image = false;
 
         if (!cli_default_args_init(&argc, &argv, &root, &forced_image)) {
@@ -47,7 +46,9 @@ bool cbm_command_update(int argc, char **argv)
                 }
                 /* Anything not / is image mode */
                 if (!streq(realp, "/")) {
-                        image_mode = true;
+                        boot_manager_set_image_mode(manager, true);
+                } else {
+                        boot_manager_set_image_mode(manager, forced_image);
                 }
 
                 /* CBM will check this again, we just needed to check for
@@ -56,17 +57,11 @@ bool cbm_command_update(int argc, char **argv)
                         return false;
                 }
         } else {
+                boot_manager_set_image_mode(manager, forced_image);
                 /* Default to "/", bail if it doesn't work. */
                 if (!boot_manager_set_prefix(manager, "/")) {
                         return false;
                 }
-        }
-
-        if (forced_image) {
-                boot_manager_set_image_mode(manager, true);
-        } else {
-                /* Set the image mode */
-                boot_manager_set_image_mode(manager, image_mode);
         }
 
         /* Let CBM take care of the rest */

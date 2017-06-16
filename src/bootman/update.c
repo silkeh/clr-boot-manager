@@ -184,6 +184,14 @@ static bool boot_manager_update_image(BootManager *self)
                 return false;
         }
 
+        /* Reinit bootloader for image mode to ensure the bootloader is then
+         * re-initialised for the current settings and environment.
+         */
+        if (!boot_manager_set_boot_dir(self, boot_dir)) {
+                LOG_FATAL("Cannot re-initialise bootloader for image mode");
+                return false;
+        }
+
         /* Sort them to find the newest kernel */
         nc_array_qsort(kernels, kernel_compare_reverse);
 

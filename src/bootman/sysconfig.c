@@ -77,9 +77,10 @@ SystemConfig *cbm_inspect_root(const char *path, bool image_mode)
          * UEFI. This is due to GPT being able to contain a legacy boot device
          * *and* an ESP at the same time. Native UEFI takes precedence.
          */
-        if (!native_uefi) {
+        if (!native_uefi || image_mode) {
                 boot = get_legacy_boot_device(realp);
         }
+
         if (boot) {
                 c->boot_device = boot;
                 c->wanted_boot_mask = BOOTLOADER_CAP_LEGACY | BOOTLOADER_CAP_GPT;
@@ -88,7 +89,9 @@ SystemConfig *cbm_inspect_root(const char *path, bool image_mode)
         }
 
         /* Now try to find the system ESP */
-        boot = get_boot_device();
+        if (!image_mode) {
+                boot = get_boot_device();
+        }
         if (boot) {
                 c->boot_device = boot;
                 c->wanted_boot_mask = BOOTLOADER_CAP_UEFI | BOOTLOADER_CAP_GPT;
