@@ -89,7 +89,7 @@ bool cbm_command_set_timeout(int argc, char **argv)
                 fprintf(stdout, "New timeout value is: %d\n", n_val);
         }
 
-        return false;
+        return true;
 }
 
 bool cbm_command_get_timeout(int argc, char **argv)
