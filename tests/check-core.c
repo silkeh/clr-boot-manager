@@ -23,7 +23,6 @@
 #include "nica/array.h"
 #include "nica/files.h"
 #include "util.h"
-#include "util.h"
 #include "writer.h"
 
 #include "blkid-harness.h"
