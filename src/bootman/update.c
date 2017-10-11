@@ -267,7 +267,7 @@ static bool boot_manager_update_native(BootManager *self)
         if (!running) {
                 /* We don't know the currently running kernel, don't try to
                  * remove anything */
-                LOG_ERROR("Cannot dermine the currently running kernel");
+                LOG_ERROR("Cannot determine the currently running kernel");
         } else {
                 LOG_DEBUG("update_native: Running kernel is (%s) %s",
                           running->meta.ktype,
