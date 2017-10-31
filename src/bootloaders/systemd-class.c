@@ -38,10 +38,13 @@ typedef struct SdClassConfig {
         char *efi_blob_dest;
         char *default_path_efi_blob;
         char *loader_config;
+        char *kernel_dir;
 } SdClassConfig;
 
 static SdClassConfig sd_class_config = { 0 };
 static BootLoaderConfig *sd_config = NULL;
+
+static char *(*get_kernel_destination_impl)(const BootManager *);
 
 #define FREE_IF_SET(x)                                                                             \
         {                                                                                          \
@@ -50,6 +53,11 @@ static BootLoaderConfig *sd_config = NULL;
                         x = NULL;                                                                  \
                 }                                                                                  \
         }
+
+char *sd_class_get_kernel_destination_default(__cbm_unused__ const BootManager *manager)
+{
+        return strdup(sd_class_config.kernel_dir);
+}
 
 bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
 {
@@ -64,6 +72,8 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         const char *prefix = NULL;
 
         sd_config = config;
+
+        get_kernel_destination_impl = sd_class_get_kernel_destination_default;
 
         /* Cache all of these to save useless allocs of the same paths later */
         base_path = boot_manager_get_boot_dir((BootManager *)manager);
@@ -112,7 +122,19 @@ bool sd_class_init(const BootManager *manager, BootLoaderConfig *config)
         OOM_CHECK_RET(loader_config, false);
         sd_class_config.loader_config = loader_config;
 
+        sd_class_config.kernel_dir = "/EFI/" KERNEL_NAMESPACE;
+
         return true;
+}
+
+void sd_class_set_get_kernel_destination_impl(char *(*impl)(const BootManager *))
+{
+        get_kernel_destination_impl = impl;
+}
+
+char *sd_class_get_kernel_destination(const BootManager *manager)
+{
+        return get_kernel_destination_impl(manager);
 }
 
 void sd_class_destroy(__cbm_unused__ const BootManager *manager)
@@ -151,7 +173,7 @@ static char *get_entry_path_for_kernel(BootManager *manager, const Kernel *kerne
                                           NULL);
 }
 
-static bool sd_class_ensure_dirs(__cbm_unused__ const BootManager *manager)
+static bool sd_class_ensure_dirs(void)
 {
         if (!nc_mkdir_p(sd_class_config.efi_dir, 00755)) {
                 LOG_FATAL("Failed to create %s: %s", sd_class_config.efi_dir, strerror(errno));
@@ -187,12 +209,6 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
 
         conf_path = get_entry_path_for_kernel((BootManager *)manager, kernel);
 
-        /* Ensure all the relevant directories exist */
-        if (!sd_class_ensure_dirs(manager)) {
-                LOG_FATAL("Failed to create required directories");
-                return false;
-        }
-
         if (!cbm_writer_open(writer)) {
                 DECLARE_OOM();
                 abort();
@@ -210,14 +226,14 @@ bool sd_class_install_kernel(const BootManager *manager, const Kernel *kernel)
         /* Standard title + linux lines */
         cbm_writer_append_printf(writer, "title %s\n", os_name);
         cbm_writer_append_printf(writer,
-                                 "linux /EFI/%s/%s\n",
-                                 KERNEL_NAMESPACE,
+                                 "linux %s/%s\n",
+                                 get_kernel_destination_impl(manager),
                                  kernel->target.path);
         /* Optional initrd */
         if (kernel->target.initrd_path) {
                 cbm_writer_append_printf(writer,
-                                         "initrd /EFI/%s/%s\n",
-                                         KERNEL_NAMESPACE,
+                                         "initrd %s/%s\n",
+                                         get_kernel_destination_impl(manager),
                                          kernel->target.initrd_path);
         }
         /* Add the root= section */
@@ -287,11 +303,6 @@ bool sd_class_remove_kernel(const BootManager *manager, const Kernel *kernel)
 bool sd_class_set_default_kernel(const BootManager *manager, const Kernel *kernel)
 {
         if (!manager) {
-                return false;
-        }
-
-        if (!sd_class_ensure_dirs(manager)) {
-                LOG_FATAL("Failed to create required directories for %s", sd_config->name);
                 return false;
         }
 
@@ -404,7 +415,7 @@ bool sd_class_install(const BootManager *manager)
                 return false;
         }
 
-        if (!sd_class_ensure_dirs(manager)) {
+        if (!sd_class_ensure_dirs()) {
                 LOG_FATAL("Failed to create required directories for %s", sd_config->name);
                 return false;
         }
@@ -439,7 +450,7 @@ bool sd_class_update(const BootManager *manager)
         if (!manager) {
                 return false;
         }
-        if (!sd_class_ensure_dirs(manager)) {
+        if (!sd_class_ensure_dirs()) {
                 LOG_FATAL("Failed to create required directories for %s", sd_config->name);
                 return false;
         }
