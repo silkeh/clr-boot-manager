@@ -21,4 +21,4 @@ xz -9 "${NAME}-${VERSION}.tar"
 
 # Automatically sign the tarball
 gpg --armor --detach-sign "${NAME}-${VERSION}.tar.xz"
-gpg --verify "${NAME}-${VERSION}.tar.xz.asc"               
+gpg --verify "${NAME}-${VERSION}.tar.xz.asc"
