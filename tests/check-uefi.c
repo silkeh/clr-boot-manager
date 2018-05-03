@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "bootloader.h"
 #include "bootman.h"
@@ -412,6 +413,32 @@ START_TEST(bootman_uefi_initrd_freestandings)
 }
 END_TEST
 
+START_TEST(bootman_uefi_missing_initrd_freestandings)
+{
+        autofree(BootManager) *m = NULL;
+        autofree(char) *path_initrd = NULL;
+        char *initrd_name = "00-initrd";
+
+        m = prepare_playground(&uefi_config);
+        fail_if(!m, "Failed to prepare update playground");
+
+        path_initrd = string_printf("%s%s/%s",
+                                    PLAYGROUND_ROOT,
+                                    INITRD_DIRECTORY,
+                                    initrd_name);
+
+        file_set_text(path_initrd, "Placeholder initrd");
+        /* Validate image install */
+        boot_manager_set_image_mode(m, false);
+        fail_if(!boot_manager_enumerate_initrds_freestanding(m), "Failed to find freestanding initrd");
+        unlink(path_initrd);
+        fail_if(!check_freestanding_initrds_available(m, initrd_name), "Failed reading from initrd path");
+        fail_if(boot_manager_update(m), "Incorrectly updated kernel when missing initrd");
+        fail_if(confirm_kernel_installed(m, &uefi_config, &(uefi_kernels[0])),
+                "Installed kernel with invalid config");
+}
+END_TEST
+
 START_TEST(bootman_uefi_initrd_freestandings_image)
 {
         autofree(BootManager) *m = NULL;
@@ -489,6 +516,7 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_uefi_namespace_migration);
         tcase_add_test(tc, bootman_uefi_ensure_removed);
         tcase_add_test(tc, bootman_uefi_initrd_freestandings);
+        tcase_add_test(tc, bootman_uefi_missing_initrd_freestandings);
         tcase_add_test(tc, bootman_uefi_initrd_freestandings_image);
         suite_add_tcase(s, tc);
 
