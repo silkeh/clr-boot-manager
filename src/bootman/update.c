@@ -201,6 +201,11 @@ static bool boot_manager_update_image(BootManager *self)
         }
         LOG_SUCCESS("update_image: Bootloader update successful");
 
+        if (!boot_manager_copy_initrd_freestanding(self)) {
+                LOG_ERROR("Failed to copying freestanding initrd");
+                return false;
+        }
+
         /* Go ahead and install the kernels */
         for (uint16_t i = 0; i < kernels->len; i++) {
                 const Kernel *k = nc_array_get(kernels, i);
