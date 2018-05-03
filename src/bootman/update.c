@@ -293,6 +293,11 @@ static bool boot_manager_update_native(BootManager *self)
 
         LOG_SUCCESS("update_native: Bootloader updated");
 
+        if (!boot_manager_copy_initrd_freestanding(self)) {
+                LOG_ERROR("Failed to copying freestanding initrd");
+                return false;
+        }
+
         /* This is mostly to allow a repair-situation */
         if (running) {
                 /* Not necessarily fatal. */
@@ -302,11 +307,6 @@ static bool boot_manager_update_native(BootManager *self)
                         LOG_SUCCESS("update_native: Repaired running kernel %s",
                                     running->source.path);
                 }
-        }
-
-        if (!boot_manager_copy_initrd_freestanding(self)) {
-                LOG_ERROR("Failed to copying freestanding initrd");
-                return false;
         }
 
         nc_hashmap_iter_init(mapped_kernels, &map_iter);
