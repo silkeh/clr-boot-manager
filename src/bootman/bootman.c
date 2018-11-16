@@ -298,6 +298,10 @@ bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
 {
         assert(self != NULL);
         autofree(KernelArray) *kernels = NULL;
+        autofree(char) *boot_dir = NULL;
+        int did_mount = -1;
+        bool matched = false;
+        bool default_set = false;
 
         if (!self->bootloader) {
                 return false;
@@ -313,16 +317,34 @@ bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
                 return false;
         }
 
+        /* TODO: decide how legacy device detection works */
+        /* For now legacy means /boot is on the / partition */
+        if ((self->sysconfig->wanted_boot_mask & BOOTLOADER_CAP_LEGACY) == BOOTLOADER_CAP_LEGACY) {
+                did_mount = 0;
+        } else {
+                did_mount = mount_boot(self, &boot_dir);
+        }
+        if (did_mount < 0) {
+                return false;
+        }
         for (uint16_t i = 0; i < kernels->len; i++) {
                 const Kernel *k = nc_array_get(kernels, i);
                 if (streq(kernel->meta.ktype, k->meta.ktype) &&
                     streq(kernel->meta.version, k->meta.version) &&
                     kernel->meta.release == k->meta.release) {
-                        return self->bootloader->set_default_kernel(self, kernel);
+                        matched = true;
+                        default_set = self->bootloader->set_default_kernel(self, kernel);
+                        break;
                 }
         }
-        LOG_ERROR("No matching kernel in %s, bailing", self->kernel_dir);
-        return false;
+        if (did_mount > 0) {
+                umount_boot(boot_dir);
+        }
+
+        if (!matched) {
+                LOG_ERROR("No matching kernel in %s, bailing", self->kernel_dir);
+        };
+        return default_set;
 }
 
 char *boot_manager_get_default_kernel(BootManager *self)
