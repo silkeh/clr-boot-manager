@@ -48,6 +48,24 @@ bool boot_manager_install_kernel_internal(const BootManager *manager, const Kern
  */
 bool boot_manager_remove_kernel_internal(const BootManager *manager, const Kernel *kernel);
 
+/**
+ * Internal function to unmount boot directory
+ */
+void umount_boot(char *boot_dir);
+
+/**
+ * Internal function to mount the boot directory
+ *
+ * Returns tri-state of -1 for error, 0 for already mounted and 1 for mount
+ * completed. *boot_directory should be free'd by caller.
+ */
+int mount_boot(BootManager *self, char **boot_directory);
+
+/**
+ * Internal function to sort by Kernel structs by release number (highest first)
+ */
+int kernel_compare_reverse(const void *a, const void *b);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

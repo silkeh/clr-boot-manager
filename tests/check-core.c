@@ -141,7 +141,7 @@ START_TEST(bootman_parser_test)
 }
 END_TEST
 
-int kernel_compare(const void *a, const void *b)
+static int kernel_compare(const void *a, const void *b)
 {
         const Kernel *ka = *(const Kernel **)a;
         const Kernel *kb = *(const Kernel **)b;
@@ -152,7 +152,7 @@ int kernel_compare(const void *a, const void *b)
         return 1;
 }
 
-int kernel_compare_reverse(const void *a, const void *b)
+static int kernel_compare_reverse(const void *a, const void *b)
 {
         const Kernel *ka = *(const Kernel **)a;
         const Kernel *kb = *(const Kernel **)b;
