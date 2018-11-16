@@ -43,6 +43,113 @@ static int kernel_compare_reverse(const void *a, const void *b)
 }
 
 /**
+ * Unmount boot directory.
+ */
+static void umount_boot(char *boot_dir)
+{
+        /* Cleanup and umount */
+        LOG_INFO("Attempting umount of %s", boot_dir);
+        if (cbm_system_umount(boot_dir) < 0) {
+                LOG_WARNING("Could not unmount boot directory");
+        } else {
+                LOG_SUCCESS("Unmounted boot directory");
+        }
+}
+
+/**
+ * Returns tri-state of -1 for error, 0 for already mounted and 1 for mount
+ * completed. *boot_directory should be free'd by caller.
+ */
+static int mount_boot(BootManager *self, char **boot_directory)
+{
+        autofree(char) *abs_bootdir = NULL;
+        autofree(char) *boot_dir = NULL;
+        int ret = -1;
+        char *root_base = NULL;
+
+        if (!boot_directory) {
+                goto out;
+        }
+
+        /* Get our boot directory */
+        boot_dir = boot_manager_get_boot_dir(self);
+        if (!boot_dir) {
+                DECLARE_OOM();
+                goto out;
+        }
+
+        /* Prepare mounts */
+        LOG_INFO("Checking for mounted boot dir");
+        /* Already mounted at the default boot dir, nothing for us to do */
+        if (cbm_system_is_mounted(boot_dir)) {
+                LOG_INFO("boot_dir is already mounted: %s", boot_dir);
+                *boot_directory = strdup(boot_dir);
+                if (*boot_directory) {
+                        ret = 0;
+                }
+                goto out;
+        }
+
+        /* Determine root device */
+        root_base = self->sysconfig->boot_device;
+        if (!root_base) {
+                LOG_FATAL("Cannot determine boot device");
+                goto out;
+        }
+
+        abs_bootdir = cbm_system_get_mountpoint_for_device(root_base);
+
+        if (abs_bootdir) {
+                LOG_DEBUG("Boot device already mounted at %s", abs_bootdir);
+                /* User has already mounted the ESP somewhere else, use that */
+                if (!boot_manager_set_boot_dir(self, abs_bootdir)) {
+                        LOG_FATAL("Cannot initialise with premounted ESP");
+                        goto out;
+                }
+                /* Successfully using their premounted ESP, go use it */
+                LOG_INFO("Skipping to native update");
+                *boot_directory = boot_dir;
+                if (*boot_directory) {
+                        ret = 0;
+                }
+                goto out;
+        }
+
+        /* The boot directory isn't mounted, so we'll mount it now */
+        if (!nc_file_exists(boot_dir)) {
+                LOG_INFO("Creating boot dir");
+                nc_mkdir_p(boot_dir, 0755);
+        }
+        LOG_INFO("Mounting boot device %s at %s", root_base, boot_dir);
+        if (cbm_system_mount(root_base, boot_dir, "vfat", MS_MGC_VAL, "") < 0) {
+                LOG_FATAL("FATAL: Cannot mount boot device %s on %s: %s",
+                          root_base,
+                          boot_dir,
+                          strerror(errno));
+                goto out;
+        }
+        LOG_SUCCESS("%s successfully mounted at %s", root_base, boot_dir);
+
+        /* Reinit bootloader for non-image mode with newly mounted boot partition
+         * as it may have paths that already exist, and we must adjust for case
+         * sensitivity (ignorant) issues
+         */
+        if (!boot_manager_set_boot_dir(self, boot_dir)) {
+                LOG_FATAL("Cannot initialise with newly mounted ESP");
+                goto out;
+        }
+        *boot_directory = strdup(boot_dir);
+        if (*boot_directory) {
+                ret = 1;
+        } else {
+                umount_boot(boot_dir);
+        }
+
+out:
+        return ret;
+}
+
+/**
  * List kernels available on the target
  *
  * Returns a list of kernels available to be run.
