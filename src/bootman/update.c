@@ -158,8 +158,10 @@ char **boot_manager_list_kernels(BootManager *self)
 {
         assert(self != NULL);
         autofree(KernelArray) *kernels = NULL;
+        autofree(char) *boot_dir = NULL;
         autofree(char) *default_kernel = NULL;
         char **results;
+        int did_mount = -1;
 
         /* Grab the available kernels */
         kernels = boot_manager_get_kernels(self);
@@ -171,7 +173,20 @@ char **boot_manager_list_kernels(BootManager *self)
         /* Sort them to ensure static ordering */
         nc_array_qsort(kernels, kernel_compare_reverse);
 
-        default_kernel = boot_manager_get_default_kernel(self);
+        /* TODO: decide how legacy device detection works */
+        /* For now legacy means /boot is on the / partition */
+        if ((self->sysconfig->wanted_boot_mask & BOOTLOADER_CAP_LEGACY) == BOOTLOADER_CAP_LEGACY) {
+                did_mount = 0;
+        } else {
+                did_mount = mount_boot(self, &boot_dir);
+        }
+        if (did_mount >= 0) {
+                default_kernel = boot_manager_get_default_kernel(self);
+                if (did_mount > 0) {
+                        umount_boot(boot_dir);
+                }
+        }
+
         results = calloc(kernels->len + (size_t)1, sizeof(char *));
         if (!results) {
                 DECLARE_OOM();
@@ -195,9 +210,7 @@ bool boot_manager_update(BootManager *self)
         assert(self != NULL);
         bool ret = false;
         autofree(char) *boot_dir = NULL;
-        bool did_mount = false;
-        char *root_base = NULL;
-        autofree(char) *abs_bootdir = NULL;
+        int did_mount = -1;
 
         /* Image mode is very simple, no prep/cleanup */
         if (boot_manager_is_image_mode(self)) {
@@ -209,81 +222,16 @@ bool boot_manager_update(BootManager *self)
         /* For now legacy means /boot is on the / partition */
         if ((self->sysconfig->wanted_boot_mask & BOOTLOADER_CAP_LEGACY) == BOOTLOADER_CAP_LEGACY) {
                 LOG_DEBUG("Skipping to legacy-native-install (no mount)");
-                goto perform;
+                did_mount = 0;
+        } else {
+                did_mount = mount_boot(self, &boot_dir);
         }
-
-        /* Get our boot directory */
-        boot_dir = boot_manager_get_boot_dir(self);
-        if (!boot_dir) {
-                DECLARE_OOM();
-                return false;
-        }
-
-        /* Prepare mounts */
-        LOG_INFO("Checking for mounted boot dir");
-        /* Already mounted at the default boot dir, nothing for us to do */
-        if (cbm_system_is_mounted(boot_dir)) {
-                LOG_INFO("boot_dir is already mounted: %s", boot_dir);
-                goto perform;
-        }
-
-        /* Determine root device */
-        root_base = self->sysconfig->boot_device;
-        if (!root_base) {
-                LOG_FATAL("Cannot determine boot device");
-                return false;
-        }
-
-        abs_bootdir = cbm_system_get_mountpoint_for_device(root_base);
-
-        if (abs_bootdir) {
-                LOG_DEBUG("Boot device already mounted at %s", abs_bootdir);
-                /* User has already mounted the ESP somewhere else, use that */
-                if (!boot_manager_set_boot_dir(self, abs_bootdir)) {
-                        LOG_FATAL("Cannot initialise with premounted ESP");
-                        return false;
+        if (did_mount >= 0) {
+                /* Do a native update */
+                ret = boot_manager_update_native(self);
+                if (did_mount > 0) {
+                        umount_boot(boot_dir);
                 }
-                /* Successfully using their premounted ESP, go use it */
-                LOG_INFO("Skipping to native update");
-                goto perform;
-        }
-
-        /* The boot directory isn't mounted, so we'll mount it now */
-        if (!nc_file_exists(boot_dir)) {
-                LOG_INFO("Creating boot dir");
-                nc_mkdir_p(boot_dir, 0755);
-        }
-        LOG_INFO("Mounting boot device %s at %s", root_base, boot_dir);
-        if (cbm_system_mount(root_base, boot_dir, "vfat", MS_MGC_VAL, "") < 0) {
-                LOG_FATAL("FATAL: Cannot mount boot device %s on %s: %s",
-                          root_base,
-                          boot_dir,
-                          strerror(errno));
-                return false;
-        }
-        LOG_SUCCESS("%s successfully mounted at %s", root_base, boot_dir);
-        did_mount = true;
-
-        /* Reinit bootloader for non-image mode with newly mounted boot partition
-         * as it may have paths that already exist, and we must adjust for case
-         * sensitivity (ignorant) issues
-         */
-        if (!boot_manager_set_boot_dir(self, boot_dir)) {
-                LOG_FATAL("Cannot initialise with newly mounted ESP");
-                return false;
-        }
-
-perform:
-        /* Do a native update */
-        ret = boot_manager_update_native(self);
-
-        /* Cleanup and umount */
-        if (did_mount) {
-                LOG_INFO("Attempting umount of %s", boot_dir);
-                if (cbm_system_umount(boot_dir) < 0) {
-                        LOG_WARNING("Could not unmount boot directory");
-                }
-                LOG_SUCCESS("Unmounted boot directory");
         }
 
         /* Done */
