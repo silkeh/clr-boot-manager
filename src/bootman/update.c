@@ -78,6 +78,7 @@ static bool boot_manager_update_image(BootManager *self)
         autofree(KernelArray) *kernels = NULL;
         autofree(char) *boot_dir = NULL;
         const Kernel *default_kernel = NULL;
+        bool ret = true;
 
         LOG_DEBUG("Now beginning update_image");
 
@@ -115,10 +116,10 @@ static bool boot_manager_update_image(BootManager *self)
         nc_array_qsort(kernels, kernel_compare_reverse);
 
         LOG_INFO("update_image: Attempting bootloader update");
-        if (!boot_manager_update_bootloader(self)) {
-                return false;
+        if (boot_manager_update_bootloader(self)) {
+                ret = true;
+                LOG_SUCCESS("update_image: Bootloader update successful");
         }
-        LOG_SUCCESS("update_image: Bootloader update successful");
 
         if (!boot_manager_copy_initrd_freestanding(self)) {
                 LOG_ERROR("Failed to copying freestanding initrd");
@@ -145,8 +146,8 @@ static bool boot_manager_update_image(BootManager *self)
         }
         LOG_SUCCESS("update_image: Default kernel is now %s", default_kernel->source.path);
 
-        /* Everything succeeded */
-        return true;
+        /* The kernel parts worked, return status from bootloader update */
+        return ret;
 }
 
 /**
@@ -165,6 +166,7 @@ static bool boot_manager_update_native(BootManager *self)
         Kernel *new_default = NULL;
         const SystemKernel *system_kernel = NULL;
         bool ret = false;
+        bool bootloader_updated = false;
 
         LOG_DEBUG("Now beginning update_native");
 
@@ -206,11 +208,10 @@ static bool boot_manager_update_native(BootManager *self)
         }
 
         /* Get the bootloader sorted out */
-        if (!boot_manager_update_bootloader(self)) {
-                return false;
+        if (boot_manager_update_bootloader(self)) {
+                LOG_SUCCESS("update_native: Bootloader updated");
+                bootloader_updated = true;
         }
-
-        LOG_SUCCESS("update_native: Bootloader updated");
 
         if (!boot_manager_copy_initrd_freestanding(self)) {
                 LOG_ERROR("Failed to copying freestanding initrd");
@@ -350,7 +351,9 @@ static bool boot_manager_update_native(BootManager *self)
                 LOG_INFO("No kernel available for any type");
         }
 
-        ret = true;
+        if (bootloader_updated) {
+                ret = true;
+        }
 
         if (!removals) {
                 /* We're done. */
