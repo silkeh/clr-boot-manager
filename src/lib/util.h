@@ -21,7 +21,7 @@
 #include <string.h>
 #include <sys/types.h>
 
-#define DECLARE_OOM() (fputs("Out of memory", stderr))
+#define DECLARE_OOM() (fputs("Out of memory\n", stderr))
 
 #define OOM_CHECK(x)                                                                               \
         {                                                                                          \
