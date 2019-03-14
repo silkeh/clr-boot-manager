@@ -37,6 +37,10 @@ bool cbm_command_update(int argc, char **argv)
                 return false;
         }
 
+        if (!boot_manager_detect_kernel_dir(root)) {
+                fprintf(stderr, "No kernels detected on system to update\n");
+                return true;
+        }
         if (root) {
                 autofree(char) *realp = NULL;
 
@@ -63,10 +67,6 @@ bool cbm_command_update(int argc, char **argv)
                 if (!boot_manager_set_prefix(manager, "/")) {
                         return false;
                 }
-        }
-        if (!nc_file_exists(boot_manager_get_kernel_dir(manager))) {
-                LOG_INFO("No kernels to process, exiting");
-                return true;
         }
         /* Grab the available freestanding initrd */
         if (!boot_manager_enumerate_initrds_freestanding(manager)) {

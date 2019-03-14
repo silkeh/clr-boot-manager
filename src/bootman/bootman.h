@@ -210,6 +210,16 @@ const char *boot_manager_get_os_id(BootManager *self);
 KernelArray *boot_manager_get_kernels(BootManager *manager);
 
 /**
+ * Detect potential kernel availability, returning a bool based on results
+ *
+ * @note Looks for kernel directory rather than kernel files
+ *
+ * @param path Path to use as prefix
+ * @return a bool indicating if the kernel directory exists
+ */
+bool boot_manager_detect_kernel_dir(char *path);
+
+/**
  * Inspect a kernel file, returning a machine-usable description
  *
  * @note free the returned struct with free_kernel
