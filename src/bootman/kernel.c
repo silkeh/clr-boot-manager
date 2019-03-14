@@ -42,6 +42,19 @@ __cbm_inline__ static inline char *boot_manager_get_kboot_file(BootManager *self
         return p;
 }
 
+bool boot_manager_detect_kernel_dir(char *path)
+{
+        autofree(char) *kernel_dir = NULL;
+
+        kernel_dir = path ? string_printf("%s/%s", path, KERNEL_DIRECTORY) :
+                string_printf("/%s", KERNEL_DIRECTORY);
+        if (!nc_file_exists(kernel_dir)) {
+                return false;
+        }
+
+        return true;
+}
+
 Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
 {
         Kernel *kern = NULL;
