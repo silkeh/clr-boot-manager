@@ -130,7 +130,6 @@ static int cbm_parse_cmdline_file_removal_internal(const char *path, char *out, 
         ssize_t r = 0;
         size_t sz = 0;
         char *buf = NULL;
-        bool ret = true;
         size_t nbytes = buflen;
 
         /* Cleanup trailing whitespace of out buf */
@@ -141,7 +140,7 @@ static int cbm_parse_cmdline_file_removal_internal(const char *path, char *out, 
                 if (errno != ENOENT) {
                         LOG_ERROR("Unable to open %s: %s", path, strerror(errno));
                 }
-                return false;
+                return -1;
         }
 
         while ((r = getline(&buf, &sn, f)) > 0) {
@@ -241,9 +240,6 @@ static int cbm_parse_cmdline_file_removal_internal(const char *path, char *out, 
                 buf = NULL;
         }
 
-        if (!ret) {
-                return -1;
-        }
         return (int)nbytes;
 }
 
@@ -367,29 +363,30 @@ clean:
         return ret;
 }
 
-static bool cbm_parse_cmdline_removal_files_directory(char *globfile, char *buffer, size_t buflen)
+void cbm_parse_cmdline_removal_files_directory(const char *root, char *buffer)
 {
         glob_t glo = { 0 };
+        autofree(char) *globfile = NULL;
+
         glo.gl_offs = 0;
-        size_t sz = buflen;
+        size_t sz = strlen(buffer);
+        globfile = string_printf("%s/%s/cmdline-removal.d/*.conf", root, KERNEL_CONF_DIRECTORY);
         glob(globfile, GLOB_DOOFFS, NULL, &glo);
-        int ret = false;
 
         for (size_t i = 0; i < glo.gl_pathc; i++) {
                 char *argv = glo.gl_pathv[i];
                 int r = 0;
 
+                LOG_DEBUG("Removing cmdline using file: %s", argv);
                 r = cbm_parse_cmdline_file_removal_internal(argv, buffer, sz);
                 if (r < 0) {
-                        goto clean;
+                        continue;
                 }
                 sz = (size_t)r;
         }
-        ret = true;
 
 clean:
         globfree(&glo);
-        return ret;
 }
 
 char *cbm_parse_cmdline_files(const char *root)
@@ -397,7 +394,6 @@ char *cbm_parse_cmdline_files(const char *root)
         autofree(char) *cmdline = NULL;
         autofree(char) *globfile = NULL;
         autofree(char) *vendor_glob = NULL;
-        autofree(char) *vendor_negative_glob = NULL;
         FILE *memstr = NULL;
         autofree(char) *buf = NULL;
         bool bump_start = false;
@@ -410,7 +406,6 @@ char *cbm_parse_cmdline_files(const char *root)
         cmdline = string_printf("%s/%s/cmdline", root, KERNEL_CONF_DIRECTORY);
         globfile = string_printf("%s/%s/cmdline.d/*.conf", root, KERNEL_CONF_DIRECTORY);
         vendor_glob = string_printf("%s/%s/cmdline.d/*.conf", root, VENDOR_KERNEL_CONF_DIRECTORY);
-        vendor_negative_glob = string_printf("%s/%s/cmdline-removal.d/*.conf", root, KERNEL_CONF_DIRECTORY);
 
         memstr = open_memstream(&buf, &sz);
         if (!memstr) {
@@ -447,7 +442,7 @@ char *cbm_parse_cmdline_files(const char *root)
 
 clean:
         fclose(memstr);
-        if (success && cbm_parse_cmdline_removal_files_directory(vendor_negative_glob, buf, sz)) {
+        if (success) {
                 return strdup(buf);
         }
         return NULL;

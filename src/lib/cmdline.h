@@ -31,6 +31,11 @@ char *cbm_parse_cmdline_files(const char *root);
  */
 char *cbm_parse_cmdline_file(const char *file);
 
+/**
+ * Modify buffer using cmdline removal configuration to blacklist content.
+ */
+void cbm_parse_cmdline_removal_files_directory(const char *root, char *buffer);
+
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
  *

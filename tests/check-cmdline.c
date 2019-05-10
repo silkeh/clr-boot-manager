@@ -108,11 +108,11 @@ END_TEST
 START_TEST(cbm_cmdline_test_delete_middle)
 {
         const char *dir = TOP_DIR "/tests/data/cmdline_delete_middle";
+        const char *cmdline = "pre init=/bin/bash foobar rw i8042.nomux thing=off one two three a single line command line file post\n";
 
-        autofree(char) *p = NULL;
+        autofree(char) *p = strdup(cmdline);
 
-        p = cbm_parse_cmdline_files(dir);
-        fail_if(!p, "Failed to parse cmdline file");
+        cbm_parse_cmdline_removal_files_directory(dir, p);
         fail_if(!streq(p, "pre post"), "Delete middle file does not match");
 }
 END_TEST
@@ -120,11 +120,11 @@ END_TEST
 START_TEST(cbm_cmdline_test_delete_ends)
 {
         const char *dir = TOP_DIR "/tests/data/cmdline_delete_ends";
+        const char *cmdline = "one two three four\n";
 
-        autofree(char) *p = NULL;
+        autofree(char) *p = strdup(cmdline);
 
-        p = cbm_parse_cmdline_files(dir);
-        fail_if(!p, "Failed to parse cmdline file");
+        cbm_parse_cmdline_removal_files_directory(dir, p);
         fail_if(!streq(p, "two three "), "Delete ends does not match");
 }
 END_TEST
@@ -132,11 +132,11 @@ END_TEST
 START_TEST(cbm_cmdline_test_delete_all)
 {
         const char *dir = TOP_DIR "/tests/data/cmdline_delete_all";
+        const char *cmdline = "init=/bin/bash foobar rw i8042.nomux thing=off one two three a single line command line file\n";
 
-        autofree(char) *p = NULL;
+        autofree(char) *p = strdup(cmdline);
 
-        p = cbm_parse_cmdline_files(dir);
-        fail_if(!p, "Failed to parse cmdline file");
+        cbm_parse_cmdline_removal_files_directory(dir, p);
         fail_if(!streq(p, ""), "Delete all cmdline does not match");
 }
 END_TEST
