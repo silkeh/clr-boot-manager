@@ -243,6 +243,8 @@ Kernel *boot_manager_inspect_kernel(BootManager *self, char *path)
                 kern->meta.cmdline = cm;
         }
 
+        cbm_parse_cmdline_removal_files_directory(self->sysconfig->prefix, kern->meta.cmdline);
+
         kern->source.cmdline_file = strdup(cmdline);
 
         /** Determine if the kernel boots */
