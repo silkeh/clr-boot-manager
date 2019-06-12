@@ -290,8 +290,18 @@ static void extlinux_destroy(__cbm_unused__ const BootManager *manager)
         }
 }
 
-static int extlinux_get_capabilities(__cbm_unused__ const BootManager *manager)
+static int extlinux_get_capabilities(const BootManager *manager)
 {
+        const char *prefix = NULL;
+        autofree(char) *command = NULL;
+
+        prefix = boot_manager_get_prefix((BootManager *)manager);
+        command = string_printf("%s/usr/bin/extlinux", prefix);
+        if (access(command, X_OK) != 0) {
+                LOG_DEBUG("extlinux not found at %s\n", command);
+                return 0;
+        }
+
         return BOOTLOADER_CAP_GPT | BOOTLOADER_CAP_LEGACY;
 }
 

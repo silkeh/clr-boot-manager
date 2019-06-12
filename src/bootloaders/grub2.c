@@ -552,8 +552,17 @@ bool grub2_remove(__cbm_unused__ const BootManager *manager)
         return true;
 }
 
-int grub2_get_capabilities(__cbm_unused__ const BootManager *manager)
+int grub2_get_capabilities(const BootManager *manager)
 {
+        const char *prefix = NULL;
+        autofree(char) *command = NULL;
+
+        prefix = boot_manager_get_prefix((BootManager *)manager);
+        command = string_printf("%s/usr/sbin/grub-mkconfig", prefix);
+        if (access(command, X_OK) != 0) {
+                LOG_DEBUG("grub2 not found at %s\n", command);
+                return 0;
+        }
         /* Or in other words, we're the last bootloader candidate. */
         return BOOTLOADER_CAP_LEGACY;
 }
