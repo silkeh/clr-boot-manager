@@ -200,12 +200,12 @@ static void internal_loader_test(bool image_mode)
 {
         autofree(BootManager) *m = NULL;
         PlaygroundConfig start_conf = { 0 };
-        const char *syslinux_source = PLAYGROUND_ROOT "/usr/share/syslinux/gptmbr.bin";
+        const char *extlinux_source = PLAYGROUND_ROOT "/usr/share/extlinux/gptmbr.bin";
         /* Testing bbbb data */
-        const char *syslinux_v2 = TOP_DIR "/tests/data/gptmbr.bin.v2";
+        const char *extlinux_v2 = TOP_DIR "/tests/data/gptmbr.bin.v2";
         /* Original aaaa data */
-        const char *syslinux_v3 = TOP_DIR "/tests/data/gptmbr.bin";
-        const char *syslinux_disk = PLAYGROUND_ROOT "/dev/leRootDevice";
+        const char *extlinux_v3 = TOP_DIR "/tests/data/gptmbr.bin";
+        const char *extlinux_disk = PLAYGROUND_ROOT "/dev/leRootDevice";
 
         m = prepare_playground(&start_conf);
         fail_if(!m, "Fatal: Cannot initialise playground");
@@ -215,13 +215,13 @@ static void internal_loader_test(bool image_mode)
                 "Failed to install bootloader");
 
         /* Check the source and dest disk now match */
-        fail_if(!cbm_files_match(syslinux_source, syslinux_disk),
+        fail_if(!cbm_files_match(extlinux_source, extlinux_disk),
                 "Installed bootloader is incorrect");
 
         /* Simulate an update with a new gptmbr file */
-        fail_if(!copy_file(syslinux_v2, syslinux_source, 00644),
+        fail_if(!copy_file(extlinux_v2, extlinux_source, 00644),
                 "Failed to bump source bootloader");
-        fail_if(cbm_files_match(syslinux_source, syslinux_disk),
+        fail_if(cbm_files_match(extlinux_source, extlinux_disk),
                 "Source shouldn't match target bootloader yet");
 
         fail_if(!boot_manager_modify_bootloader(m,
@@ -229,11 +229,11 @@ static void internal_loader_test(bool image_mode)
                                                     BOOTLOADER_OPERATION_NO_CHECK),
                 "Failed to forcibly update bootloader");
 
-        fail_if(!cbm_files_match(syslinux_source, syslinux_disk),
+        fail_if(!cbm_files_match(extlinux_source, extlinux_disk),
                 "Bootloader didn't actually update");
 
         /* Push a "v3" */
-        fail_if(!copy_file(syslinux_v3, syslinux_source, 00644),
+        fail_if(!copy_file(extlinux_v3, extlinux_source, 00644),
                 "Failed to bump source bootloader");
 
         /* Pushed out of sync, should need update */
@@ -241,7 +241,7 @@ static void internal_loader_test(bool image_mode)
                 "Failed to auto-update bootloader");
 
         /* Make sure last update now works */
-        fail_if(!cbm_files_match(syslinux_source, syslinux_disk),
+        fail_if(!cbm_files_match(extlinux_source, extlinux_disk),
                 "Auto-updated bootloader doesn't match source");
 }
 

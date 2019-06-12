@@ -37,7 +37,7 @@ static KernelArray *kernel_queue = NULL;
 static char *extlinux_cmd = NULL;
 static char *base_path = NULL;
 
-static bool syslinux_init(const BootManager *manager)
+static bool extlinux_init(const BootManager *manager)
 {
         autofree(char) *ldlinux = NULL;
         const char *prefix = NULL;
@@ -78,7 +78,7 @@ static bool syslinux_init(const BootManager *manager)
 }
 
 /* Queue kernel to be added to conf */
-static bool syslinux_install_kernel(__cbm_unused__ const BootManager *manager, const Kernel *kernel)
+static bool extlinux_install_kernel(__cbm_unused__ const BootManager *manager, const Kernel *kernel)
 {
         /* We may end up adding the same kernel again, when in repair situations
          * for existing kernels (and current == tip cases)
@@ -99,14 +99,14 @@ static bool syslinux_install_kernel(__cbm_unused__ const BootManager *manager, c
 }
 
 /* No op due since conf file will only have queued kernels anyway */
-static bool syslinux_remove_kernel(__cbm_unused__ const BootManager *manager,
+static bool extlinux_remove_kernel(__cbm_unused__ const BootManager *manager,
                                    __cbm_unused__ const Kernel *kernel)
 {
         return true;
 }
 
 /* Actually creates the whole conf by iterating through the queued kernels */
-static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel *default_kernel)
+static bool extlinux_set_default_kernel(const BootManager *manager, const Kernel *default_kernel)
 {
         autofree(char) *config_path = NULL;
         const CbmDeviceProbe *root_dev = NULL;
@@ -121,7 +121,7 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
                 return false;
         }
 
-        config_path = string_printf("%s/syslinux.cfg", base_path);
+        config_path = string_printf("%s/extlinux.cfg", base_path);
 
         if (!cbm_writer_open(writer)) {
                 DECLARE_OOM();
@@ -197,7 +197,7 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
         }
 
         if (!file_set_text(config_path, writer->buffer)) {
-                LOG_FATAL("syslinux_set_default_kernel: Failed to write %s: %s",
+                LOG_FATAL("extlinux_set_default_kernel: Failed to write %s: %s",
                           config_path,
                           strerror(errno));
                 return false;
@@ -207,28 +207,28 @@ static bool syslinux_set_default_kernel(const BootManager *manager, const Kernel
         return true;
 }
 
-char *syslinux_get_default_kernel(__cbm_unused__ const BootManager *manager)
+char *extlinux_get_default_kernel(__cbm_unused__ const BootManager *manager)
 {
         return NULL;
 }
 
-static bool syslinux_needs_update(__cbm_unused__ const BootManager *manager)
+static bool extlinux_needs_update(__cbm_unused__ const BootManager *manager)
 {
         return true;
 }
 
-static bool syslinux_needs_install(__cbm_unused__ const BootManager *manager)
+static bool extlinux_needs_install(__cbm_unused__ const BootManager *manager)
 {
         return true;
 }
 
-static bool syslinux_install(const BootManager *manager)
+static bool extlinux_install(const BootManager *manager)
 {
         autofree(char) *boot_device = NULL;
-        autofree(char) *syslinux_path = NULL;
+        autofree(char) *extlinux_path = NULL;
         const char *prefix = NULL;
         int mbr = -1;
-        int syslinux_mbr = -1;
+        int extlinux_mbr = -1;
         ssize_t count = 0;
 
         prefix = boot_manager_get_prefix((BootManager *)manager);
@@ -238,22 +238,22 @@ static bool syslinux_install(const BootManager *manager)
                 return false;
         }
 
-        syslinux_path = string_printf("%s/usr/share/syslinux/gptmbr.bin", prefix);
+        extlinux_path = string_printf("%s/usr/share/extlinux/gptmbr.bin", prefix);
 
-        syslinux_mbr = open(syslinux_path, O_RDONLY);
-        if (syslinux_mbr < 0) {
+        extlinux_mbr = open(extlinux_path, O_RDONLY);
+        if (extlinux_mbr < 0) {
                 close(mbr);
                 return false;
         }
 
-        count = sendfile(mbr, syslinux_mbr, NULL, CBM_MBR_SYSLINUX_SIZE);
+        count = sendfile(mbr, extlinux_mbr, NULL, CBM_MBR_SYSLINUX_SIZE);
         if (count != CBM_MBR_SYSLINUX_SIZE) {
                 close(mbr);
-                close(syslinux_mbr);
+                close(extlinux_mbr);
                 return false;
         }
         close(mbr);
-        close(syslinux_mbr);
+        close(extlinux_mbr);
 
         if (cbm_system_system(extlinux_cmd) != 0) {
                 return false;
@@ -263,18 +263,18 @@ static bool syslinux_install(const BootManager *manager)
         return true;
 }
 
-static bool syslinux_update(const BootManager *manager)
+static bool extlinux_update(const BootManager *manager)
 {
-        return syslinux_install(manager);
+        return extlinux_install(manager);
 }
 
-static bool syslinux_remove(__cbm_unused__ const BootManager *manager)
+static bool extlinux_remove(__cbm_unused__ const BootManager *manager)
 {
         /* Maybe should return false? Unsure */
         return true;
 }
 
-static void syslinux_destroy(__cbm_unused__ const BootManager *manager)
+static void extlinux_destroy(__cbm_unused__ const BootManager *manager)
 {
         if (kernel_queue) {
                 /* kernels pointers inside are not owned by the array */
@@ -290,27 +290,27 @@ static void syslinux_destroy(__cbm_unused__ const BootManager *manager)
         }
 }
 
-static int syslinux_get_capabilities(__cbm_unused__ const BootManager *manager)
+static int extlinux_get_capabilities(__cbm_unused__ const BootManager *manager)
 {
         return BOOTLOADER_CAP_GPT | BOOTLOADER_CAP_LEGACY;
 }
 
-__cbm_export__ const BootLoader syslinux_bootloader = {.name = "syslinux",
-                                                       .init = syslinux_init,
-                                                       .install_kernel = syslinux_install_kernel,
-                                                       .remove_kernel = syslinux_remove_kernel,
+__cbm_export__ const BootLoader extlinux_bootloader = {.name = "extlinux",
+                                                       .init = extlinux_init,
+                                                       .install_kernel = extlinux_install_kernel,
+                                                       .remove_kernel = extlinux_remove_kernel,
                                                        .set_default_kernel =
-                                                           syslinux_set_default_kernel,
+                                                           extlinux_set_default_kernel,
                                                        .get_default_kernel =
-                                                           syslinux_get_default_kernel,
-                                                       .needs_install = syslinux_needs_install,
-                                                       .needs_update = syslinux_needs_update,
-                                                       .install = syslinux_install,
-                                                       .update = syslinux_update,
-                                                       .remove = syslinux_remove,
-                                                       .destroy = syslinux_destroy,
+                                                           extlinux_get_default_kernel,
+                                                       .needs_install = extlinux_needs_install,
+                                                       .needs_update = extlinux_needs_update,
+                                                       .install = extlinux_install,
+                                                       .update = extlinux_update,
+                                                       .remove = extlinux_remove,
+                                                       .destroy = extlinux_destroy,
                                                        .get_capabilities =
-                                                           syslinux_get_capabilities };
+                                                           extlinux_get_capabilities };
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
