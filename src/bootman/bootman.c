@@ -38,20 +38,20 @@ extern const BootLoader grub2_bootloader;
 extern const BootLoader shim_systemd_bootloader;
 #endif
 extern const BootLoader systemd_bootloader;
-extern const BootLoader syslinux_bootloader;
+extern const BootLoader extlinux_bootloader;
 
 /**
  * Bootloader set that we're allowed to check and use
  */
 const BootLoader *bootman_known_loaders[] =
-    { &grub2_bootloader, /**<Always place first to allow syslinux to override */
+    { &grub2_bootloader, /**<Always place first to allow extlinux to override */
 #if defined(HAVE_SHIM_SYSTEMD_BOOT)
       &shim_systemd_bootloader,
 #elif defined(HAVE_SYSTEMD_BOOT)
       &systemd_bootloader,
 #endif
       /* non-systemd-class */
-      &syslinux_bootloader };
+      &extlinux_bootloader };
 
 BootManager *boot_manager_new()
 {

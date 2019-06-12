@@ -223,31 +223,31 @@ static void bootman_select_set_legacy_vtables(void)
 }
 
 /**
- * ############ BEGIN SYSLINUX TESTS #################
+ * ############ BEGIN EXTLINUX TESTS #################
  */
 
 /**
  * We're operating in native mode (!image) with a legacy device available
  *
- * syslinux mode will only be activated when we find a legacy device through
+ * extlinux mode will only be activated when we find a legacy device through
  * blkid inspection of the root device. Thus we *must* have a boot device,
- * and the other tests will ensure syslinux isn't detected.
+ * and the other tests will ensure extlinux isn't detected.
  */
-START_TEST(bootman_select_syslinux_native_with_boot)
+START_TEST(bootman_select_extlinux_native_with_boot)
 {
         PlaygroundConfig config = { "4.2.1-121.kvm", NULL, 0, .uefi = false };
         autofree(BootManager) *m = NULL;
         bootman_select_set_legacy_vtables();
 
         m = prepare_playground(&config);
-        ensure_bootloader_is(m, "syslinux");
+        ensure_bootloader_is(m, "extlinux");
 }
 END_TEST
 
 /**
  * We're operating in image mode with a legacy device available
  */
-START_TEST(bootman_select_syslinux_image_with_boot)
+START_TEST(bootman_select_extlinux_image_with_boot)
 {
         PlaygroundConfig config = { "4.2.1-121.kvm", NULL, 0, .uefi = false };
         autofree(BootManager) *m = NULL;
@@ -257,7 +257,7 @@ START_TEST(bootman_select_syslinux_image_with_boot)
         boot_manager_set_image_mode(m, true);
         boot_manager_set_prefix(m, PLAYGROUND_ROOT);
 
-        ensure_bootloader_is(m, "syslinux");
+        ensure_bootloader_is(m, "extlinux");
 }
 END_TEST
 
@@ -351,9 +351,9 @@ START_TEST(bootman_select_edge_uefi_with_legacy_part_native)
         autofree(BootManager) *m = NULL;
         bootman_select_set_legacy_vtables();
 
-        /* At this point we would've selected syslinux */
+        /* At this point we would've selected extlinux */
         m = prepare_playground(&config);
-        ensure_bootloader_is(m, "syslinux");
+        ensure_bootloader_is(m, "extlinux");
 
         /* Construct /sys/firmware/efi. Now we need it to be UEFI bootloader */
         fail_if(!nc_mkdir_p(PLAYGROUND_ROOT "/sys/firmware/efi", 00755), "Failed to emulate EFI");
@@ -365,7 +365,7 @@ END_TEST
 /**
  * We have a GPT disk that contains a legacy partition, but we're in image
  * mode with UEFI available
- * We should only ever select syslinux
+ * We should only ever select extlinux
  */
 START_TEST(bootman_select_edge_uefi_with_legacy_part_image)
 {
@@ -373,21 +373,21 @@ START_TEST(bootman_select_edge_uefi_with_legacy_part_image)
         autofree(BootManager) *m = NULL;
         bootman_select_set_legacy_vtables();
 
-        /* At this point we would've selected syslinux */
+        /* At this point we would've selected extlinux */
         m = prepare_playground(&config);
-        ensure_bootloader_is(m, "syslinux");
+        ensure_bootloader_is(m, "extlinux");
 
-        /* Ensure it's still syslinux in image mode */
+        /* Ensure it's still extlinux in image mode */
         boot_manager_set_image_mode(m, true);
         boot_manager_set_prefix(m, PLAYGROUND_ROOT);
-        ensure_bootloader_is(m, "syslinux");
+        ensure_bootloader_is(m, "extlinux");
 
         /* Construct /sys/firmware/efi. */
         fail_if(!nc_mkdir_p(PLAYGROUND_ROOT "/sys/firmware/efi", 00755), "Failed to emulate EFI");
         boot_manager_set_prefix(m, PLAYGROUND_ROOT);
 
         /* We're in image mode, the firmware is not relevant */
-        ensure_bootloader_is(m, "syslinux");
+        ensure_bootloader_is(m, "extlinux");
 }
 END_TEST
 
@@ -406,10 +406,10 @@ static Suite *core_suite(void)
         tcase_add_test(tc, bootman_select_uefi_image_without_boot);
         suite_add_tcase(s, tc);
 
-        /* syslinux tests */
-        tc = tcase_create("bootman_select_syslinux_functions");
-        tcase_add_test(tc, bootman_select_syslinux_native_with_boot);
-        tcase_add_test(tc, bootman_select_syslinux_image_with_boot);
+        /* extlinux tests */
+        tc = tcase_create("bootman_select_extlinux_functions");
+        tcase_add_test(tc, bootman_select_extlinux_native_with_boot);
+        tcase_add_test(tc, bootman_select_extlinux_image_with_boot);
         suite_add_tcase(s, tc);
 
         /* grub2 tests */
