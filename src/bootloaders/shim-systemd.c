@@ -385,7 +385,7 @@ static void shim_systemd_destroy(const BootManager *manager)
 
 static int shim_systemd_get_capabilities(__cbm_unused__ const BootManager *manager)
 {
-        return BOOTLOADER_CAP_GPT | BOOTLOADER_CAP_UEFI;
+        return BOOTLOADER_CAP_GPT | BOOTLOADER_CAP_UEFI | BOOTLOADER_CAP_FATFS;
 }
 
 /*

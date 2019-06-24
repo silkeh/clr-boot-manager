@@ -121,6 +121,8 @@ static bool boot_manager_select_bootloader(BootManager *self)
         }
 
         if (!selected) {
+                LOG_DEBUG("Capability masks: selected 0x%02x wanted 0x%02x\n",
+                                selected_boot_mask, wanted_boot_mask);
                 LOG_FATAL("Failed to find an appropriate bootloader for this system");
                 return false;
         }

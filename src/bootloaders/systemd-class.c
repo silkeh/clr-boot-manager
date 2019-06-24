@@ -669,7 +669,7 @@ bool sd_class_remove(const BootManager *manager)
 int sd_class_get_capabilities(__cbm_unused__ const BootManager *manager)
 {
         /* Very trivial bootloader, we support UEFI/GPT only */
-        return BOOTLOADER_CAP_GPT | BOOTLOADER_CAP_UEFI;
+        return BOOTLOADER_CAP_GPT | BOOTLOADER_CAP_UEFI | BOOTLOADER_CAP_FATFS;
 }
 
 /*
