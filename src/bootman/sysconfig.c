@@ -17,6 +17,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <blkid/blkid.h>
+
 #include "bootman.h"
 #include "bootman_private.h"
 #include "files.h"
@@ -33,6 +35,45 @@ void cbm_free_sysconfig(SystemConfig *config)
         free(config->boot_device);
         cbm_probe_free(config->root_device);
         free(config);
+}
+
+int cbm_get_fstype(const char *boot_device)
+{
+        int rc;
+        blkid_probe pr;
+        const char *data;
+        int ret = 0;
+
+        pr = blkid_new_probe_from_filename(boot_device);
+        if (!pr) {
+                LOG_ERROR("%s: failed to create a new libblkid probe",
+                                boot_device);
+                exit(EXIT_FAILURE);
+        }
+
+        blkid_probe_set_superblocks_flags(pr, BLKID_SUBLKS_TYPE);
+        rc = blkid_do_safeprobe(pr);
+        if (rc != 0) {
+                LOG_ERROR("%s: blkid_do_safeprobe() failed", boot_device);
+                exit(EXIT_FAILURE);
+        }
+
+        rc = blkid_probe_lookup_value(pr, "TYPE", &data, NULL);
+        if (rc != 0) {
+                LOG_ERROR("%s: blkid_probe_lookup_value() failed", boot_device);
+                exit(EXIT_FAILURE);
+        }
+
+        if ((strcmp(data, "ext2") == 0) ||
+            (strcmp(data, "ext3") == 0) ||
+            (strcmp(data, "ext4") == 0))
+                ret = BOOTLOADER_CAP_EXTFS;
+        else if (strcmp(data, "vfat") == 0)
+                ret = BOOTLOADER_CAP_FATFS;
+
+        blkid_free_probe(pr);
+
+        return ret;
 }
 
 SystemConfig *cbm_inspect_root(const char *path, bool image_mode)
@@ -123,6 +164,11 @@ refine_device:
                         LOG_INFO("Fully resolved boot device: %s", rel);
                 }
                 c->wanted_boot_mask |= BOOTLOADER_CAP_GPT;
+        }
+
+        /* determine fstype of the boot_device */
+        if (c->boot_device) {
+                c->wanted_boot_mask |= cbm_get_fstype(c->boot_device);
         }
 
         c->root_device = cbm_probe_path(realp);

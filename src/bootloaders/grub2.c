@@ -564,7 +564,7 @@ int grub2_get_capabilities(const BootManager *manager)
                 return 0;
         }
         /* Or in other words, we're the last bootloader candidate. */
-        return BOOTLOADER_CAP_LEGACY;
+        return BOOTLOADER_CAP_LEGACY | BOOTLOADER_CAP_EXTFS;
 }
 
 __cbm_export__ const BootLoader grub2_bootloader = {.name = "grub2",
