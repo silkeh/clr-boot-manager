@@ -19,6 +19,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 #include "bootman.h"
 #define _BOOTMAN_INTERNAL_
@@ -386,6 +389,20 @@ BootManager *prepare_playground(PlaygroundConfig *config)
 
         /* Construct kernel config directory */
         if (!nc_mkdir_p(PLAYGROUND_ROOT "/" KERNEL_CONF_DIRECTORY, 00755)) {
+                goto fail;
+        }
+
+        /* plant extlinux/grub before boot_manager_set_prefix */
+        if (!nc_mkdir_p(PLAYGROUND_ROOT "/usr/bin", 00755)) {
+                goto fail;
+        }
+        if (!creat(PLAYGROUND_ROOT "/usr/bin/extlinux", 00755)) {
+                goto fail;
+        }
+        if (!nc_mkdir_p(PLAYGROUND_ROOT "/usr/sbin", 00755)) {
+                goto fail;
+        }
+        if (!creat(PLAYGROUND_ROOT "/usr/sbin/grub-mkconfig", 00755)) {
                 goto fail;
         }
 

@@ -26,6 +26,8 @@
 #include "nica/files.h"
 #include "system_stub.h"
 
+#define CBM_BOOTVAR_TEST_MODE_VAR "CBM_BOOTVAR_TEST_MODE"
+
 void cbm_free_sysconfig(SystemConfig *config)
 {
         if (!config) {
@@ -43,6 +45,14 @@ int cbm_get_fstype(const char *boot_device)
         blkid_probe pr;
         const char *data;
         int ret = 0;
+
+        /* Test suite will set the CBM_TEST_FSTYPE env var and inform the wanted fstype */
+        char *test_mode_fs_type_env = getenv("CBM_TEST_FSTYPE");
+        if (test_mode_fs_type_env && !strncmp(test_mode_fs_type_env, "EXTFS", 5)) {
+                return BOOTLOADER_CAP_EXTFS;
+        } else if (test_mode_fs_type_env && !strncmp(test_mode_fs_type_env, "FATFS", 5)) {
+                return BOOTLOADER_CAP_FATFS;
+        }
 
         pr = blkid_new_probe_from_filename(boot_device);
         if (!pr) {
