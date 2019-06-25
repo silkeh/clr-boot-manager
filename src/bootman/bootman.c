@@ -114,6 +114,8 @@ static bool boot_manager_select_bootloader(BootManager *self)
         for (size_t i = 0; i < ARRAY_SIZE(bootman_known_loaders); i++) {
                 const BootLoader *l = bootman_known_loaders[i];
                 selected_boot_mask = l->get_capabilities(self);
+                LOG_DEBUG("%s caps: 0x%02x, wanted: 0x%02x",
+                                l->name, selected_boot_mask, wanted_boot_mask);
                 if ((selected_boot_mask & wanted_boot_mask) == wanted_boot_mask) {
                         selected = l;
                         break;
@@ -121,8 +123,6 @@ static bool boot_manager_select_bootloader(BootManager *self)
         }
 
         if (!selected) {
-                LOG_DEBUG("Capability masks: selected 0x%02x wanted 0x%02x\n",
-                                selected_boot_mask, wanted_boot_mask);
                 LOG_FATAL("Failed to find an appropriate bootloader for this system");
                 return false;
         }

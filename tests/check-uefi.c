@@ -637,6 +637,9 @@ int main(void)
         /* Turn off the EFI variable manipulation. */
         setenv("CBM_BOOTVAR_TEST_MODE", "yes", 1);
 
+        /* Force detection of `fat` filesystem. */
+        setenv("CBM_TEST_FSTYPE", "FATFS", 1);
+
         cbm_blkid_set_vtable(&BlkidTestOps);
         cbm_system_set_vtable(&SystemTestOps);
 
