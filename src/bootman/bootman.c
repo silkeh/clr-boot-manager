@@ -39,6 +39,7 @@ extern const BootLoader shim_systemd_bootloader;
 #endif
 extern const BootLoader systemd_bootloader;
 extern const BootLoader extlinux_bootloader;
+extern const BootLoader syslinux_bootloader;
 
 /**
  * Bootloader set that we're allowed to check and use
@@ -51,7 +52,8 @@ const BootLoader *bootman_known_loaders[] =
       &systemd_bootloader,
 #endif
       /* non-systemd-class */
-      &extlinux_bootloader };
+      &syslinux_bootloader,
+      &extlinux_bootloader};
 
 BootManager *boot_manager_new()
 {
