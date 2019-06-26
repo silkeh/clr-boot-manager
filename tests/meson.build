@@ -7,6 +7,7 @@ desired_tests = [
     'os-release',
     'probe',
     'select-bootloader',
+    'syslinux',
     'uefi',
 ]
 

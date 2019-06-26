@@ -30,8 +30,8 @@
 #include "system_stub.h"
 #include "util.h"
 #include "writer.h"
-
-#define CBM_MBR_SYSLINUX_SIZE 440
+#include "mbr.h"
+#include "lib/probe.h"
 
 static KernelArray *kernel_queue = NULL;
 static char *syslinux_cmd = NULL;
@@ -225,11 +225,10 @@ static bool syslinux_needs_install(__cbm_unused__ const BootManager *manager)
 static bool syslinux_install(const BootManager *manager)
 {
         autofree(char) *boot_device = NULL;
-        autofree(char) *syslinux_path = NULL;
         const char *prefix = NULL;
         int mbr = -1;
-        int syslinux_mbr = -1;
         ssize_t count = 0;
+        bool is_gpt = false;
 
         prefix = boot_manager_get_prefix((BootManager *)manager);
         boot_device = get_parent_disk((char *)prefix);
@@ -238,22 +237,17 @@ static bool syslinux_install(const BootManager *manager)
                 return false;
         }
 
-        syslinux_path = string_printf("%s/usr/share/syslinux/gptmbr.bin", prefix);
-
-        syslinux_mbr = open(syslinux_path, O_RDONLY);
-        if (syslinux_mbr < 0) {
+        is_gpt = boot_manager_get_wanted_boot_mask((BootManager *)manager)
+                        & BOOTLOADER_CAP_GPT;
+        count = write(mbr, is_gpt ? syslinux_gptmbr_bin : syslinux_mbr_bin,
+                        MBR_BIN_LEN);
+        LOG_DEBUG("wrote \"%s.bin\" to %s", is_gpt ? "gptmbr" : "mbr",
+                        boot_device);
+        if (count != MBR_BIN_LEN) {
                 close(mbr);
-                return false;
-        }
-
-        count = sendfile(mbr, syslinux_mbr, NULL, CBM_MBR_SYSLINUX_SIZE);
-        if (count != CBM_MBR_SYSLINUX_SIZE) {
-                close(mbr);
-                close(syslinux_mbr);
                 return false;
         }
         close(mbr);
-        close(syslinux_mbr);
 
         if (cbm_system_system(syslinux_cmd) != 0) {
                 return false;
