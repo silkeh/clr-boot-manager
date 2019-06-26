@@ -399,6 +399,9 @@ BootManager *prepare_playground(PlaygroundConfig *config)
         if (!creat(PLAYGROUND_ROOT "/usr/bin/extlinux", 00755)) {
                 goto fail;
         }
+        if (!creat(PLAYGROUND_ROOT "/usr/bin/syslinux", 00755)) {
+                goto fail;
+        }
         if (!nc_mkdir_p(PLAYGROUND_ROOT "/usr/sbin", 00755)) {
                 goto fail;
         }
