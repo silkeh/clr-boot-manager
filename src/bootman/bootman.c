@@ -218,6 +218,13 @@ bool boot_manager_set_prefix(BootManager *self, char *prefix)
         return true;
 }
 
+int boot_manager_get_wanted_boot_mask(BootManager *self)
+{
+        assert(self != NULL);
+
+        return self->sysconfig->wanted_boot_mask;
+}
+
 const char *boot_manager_get_prefix(BootManager *self)
 {
         assert(self != NULL);

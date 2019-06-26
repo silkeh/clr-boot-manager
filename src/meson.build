@@ -36,6 +36,7 @@ libcbm_sources = [
     'bootloaders/grub2.c',
     'bootloaders/extlinux.c',
     'bootloaders/syslinux.c',
+    'bootloaders/mbr.c',
     'bootman/bootman.c',
     'bootman/kernel.c',
     'bootman/sysconfig.c',

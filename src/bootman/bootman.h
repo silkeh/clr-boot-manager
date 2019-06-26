@@ -158,6 +158,13 @@ bool boot_manager_set_prefix(BootManager *manager, char *prefix);
 bool boot_manager_set_boot_dir(BootManager *manager, const char *bootdir);
 
 /**
+ * Get the current wanted boot mask
+ *
+ * @return wanted boot mask (gpt/legacy/uefi, fstype) mask
+ */
+int boot_manager_get_wanted_boot_mask(BootManager *self);
+
+/**
  * Get the current filesystem prefix
  *
  * @note This string is owned by BootManager, do not modify or free
