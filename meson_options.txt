@@ -20,3 +20,7 @@ option('with-initrd-dir', type: 'string', description: 'Directory containing fre
 option('with-boot-dir', type: 'string', description: 'System boot directory', value: '/boot')
 option('with-vendor-prefix', type: 'string', description: 'Prefix for files created by clr-boot-manager', value: 'generic-linux-os')
 option('with-systemd-system-unit-dir', type: 'string', description: 'systemd unit directory')
+option('bash_completions', type: 'boolean', value: true, description: 'Install bash shell completions.')
+option('zsh_completions', type: 'boolean', value: true, description: 'Install zsh shell completions.')
+option('with-bash-completions-dir', type: 'string', description: 'System bash completions directory')
+option('with-zsh-completions-dir', type: 'string', description: 'System zsh completions directory')
