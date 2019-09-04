@@ -128,8 +128,14 @@ SystemConfig *cbm_inspect_root(const char *path, bool image_mode)
          * UEFI. This is due to GPT being able to contain a legacy boot device
          * *and* an ESP at the same time. Native UEFI takes precedence.
          */
-        if (!native_uefi || image_mode) {
+        if (!native_uefi || image_mode || getenv("CBM_FORCE_LEGACY")) {
                 boot = get_legacy_boot_device(realp);
+
+                // we may be installing legacy bootloader on a EFI running system
+                // it's useful for CI as well
+                if (!boot && !image_mode) {
+                        boot = get_boot_device();
+                }
         }
 
         if (boot) {
