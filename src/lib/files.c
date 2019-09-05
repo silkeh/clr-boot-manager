@@ -183,6 +183,64 @@ char *get_parent_disk(char *path)
         return realpath(node, NULL);
 }
 
+int get_partition_index(const char *path, const char *devnode)
+{
+        autofree(char) *parent_disk = NULL;
+        autofree(char) *devnode_rpath = NULL;
+        blkid_partlist parts = NULL;
+        blkid_probe probe = NULL;
+        const char *devfs = NULL;
+        int part_count = 0;
+        int ret = -1;
+
+        parent_disk = get_parent_disk((char *)path);
+        if (!parent_disk) {
+                LOG_ERROR("Failed to get parent disk");
+                return ret;
+        }
+
+        probe = cbm_blkid_new_probe_from_filename(parent_disk);
+        if (!probe) {
+                LOG_ERROR("Unable to blkid probe %s", parent_disk);
+                return ret;
+        }
+
+        parts = cbm_blkid_probe_get_partitions(probe);
+
+        part_count = cbm_blkid_partlist_numof_partitions(parts);
+        if (part_count <= 0) {
+                LOG_ERROR("Invalid partition list");
+                goto clean;
+        }
+
+        devfs = cbm_system_get_devfs_path();
+        devnode_rpath = realpath(devnode, NULL);
+
+        for (int i = 0; i < part_count; i++) {
+                blkid_partition part = cbm_blkid_partlist_get_partition(parts, i);
+                const char *part_id = cbm_blkid_partition_get_uuid(part);
+                autofree(char) *pt_path = NULL;
+                autofree(char) *rpath = NULL;
+
+                if (!part_id) {
+                        LOG_ERROR("Not a valid GPT disk");
+                        break;
+                }
+
+                pt_path = string_printf("%s/disk/by-partuuid/%s", devfs, part_id);
+                rpath = realpath(pt_path, NULL);
+
+                if (strncmp(devnode_rpath, rpath, strlen(devnode)) == 0) {
+                        ret = i;
+                        break;
+                }
+        }
+
+ clean:
+        cbm_blkid_free_probe(probe);
+        return ret;
+}
+
 char *get_legacy_boot_device(char *path)
 {
         blkid_probe probe = NULL;

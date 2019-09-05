@@ -51,6 +51,13 @@ char *get_boot_device(void);
 char *get_parent_disk(char *path);
 
 /**
+ * Return the partition's index number for the specified partiton devnode
+ *
+ * This must be on a GPT disk
+ */
+int get_partition_index(const char *path, const char *devnode);
+
+/**
  * Return the device for the legacy boot partition on the same
  * disk as the specified path
  *
