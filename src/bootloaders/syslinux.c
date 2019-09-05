@@ -35,12 +35,15 @@
 
 static KernelArray *kernel_queue = NULL;
 static char *syslinux_cmd = NULL;
+static char *sgdisk_cmd = NULL;
 static char *base_path = NULL;
 
 static bool syslinux_init(const BootManager *manager)
 {
-        autofree(char) *ldlinux = NULL;
+        autofree(char) *parent_disk = NULL;
+        autofree(char) *boot_device = NULL;
         const char *prefix = NULL;
+        int partition_index;
 
         if (kernel_queue) {
                 kernel_array_free(kernel_queue);
@@ -62,19 +65,46 @@ static bool syslinux_init(const BootManager *manager)
                 syslinux_cmd = NULL;
         }
 
-        ldlinux = string_printf("%s/ldlinux.sys", base_path);
-
-        prefix = boot_manager_get_prefix((BootManager *)manager);
-
-        if (nc_file_exists(ldlinux)) {
-                syslinux_cmd =
-                    string_printf("%s/usr/bin/syslinux -U %s &> /dev/null", prefix, base_path);
-        } else {
-                syslinux_cmd =
-                    string_printf("%s/usr/bin/syslinux -i %s &> /dev/null", prefix, base_path);
+        if (sgdisk_cmd) {
+                free(sgdisk_cmd);
+                sgdisk_cmd = NULL;
         }
 
+        prefix = boot_manager_get_prefix((BootManager *)manager);
+        boot_device = get_legacy_boot_device((char *)prefix);
+
+        if (!boot_device) {
+                boot_device = get_boot_device();
+        }
+
+        // syslinux -U will not work with a partuuid, the effect of "install" and
+        // "update" will always be the same, so assume install for all scenarios
+        syslinux_cmd = string_printf("%s/usr/bin/syslinux -i %s &> /dev/null",
+                                     prefix, boot_device);
+
+        partition_index = get_partition_index(prefix, boot_device);
+        if (partition_index == -1) {
+                LOG_ERROR("Failed to get partition index");
+                goto cleanup;
+        }
+
+        parent_disk = get_parent_disk((char *)prefix);
+        if (!parent_disk) {
+                LOG_ERROR("Failed to get parent disk");
+                goto cleanup;
+        }
+
+        sgdisk_cmd = string_printf("%s/usr/bin/sgdisk %s --attributes=%d:set:2",
+                                   prefix, parent_disk, partition_index + 1);
         return true;
+
+ cleanup:
+        free(syslinux_cmd);
+        syslinux_cmd = NULL;
+
+        free(sgdisk_cmd);
+        sgdisk_cmd = NULL;
+        return false;
 }
 
 /* Queue kernel to be added to conf */
@@ -250,6 +280,12 @@ static bool syslinux_install(const BootManager *manager)
         close(mbr);
 
         if (cbm_system_system(syslinux_cmd) != 0) {
+                LOG_DEBUG("Failed to run syslinux command: %s", syslinux_cmd);
+                return false;
+        }
+
+        if (cbm_system_system(sgdisk_cmd) != 0) {
+                LOG_DEBUG("Failed to run sgdisk command: %s", sgdisk_cmd);
                 return false;
         }
 
@@ -277,6 +313,10 @@ static void syslinux_destroy(__cbm_unused__ const BootManager *manager)
         if (syslinux_cmd) {
                 free(syslinux_cmd);
                 syslinux_cmd = NULL;
+        }
+        if (sgdisk_cmd) {
+                free(sgdisk_cmd);
+                sgdisk_cmd = NULL;
         }
         if (base_path) {
                 free(base_path);
