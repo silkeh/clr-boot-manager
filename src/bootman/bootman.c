@@ -305,6 +305,31 @@ bool boot_manager_remove_kernel(BootManager *self, const Kernel *kernel)
         return self->bootloader->remove_kernel(self, kernel);
 }
 
+int detect_and_mount_boot(BootManager *self, char **boot_dir) {
+        autofree(char) *boot_dev = NULL;
+        const char *prefix;
+        int wanted_boot_mask;
+
+        wanted_boot_mask = self->sysconfig->wanted_boot_mask;
+        if ((wanted_boot_mask & BOOTLOADER_CAP_LEGACY) != BOOTLOADER_CAP_LEGACY) {
+                return mount_boot(self, boot_dir);
+        }
+
+        boot_dev = get_boot_device();
+
+        if (!boot_dev) {
+                prefix = boot_manager_get_prefix((BootManager *)self);
+                boot_dev = get_legacy_boot_device((char *)prefix);
+        }
+
+        if (!boot_dev) {
+                LOG_DEBUG("No boot partition, nothing to mount.");
+                return 0;
+        }
+
+        return mount_boot(self, boot_dir);
+}
+
 bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
 {
         assert(self != NULL);
@@ -328,13 +353,7 @@ bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
                 return false;
         }
 
-        /* TODO: decide how legacy device detection works */
-        /* For now legacy means /boot is on the / partition */
-        if ((self->sysconfig->wanted_boot_mask & BOOTLOADER_CAP_LEGACY) == BOOTLOADER_CAP_LEGACY) {
-                did_mount = 0;
-        } else {
-                did_mount = mount_boot(self, &boot_dir);
-        }
+        did_mount = detect_and_mount_boot(self, &boot_dir);
         if (did_mount < 0) {
                 return false;
         }
@@ -518,13 +537,7 @@ char **boot_manager_list_kernels(BootManager *self)
         /* Sort them to ensure static ordering */
         nc_array_qsort(kernels, kernel_compare_reverse);
 
-        /* TODO: decide how legacy device detection works */
-        /* For now legacy means /boot is on the / partition */
-        if ((self->sysconfig->wanted_boot_mask & BOOTLOADER_CAP_LEGACY) == BOOTLOADER_CAP_LEGACY) {
-                did_mount = 0;
-        } else {
-                did_mount = mount_boot(self, &boot_dir);
-        }
+        did_mount = detect_and_mount_boot(self, &boot_dir);
         if (did_mount >= 0) {
                 default_kernel = boot_manager_get_default_kernel(self);
                 if (did_mount > 0) {

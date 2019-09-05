@@ -62,6 +62,14 @@ void umount_boot(char *boot_dir);
 int mount_boot(BootManager *self, char **boot_directory);
 
 /**
+ * Detect if legacy, if so make sure there's a boot partition, in that case mount. For
+ * other cases always try to mount.
+ *
+ * @see mount_boot() for return and error conditions.
+ */
+int detect_and_mount_boot(BootManager *self, char **boot_dir);
+
+/**
  * Internal function to sort by Kernel structs by release number (highest first)
  */
 int kernel_compare_reverse(const void *a, const void *b);
