@@ -1,8 +1,7 @@
 clr-boot-manager
 ----------------
 
-[![Build Status](https://travis-ci.org/clearlinux/clr-boot-manager.svg?branch=master)](https://travis-ci.org/clearlinux/clr-boot-manager)
-
+![](https://github.com/clearlinux/clr-boot-manager/workflows/CI/badge.svg)
 
 clr-boot-manager  exists  to  enable the correct maintenance of vendor kernels and appropriate garbage collection tactics over the  course  of upgrades.   The  implementation  provides  the  means to enable correct cohabitation on a shared boot directory, such as the EFI System  Partition for UEFI-booting operating systems.
 

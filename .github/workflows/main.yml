@@ -1,0 +1,21 @@
+name: CI
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: true
+    - name: Prepare
+      run: |
+        sudo apt-get update
+        sudo apt-get install libefiboot-dev check grep ninja-build meson gcc-5 libblkid-dev lcov valgrind gnu-efi libefivar-dev ruby ruby-dev rubygems
+        sudo gem install coveralls-lcov
+    - name: Build
+      env:
+        CC: "gcc-5"
+      run: |
+        ./scripts/travis_test.sh && coveralls-lcov outCoverage/coverage.info
