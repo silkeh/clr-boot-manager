@@ -72,7 +72,7 @@ stash_coverage() {
     fi
 
     # Does this guy exist?
-    if [[ ! -e "$coverageFile" ]]; then
+    if [[ ! -s "$coverageFile" ]]; then
         cp -v "$sampleFile" "$coverageFile"
     else
         # Merge them!
@@ -82,8 +82,10 @@ stash_coverage() {
         mv "${coverageFile}.tmp" "$coverageFile"
     fi
 
-    # Ensure we remove any unnecessary junk now
-    lcov --remove "$coverageFile" 'tests/*' '/usr/*' --output-file "$coverageFile"
+    if [[ ! -s "$coverageFile" ]]; then
+	# Ensure we remove any unnecessary junk now
+	lcov --remove "$coverageFile" 'tests/*' '/usr/*' --output-file "$coverageFile"
+    fi
 }
 
 set_full_config() {
