@@ -41,9 +41,14 @@ static inline char *test_get_mountpoint_for_device(__cbm_unused__ const char *de
         return NULL;
 }
 
-static inline char *test_devnode_to_devpath(__cbm_unused__ dev_t d)
+static inline char *test_get_device_for_mountpoint(__cbm_unused__ const char *device)
 {
         return string_printf("%s/dev/testRoot", TOP_BUILD_DIR "/tests/update_playground");
+}
+
+static inline char *test_devnode_to_devpath(__cbm_unused__ dev_t d)
+{
+        return test_get_device_for_mountpoint(NULL);
 }
 
 static inline const char *test_get_sysfs_path(void)
@@ -66,6 +71,7 @@ CbmSystemOps SystemTestOps = {
         .system = test_system,
         .is_mounted = test_is_mounted,
         .get_mountpoint_for_device = test_get_mountpoint_for_device,
+        .get_device_for_mountpoint = test_get_device_for_mountpoint,
         .devnode_to_devpath = test_devnode_to_devpath,
         .get_sysfs_path = test_get_sysfs_path,
         .get_devfs_path = test_get_devfs_path,

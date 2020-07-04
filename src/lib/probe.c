@@ -203,17 +203,17 @@ CbmDeviceProbe *cbm_probe_path(const char *path)
                 LOG_ERROR("Path does not exist: %s", path);
                 return NULL;
         }
-        probe.dev = st.st_dev;
 
-        devnode = cbm_system_devnode_to_devpath(probe.dev);
+        devnode = cbm_system_get_device_for_mountpoint(path);
         if (!devnode) {
+                LOG_ERROR("No device for path: %s", path);
                 DECLARE_OOM();
                 return NULL;
         }
 
         blk_probe = cbm_blkid_new_probe_from_filename(devnode);
         if (!blk_probe) {
-                fprintf(stderr, "Unable to probe %u:%u", major(st.st_dev), minor(st.st_dev));
+                fprintf(stderr, "Unable to probe device %s", devnode);
                 return NULL;
         }
 

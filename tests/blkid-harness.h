@@ -12,6 +12,7 @@
 #pragma once
 
 #include "blkid_stub.h"
+#include <sys/sysmacros.h>
 
 const char *DEFAULT_UUID = "Test-UUID";
 const char *DEFAULT_PART_UUID = "Test-PartUUID";
@@ -46,6 +47,12 @@ static inline int test_blkid_probe_set_partitions_flags(__cbm_unused__ blkid_pro
                                                         __cbm_unused__ int flags)
 {
         return 0;
+}
+
+static inline dev_t test_blkid_probe_get_wholedisk_devno(__cbm_unused__ blkid_probe pr)
+{
+        /* Prevent legacy testing */
+        return makedev(0, 0);
 }
 
 static inline int test_blkid_do_safeprobe(__cbm_unused__ blkid_probe pr)
@@ -118,6 +125,12 @@ static inline int test_blkid_devno_to_wholedisk(__cbm_unused__ dev_t dev,
         return -1;
 }
 
+static inline char *test_blkid_devno_to_devname(dev_t dev)
+{
+    return string_printf("%s/dev/block/%u:%u",
+                         TOP_BUILD_DIR "/tests/update_playground", major(dev), minor(dev));
+}
+
 static inline blkid_parttable test_blkid_partlist_get_table(__cbm_unused__ blkid_partlist ls)
 {
         /* Return a "valid" partition table */
@@ -140,6 +153,7 @@ CbmBlkidOps BlkidTestOps = {
         .probe_set_superblocks_flags = test_blkid_probe_set_superblocks_flags,
         .probe_enable_partitions = test_blkid_probe_enable_partitions,
         .probe_set_partitions_flags = test_blkid_probe_set_partitions_flags,
+        .probe_get_wholedisk_devno = test_blkid_probe_get_wholedisk_devno,
         .probe_lookup_value = test_blkid_probe_lookup_value,
         .do_safeprobe = test_blkid_do_safeprobe,
         .free_probe = test_blkid_free_probe,
@@ -157,6 +171,7 @@ CbmBlkidOps BlkidTestOps = {
 
         /* Misc */
         .devno_to_wholedisk = test_blkid_devno_to_wholedisk,
+        .devno_to_devname = test_blkid_devno_to_devname,
 };
 
 /*

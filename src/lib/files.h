@@ -143,6 +143,14 @@ bool cbm_is_mounted(const char *path);
 char *cbm_get_mountpoint_for_device(const char *device);
 
 /**
+ * Determine the device for the given mountpoint
+ *
+ * @param mount Mount point to get the device for
+ * @return Device path for the mount point, or NULL if none was found.
+ */
+char *cbm_get_device_for_mountpoint(const char *mount);
+
+/**
  * Determine whether the system is booted using UEFI
  */
 bool cbm_system_has_uefi(void);

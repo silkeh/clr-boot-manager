@@ -44,6 +44,14 @@ static inline int legacy_devno_to_wholedisk(__cbm_unused__ dev_t dev, __cbm_unus
 }
 
 /**
+ * Coerce legacy lookup
+ */
+static inline dev_t legacy_probe_get_wholedisk_devno(__cbm_unused__ blkid_probe pr)
+{
+        return makedev(8, 8);
+}
+
+/**
  * Forces detection of GPT legacy boot partition
  */
 static inline unsigned long long legacy_partition_get_flags(__cbm_unused__ blkid_partition par)
@@ -290,6 +298,7 @@ int main(void)
         /* override test ops for legacy testing */
         CbmBlkidOps blkid_ops = BlkidTestOps;
         blkid_ops.devno_to_wholedisk = legacy_devno_to_wholedisk;
+        blkid_ops.probe_get_wholedisk_devno = legacy_probe_get_wholedisk_devno;
         blkid_ops.partition_get_flags = legacy_partition_get_flags;
         blkid_ops.partition_get_uuid = legacy_partition_get_uuid;
 
