@@ -329,7 +329,7 @@ bool boot_manager_remove_kernel(BootManager *self, const Kernel *kernel)
         return self->bootloader->remove_kernel(self, kernel);
 }
 
-int detect_and_mount_boot(BootManager *self, char **boot_dir) {
+int boot_manager_detect_and_mount_boot(BootManager *self, char **boot_dir) {
         autofree(char) *boot_dev = NULL;
         const char *prefix;
         int wanted_boot_mask;
@@ -370,7 +370,7 @@ bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
         CHECK_ERR_RET_VAL(!kernels || kernels->len == 0, false,
                           "No kernels discovered in %s, bailing", self->kernel_dir);
 
-        did_mount = detect_and_mount_boot(self, &boot_dir);
+        did_mount = boot_manager_detect_and_mount_boot(self, &boot_dir);
         CHECK_DBG_RET_VAL(did_mount < 0, false, "Boot was not mounted");
 
         for (uint16_t i = 0; i < kernels->len; i++) {
@@ -566,7 +566,7 @@ char **boot_manager_list_kernels(BootManager *self)
         /* Sort them to ensure static ordering */
         nc_array_qsort(kernels, kernel_compare_reverse);
 
-        did_mount = detect_and_mount_boot(self, &boot_dir);
+        did_mount = boot_manager_detect_and_mount_boot(self, &boot_dir);
         if (did_mount >= 0) {
                 default_kernel = boot_manager_get_default_kernel(self);
                 if (did_mount > 0) {
