@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <sys/sysmacros.h>
 #include <unistd.h>
+#include <btrfsutil.h>
 
 #include "blkid_stub.h"
 #include "files.h"
@@ -203,17 +204,17 @@ CbmDeviceProbe *cbm_probe_path(const char *path)
                 LOG_ERROR("Path does not exist: %s", path);
                 return NULL;
         }
-        probe.dev = st.st_dev;
 
-        devnode = cbm_system_devnode_to_devpath(probe.dev);
+        devnode = cbm_system_get_device_for_mountpoint(path);
         if (!devnode) {
+                LOG_ERROR("No device for path: %s", path);
                 DECLARE_OOM();
                 return NULL;
         }
 
         blk_probe = cbm_blkid_new_probe_from_filename(devnode);
         if (!blk_probe) {
-                fprintf(stderr, "Unable to probe %u:%u", major(st.st_dev), minor(st.st_dev));
+                fprintf(stderr, "Unable to probe device %s", devnode);
                 return NULL;
         }
 
@@ -253,6 +254,16 @@ CbmDeviceProbe *cbm_probe_path(const char *path)
         /* Now check we have at least one UUID value */
         if (!probe.part_uuid && !probe.uuid) {
                 LOG_ERROR("Unable to find UUID for %s: %s", devnode, strerror(errno));
+        }
+
+        /* Check if its a Btrfs device */
+        if (btrfs_util_is_subvolume(path) == BTRFS_UTIL_OK) {
+                LOG_DEBUG("Root device is a Btrfs subvolume");
+                enum btrfs_util_error err = btrfs_util_subvolume_path(path, 0, &probe.btrfs_sub);
+                if (err != BTRFS_UTIL_OK) {
+                        LOG_ERROR("Failed to get subvolume of Btrfs filesystem %s: %s",
+                                  path, btrfs_util_strerror(err));
+                }
         }
 
         /* Check if its a software raid device */

@@ -37,6 +37,7 @@ static CbmBlkidOps default_blkid_ops = {
         .probe_set_superblocks_flags = blkid_probe_set_superblocks_flags,
         .probe_enable_partitions = blkid_probe_enable_partitions,
         .probe_set_partitions_flags = blkid_probe_set_partitions_flags,
+        .probe_get_wholedisk_devno = blkid_probe_get_wholedisk_devno,
         .probe_lookup_value = blkid_probe_lookup_value,
         .do_safeprobe = blkid_do_safeprobe,
         .free_probe = blkid_free_probe,
@@ -54,6 +55,7 @@ static CbmBlkidOps default_blkid_ops = {
 
         /* Misc */
         .devno_to_wholedisk = cbm_blkid_devno_to_wholedisk_wrapped,
+        .devno_to_devname = blkid_devno_to_devname,
 };
 
 /**
@@ -79,6 +81,7 @@ void cbm_blkid_set_vtable(CbmBlkidOps *ops)
         assert(blkid_ops->probe_set_superblocks_flags != NULL);
         assert(blkid_ops->probe_enable_partitions != NULL);
         assert(blkid_ops->probe_set_partitions_flags != NULL);
+        assert(blkid_ops->probe_get_wholedisk_devno != NULL);
         assert(blkid_ops->probe_lookup_value != NULL);
         assert(blkid_ops->do_safeprobe != NULL);
         assert(blkid_ops->free_probe != NULL);
@@ -96,6 +99,7 @@ void cbm_blkid_set_vtable(CbmBlkidOps *ops)
 
         /* misc */
         assert(blkid_ops->devno_to_wholedisk != NULL);
+        assert(blkid_ops->devno_to_devname != NULL);
 }
 
 /**
@@ -139,6 +143,11 @@ int cbm_blkid_probe_lookup_value(blkid_probe pr, const char *name, const char **
 void cbm_blkid_free_probe(blkid_probe pr)
 {
         blkid_ops->free_probe(pr);
+}
+
+dev_t cbm_probe_get_wholedisk_devno(blkid_probe pr)
+{
+        return blkid_ops->probe_get_wholedisk_devno(pr);
 }
 
 /**
@@ -191,6 +200,11 @@ const char *cbm_blkid_parttable_get_type(blkid_parttable tab)
 int cbm_blkid_devno_to_wholedisk(dev_t dev, char *diskname, size_t len, dev_t *diskdevno)
 {
         return blkid_ops->devno_to_wholedisk(dev, diskname, len, diskdevno);
+}
+
+char *cbm_blkid_devno_to_devname(dev_t dev)
+{
+        return blkid_ops->devno_to_devname(dev);
 }
 
 /*

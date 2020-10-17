@@ -155,17 +155,22 @@ next:
 static bool get_parent_disk_devno(char *path, dev_t *diskdevno)
 {
         struct stat st = { 0 };
-        dev_t ret;
+        autofree(char) *dev_path = NULL;
 
         if (stat(path, &st) != 0) {
                 return false;
         }
 
-        if (cbm_blkid_devno_to_wholedisk(st.st_dev, NULL, 0, &ret) < 0) {
+        dev_path = cbm_system_get_device_for_mountpoint(path);
+        blkid_probe pr = cbm_blkid_new_probe_from_filename(dev_path);
+        if (cbm_blkid_do_safeprobe(pr) != 0) {
                 LOG_ERROR("Invalid block device: %s", path);
+                cbm_blkid_free_probe(pr);
                 return false;
         }
-        *diskdevno = ret;
+
+        *diskdevno = cbm_probe_get_wholedisk_devno(pr);
+        cbm_blkid_free_probe(pr);
         return true;
 }
 
@@ -199,13 +204,12 @@ char *get_parent_disk(char *path)
 {
         dev_t devt;
         autofree(char) *node = NULL;
-        const char *devfs = cbm_system_get_devfs_path();
 
         if (!get_parent_disk_devno(path, &devt)) {
                 return NULL;
         }
 
-        node = string_printf("%s/block/%u:%u", devfs, major(devt), minor(devt));
+        node = cbm_blkid_devno_to_devname(devt);
         return realpath(node, NULL);
 }
 
@@ -516,6 +520,27 @@ char *cbm_get_mountpoint_for_device(const char *device)
                 }
         }
         return NULL;
+}
+
+char *cbm_get_device_for_mountpoint(const char *mount)
+{
+        autofree(char) *dev_path = NULL;
+        autofree(FILE_MNT) *tab = NULL;
+        struct mntent *mnt = NULL;
+
+        tab = setmntent("/proc/self/mounts", "r");
+        if (tab == NULL) {
+                return NULL;
+        }
+
+        while ((mnt = getmntent(tab)) != NULL) {
+                if (strcmp(mnt->mnt_dir, mount) == 0) {
+                        dev_path = strdup(mnt->mnt_fsname);
+                        break;
+                }
+        }
+
+        return realpath(dev_path, NULL);
 }
 
 bool cbm_system_has_uefi()

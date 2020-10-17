@@ -68,6 +68,7 @@ libcbm_includes = [
 libcbm_dependencies = [
     link_libnica,
     dep_blkid,
+    dep_btrfs,
 ]
 
 # Special constraints for efi functionality
@@ -98,6 +99,7 @@ clr_boot_manager_sources = [
     'cli/cli.c',
     'cli/main.c',
     'cli/ops/kernels.c',
+    'cli/ops/mount.c',
     'cli/ops/report_booted.c',
     'cli/ops/timeout.c',
     'cli/ops/update.c',

@@ -55,6 +55,7 @@ static CbmSystemOps default_system_ops = {
         .system = system,
         .is_mounted = cbm_is_mounted,
         .get_mountpoint_for_device = cbm_get_mountpoint_for_device,
+        .get_device_for_mountpoint = cbm_get_device_for_mountpoint,
         .devnode_to_devpath = cbm_devnode_to_devpath,
         .get_sysfs_path = cbm_get_sysfs_path,
         .get_devfs_path = cbm_get_devfs_path,
@@ -112,6 +113,11 @@ bool cbm_system_is_mounted(const char *target)
 char *cbm_system_get_mountpoint_for_device(const char *device)
 {
         return system_ops->get_mountpoint_for_device(device);
+}
+
+char *cbm_system_get_device_for_mountpoint(const char *device)
+{
+        return system_ops->get_device_for_mountpoint(device);
 }
 
 char *cbm_system_devnode_to_devpath(dev_t d)
