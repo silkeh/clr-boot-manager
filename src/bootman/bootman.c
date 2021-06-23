@@ -329,7 +329,7 @@ bool boot_manager_remove_kernel(BootManager *self, const Kernel *kernel)
         return self->bootloader->remove_kernel(self, kernel);
 }
 
-int detect_and_mount_boot(BootManager *self, char **boot_dir) {
+int boot_manager_detect_and_mount_boot(BootManager *self, char **boot_dir) {
         autofree(char) *boot_dev = NULL;
         const char *prefix;
         int wanted_boot_mask;
@@ -370,7 +370,7 @@ bool boot_manager_set_default_kernel(BootManager *self, const Kernel *kernel)
         CHECK_ERR_RET_VAL(!kernels || kernels->len == 0, false,
                           "No kernels discovered in %s, bailing", self->kernel_dir);
 
-        did_mount = detect_and_mount_boot(self, &boot_dir);
+        did_mount = boot_manager_detect_and_mount_boot(self, &boot_dir);
         CHECK_DBG_RET_VAL(did_mount < 0, false, "Boot was not mounted");
 
         for (uint16_t i = 0; i < kernels->len; i++) {
@@ -460,10 +460,9 @@ int mount_boot(BootManager *self, char **boot_directory)
 
         /*
          * Already mounted at the default boot dir or boot doesn't have its own partition,
-         * we check if /boot is empty, if it's not then we assume it's a "partitionless" /boot
-         * (the system has no /boot partition), in both cases there's nothing for us to do
+         * in both cases there's nothing for us to do.
          */
-        if (cbm_system_is_mounted(boot_dir) || !cbm_is_dir_empty(boot_dir)) {
+        if (cbm_system_is_mounted(boot_dir) || check_partitionless_boot(self, boot_dir)) {
                 LOG_INFO("boot_dir is already mounted: %s", boot_dir);
                 *boot_directory = strdup(boot_dir);
                 if (*boot_directory) {
@@ -566,7 +565,7 @@ char **boot_manager_list_kernels(BootManager *self)
         /* Sort them to ensure static ordering */
         nc_array_qsort(kernels, kernel_compare_reverse);
 
-        did_mount = detect_and_mount_boot(self, &boot_dir);
+        did_mount = boot_manager_detect_and_mount_boot(self, &boot_dir);
         if (did_mount >= 0) {
                 default_kernel = boot_manager_get_default_kernel(self);
                 if (did_mount > 0) {
@@ -1009,6 +1008,14 @@ bool boot_manager_is_update_efi_vars(BootManager *self)
 {
         assert(self != NULL);
         return self->update_efi_vars;
+}
+
+bool check_partitionless_boot(const BootManager *self, const char *boot_dir)
+{
+        assert(self != NULL);
+        return ((self->bootloader->get_capabilities(self) & BOOTLOADER_CAP_PARTLESS)
+                && !(self->sysconfig->wanted_boot_mask & BOOTLOADER_CAP_UEFI)
+                && !cbm_is_dir_empty(boot_dir));
 }
 
 /*

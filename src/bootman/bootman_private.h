@@ -70,7 +70,7 @@ int mount_boot(BootManager *self, char **boot_directory);
  *
  * @see mount_boot() for return and error conditions.
  */
-int detect_and_mount_boot(BootManager *self, char **boot_dir);
+int boot_manager_detect_and_mount_boot(BootManager *self, char **boot_dir);
 
 /**
  * Internal function to sort by Kernel structs by release number (highest first)
@@ -81,6 +81,15 @@ int kernel_compare_reverse(const void *a, const void *b);
  * Given a boot_device returns the filesystem name, if unknown filesystem returns NULL.
  */
 const char *cbm_get_fstype_name(const char *boot_device);
+
+/**
+ * Check if the system supports a "partitionless" (the system has no /boot partition) boot.
+ * Conditions are:
+ * - The bootloader supports this.
+ * - The system is not UEFI.
+ * - The /boot folder is not empty.
+ */
+bool check_partitionless_boot(const BootManager *self, const char *boot_dir);
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html

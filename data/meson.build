@@ -8,3 +8,10 @@ configure_file(
     configuration: data_conf,
     install_dir: with_systemd_system_unit_dir,
 )
+
+configure_file(
+    input: 'clr-boot-manager-mount-boot.service.in',
+    output: 'clr-boot-manager-mount-boot.service',
+    configuration: data_conf,
+    install_dir: with_systemd_system_unit_dir,
+)

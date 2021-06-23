@@ -30,6 +30,7 @@ typedef struct CbmSystemOps {
         /* wrap cbm lib functions */
         bool (*is_mounted)(const char *target);
         char *(*get_mountpoint_for_device)(const char *device);
+        char *(*get_device_for_mountpoint)(const char *mount);
 
         /* exec family */
         int (*system)(const char *command);
@@ -69,6 +70,11 @@ bool cbm_system_is_mounted(const char *target);
  * Get the mountpoint for the given device path
  */
 char *cbm_system_get_mountpoint_for_device(const char *device);
+
+/**
+ * Get the device path for a given mountpoint
+ */
+char *cbm_system_get_device_for_mountpoint(const char *device);
 
 /**
  * Wrap the umount syscall

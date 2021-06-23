@@ -240,6 +240,11 @@ bool grub2_write_kernel(const Grub2Config *config, const Kernel *kernel)
                                          "rd.luks.uuid=%s ",
                                          config->root_dev->luks_uuid);
         }
+        if (config->root_dev->btrfs_sub) {
+                cbm_writer_append_printf(config->writer,
+                                         "rootflags=subvol=%s ",
+                                         config->root_dev->btrfs_sub);
+        }
 
         /* Finish it off with the command line options */
         cbm_writer_append_printf(config->writer, "%s\"\n", kernel->meta.cmdline);
@@ -564,7 +569,7 @@ int grub2_get_capabilities(const BootManager *manager)
                 return 0;
         }
         /* Or in other words, we're the last bootloader candidate. */
-        return BOOTLOADER_CAP_LEGACY | BOOTLOADER_CAP_EXTFS;
+        return BOOTLOADER_CAP_LEGACY | BOOTLOADER_CAP_EXTFS | BOOTLOADER_CAP_PARTLESS;
 }
 
 __cbm_export__ const BootLoader grub2_bootloader = {.name = "grub2",
