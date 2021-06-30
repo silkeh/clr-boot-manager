@@ -67,6 +67,14 @@ static inline int gpt_devno_to_wholedisk(__cbm_unused__ dev_t dev, __cbm_unused_
 }
 
 /**
+ * Coerce legacy lookup
+ */
+static inline dev_t gpt_probe_get_wholedisk_devno(__cbm_unused__ blkid_probe pr)
+{
+        return makedev(8, 8);
+}
+
+/**
  * This will force the tests to use the GPT detection codepaths
  */
 static CbmBlkidOps gpt_blkid_ops = {
@@ -75,6 +83,7 @@ static CbmBlkidOps gpt_blkid_ops = {
         .probe_set_superblocks_flags = test_blkid_probe_set_superblocks_flags,
         .probe_enable_partitions = test_blkid_probe_enable_partitions,
         .probe_set_partitions_flags = test_blkid_probe_set_partitions_flags,
+        .probe_get_wholedisk_devno = gpt_probe_get_wholedisk_devno,
         .probe_lookup_value = test_blkid_probe_lookup_value,
         .do_safeprobe = test_blkid_do_safeprobe,
         .free_probe = test_blkid_free_probe,
@@ -86,6 +95,7 @@ static CbmBlkidOps gpt_blkid_ops = {
         .partlist_get_table = test_blkid_partlist_get_table,
         .parttable_get_type = test_blkid_parttable_get_type,
         .devno_to_wholedisk = gpt_devno_to_wholedisk,
+        .devno_to_devname = test_blkid_devno_to_devname,
 };
 
 static inline const char *mbr_parttable_get_type(__cbm_unused__ blkid_parttable tab)
@@ -102,6 +112,7 @@ static CbmBlkidOps mbr_blkid_ops = {
         .probe_set_superblocks_flags = test_blkid_probe_set_superblocks_flags,
         .probe_enable_partitions = test_blkid_probe_enable_partitions,
         .probe_set_partitions_flags = test_blkid_probe_set_partitions_flags,
+        .probe_get_wholedisk_devno = test_blkid_probe_get_wholedisk_devno,
         .probe_lookup_value = test_blkid_probe_lookup_value,
         .do_safeprobe = test_blkid_do_safeprobe,
         .free_probe = test_blkid_free_probe,
@@ -113,6 +124,7 @@ static CbmBlkidOps mbr_blkid_ops = {
         .partlist_get_table = test_blkid_partlist_get_table,
         .parttable_get_type = mbr_parttable_get_type,
         .devno_to_wholedisk = gpt_devno_to_wholedisk,
+        .devno_to_devname = test_blkid_devno_to_devname,
 };
 
 static void bootman_probe_set_gpt_vtables(void)

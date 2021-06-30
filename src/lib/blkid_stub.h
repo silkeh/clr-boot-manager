@@ -28,6 +28,7 @@ typedef struct CbmBlkidOps {
         int (*probe_lookup_value)(blkid_probe pr, const char *name, const char **data, size_t *len);
         int (*do_safeprobe)(blkid_probe pr);
         void (*free_probe)(blkid_probe pr);
+        dev_t (*probe_get_wholedisk_devno)(blkid_probe pr);
 
         /* Partition functions */
         blkid_partlist (*probe_get_partitions)(blkid_probe pr);
@@ -42,6 +43,7 @@ typedef struct CbmBlkidOps {
 
         /* Misc functions */
         int (*devno_to_wholedisk)(dev_t dev, char *diskname, size_t len, dev_t *diskdevno);
+        char *(*devno_to_devname)(dev_t dev);
 } CbmBlkidOps;
 
 /**
@@ -109,6 +111,7 @@ int cbm_blkid_probe_set_partitions_flags(blkid_probe pr, int flags);
 int cbm_blkid_do_safeprobe(blkid_probe pr);
 int cbm_blkid_probe_lookup_value(blkid_probe pr, const char *name, const char **data, size_t *len);
 void cbm_blkid_free_probe(blkid_probe pr);
+dev_t cbm_probe_get_wholedisk_devno(blkid_probe pr);
 
 /**
  * Partition related wrappers
@@ -129,6 +132,7 @@ const char *cbm_blkid_parttable_get_type(blkid_parttable tab);
  * Misc related wrappers
  */
 int cbm_blkid_devno_to_wholedisk(dev_t dev, char *diskname, size_t len, dev_t *diskdevno);
+char *cbm_blkid_devno_to_devname(dev_t dev);
 
 /*
  * Editor modelines  -  https://www.wireshark.org/tools/modelines.html
